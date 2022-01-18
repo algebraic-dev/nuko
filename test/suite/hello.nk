@@ -1,0 +1,6 @@
+type Maybe a = | Just a | Nothing
+
+let divide (num : Int) (den : Int) : Maybe Int = 
+   case den of 
+      n -> Just (num/den)  
+      e -> Nothing

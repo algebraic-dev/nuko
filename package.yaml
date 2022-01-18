@@ -1,0 +1,55 @@
+name: nuko
+version: 0.1.0.0
+github: "felipegchi/Nuko"
+license: MIT
+author: "Chiyoku"
+maintainer: "chiyoku@gmail.com"
+copyright: "2022 Chiyoku"
+
+description: <https://github.com/felipegchi/Nuko#readme>
+
+dependencies:
+  - base >= 4.7 && < 5
+  - array
+  - text
+  - bytestring
+  - mtl
+
+default-extensions:
+  - TypeFamilies
+  - GADTs
+  - DeriveFunctor
+  - GeneralizedNewtypeDeriving
+  - LambdaCase
+  - OverloadedStrings
+  - DeriveGeneric
+
+build-depends:
+  - alex
+  - happy
+
+library:
+  source-dirs: src
+
+executables:
+  nuko-exe:
+    main: Main.hs
+    source-dirs: app
+    ghc-options:
+      - -threaded
+      - -rtsopts
+      - -with-rtsopts=-N
+      - -Wall
+    dependencies:
+      - nuko
+
+tests:
+  nuko-test:
+    main: Spec.hs
+    source-dirs: test
+    ghc-options:
+      - -threaded
+      - -rtsopts
+      - -with-rtsopts=-N
+    dependencies:
+      - nuko
