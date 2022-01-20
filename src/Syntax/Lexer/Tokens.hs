@@ -9,6 +9,8 @@ data Token
     
     | TknNumber Integer
     | TknLStr Text
+    | TknLChar Char 
+    | TknLDouble Double
 
     -- Layout 
     | TknOpen | TknClose | TknEnd

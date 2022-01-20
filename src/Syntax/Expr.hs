@@ -28,13 +28,13 @@ data Pattern ζ
 data Literal ζ
     = LChar (XLChar ζ) Char
     | LString (XLString ζ) Text
-    | LInt (XLInt ζ) Int 
+    | LInt (XLInt ζ) Integer
     | LDouble (XLDouble ζ) Double
     | LExt !(XLExt ζ)
 
 data Expr ζ
     = Lam (XLam ζ) (Binder ζ) (Expr ζ)
-    | App (XApp ζ) (NonEmpty (Expr ζ))
+    | App (XApp ζ) (Expr ζ) (Expr ζ)
     | Var (XVar ζ) (Name ζ) 
     | Lit (XLit ζ) (Literal ζ)
     | Assign (XAssign ζ) (Binder ζ) (Expr ζ) 

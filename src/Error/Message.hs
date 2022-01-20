@@ -28,7 +28,7 @@ data ErrReport =
 -- Instatiation
 
 onlyCol :: Pos -> Bounds
-onlyCol pos@(B.Pos line col) = (B.Bounds pos (B.Pos line (col + 1)))
+onlyCol pos@(B.Pos line col) = B.Bounds pos (B.Pos line (col + 1))
 
 messageFromErr :: ErrorKind -> ErrMessage
 messageFromErr (UnfinishedString pos) = 

@@ -14,12 +14,14 @@ dependencies:
   - text
   - bytestring
   - containers
+  - array
 
 default-extensions:
   - GeneralizedNewtypeDeriving
   - OverloadedStrings
   - TypeFamilies
   - FlexibleInstances
+  - LambdaCase
 
 library:
   source-dirs: src

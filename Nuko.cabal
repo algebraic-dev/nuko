@@ -26,8 +26,10 @@ library
       Error.PrettyPrint
       Syntax.Bounds
       Syntax.Expr
+      Syntax.Lexer
       Syntax.Lexer.Support
       Syntax.Lexer.Tokens
+      Syntax.Parser
       Syntax.Parser.AST
   other-modules:
       Paths_Nuko
@@ -38,9 +40,11 @@ library
       OverloadedStrings
       TypeFamilies
       FlexibleInstances
+      LambdaCase
   ghc-options: -Wall
   build-depends:
-      base >=4.7 && <5
+      array
+    , base >=4.7 && <5
     , bytestring
     , containers
     , mtl
@@ -59,9 +63,11 @@ executable Nuko-exe
       OverloadedStrings
       TypeFamilies
       FlexibleInstances
+      LambdaCase
   ghc-options: -Wall -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       Nuko
+    , array
     , base >=4.7 && <5
     , bytestring
     , containers
@@ -81,9 +87,11 @@ test-suite Nuko-test
       OverloadedStrings
       TypeFamilies
       FlexibleInstances
+      LambdaCase
   ghc-options: -Wall -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       Nuko
+    , array
     , base >=4.7 && <5
     , bytestring
     , containers

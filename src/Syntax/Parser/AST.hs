@@ -72,7 +72,7 @@ instance HasPosition (Literal Normal) where
 
 instance HasPosition (Expr Normal) where 
     getPos (Lam pos _ _) = pos 
-    getPos (App pos _) = pos 
+    getPos (App pos _ _) = pos 
     getPos (Var _ name) = getPos name 
     getPos (Lit _ lit) = getPos lit 
     getPos (Assign pos _ _) = pos 
