@@ -1,0 +1,7 @@
+let valid? (a : Int): Bool = True 
+let this_is_valid! (a: Int): Bool = True
+let val3123 = 42
+let v3 = 42
+let v_3? = 42
+
+let main = print "Right!"

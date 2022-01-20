@@ -1,0 +1,15 @@
+type Nat =
+    | Z
+    | S Nat
+
+let add (a: Nat) (b: Nat) : Nat = 
+    match a with 
+        Z   -> b 
+        S n -> add n (S b)
+
+let toInt (a: Nat): Int = 
+    match a with 
+        S n -> toInt n + 1
+        Z   -> 0
+
+let main = print (toInt (add (S (S Z)) (S Z)))

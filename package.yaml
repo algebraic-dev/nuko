@@ -1,55 +1,54 @@
-name: nuko
+name: Nuko
 version: 0.1.0.0
 github: "felipegchi/Nuko"
-license: MIT
-author: "Chiyoku"
-maintainer: "chiyoku@gmail.com"
-copyright: "2022 Chiyoku"
+license: BSD3
+author: "Felipe G"
+maintainer: "chiyokuoni@gmail.com"
+copyright: "2022 Felipe G"
 
-description: <https://github.com/felipegchi/Nuko#readme>
+description: <https://github.com/githubuser/Nuko#readme>
 
 dependencies:
   - base >= 4.7 && < 5
-  - array
+  - mtl
   - text
   - bytestring
-  - mtl
+  - containers
 
 default-extensions:
-  - TypeFamilies
-  - GADTs
-  - DeriveFunctor
   - GeneralizedNewtypeDeriving
-  - LambdaCase
   - OverloadedStrings
-  - DeriveGeneric
-
-build-depends:
-  - alex
-  - happy
+  - TypeFamilies
+  - FlexibleInstances
 
 library:
   source-dirs: src
+  ghc-options:
+    - -Wall
 
 executables:
-  nuko-exe:
+  Nuko-exe:
     main: Main.hs
     source-dirs: app
     ghc-options:
+      - -Wall
       - -threaded
       - -rtsopts
       - -with-rtsopts=-N
-      - -Wall
     dependencies:
-      - nuko
+      - Nuko
 
 tests:
-  nuko-test:
+  Nuko-test:
     main: Spec.hs
     source-dirs: test
     ghc-options:
+      - -Wall
       - -threaded
       - -rtsopts
       - -with-rtsopts=-N
     dependencies:
-      - nuko
+      - Nuko
+      - tasty-golden
+      - tasty
+      - filepath

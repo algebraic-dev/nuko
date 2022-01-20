@@ -1,0 +1,2 @@
+let add a b = a + b
+let main = print (add 2 3)

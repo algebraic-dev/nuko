@@ -1,28 +1,25 @@
-module Syntax.Bounds (
-    Pos(..), 
-    Bounds(..), 
-    WithBounds(..),
-    advancePos,
-    emptyBound,
-    mixBounds
-) where
+module Syntax.Bounds where
 
-data Pos = Pos { line :: !Int, column :: !Int } deriving Show
-data Bounds = Bounds { start :: !Pos, end :: !Pos }
-data WithBounds a = WithBounds { info :: a, bounds :: !Bounds }
+import Data.Function (on)
 
-instance Show a => Show (WithBounds a) where 
-    show res = show (info res)
+data Pos = Pos { line :: !Int, column :: !Int } 
+           deriving Show
 
-instance Show Bounds where 
-    show r = "_"
+data Bounds = Bounds { start :: !Pos, end :: !Pos } 
+              deriving Show
 
+data WithBounds a = WithBounds { info :: a, position :: !Bounds } 
+                    deriving Show
+
+instance Eq a => Eq (WithBounds a) where 
+    (==) = (==) `on` info
+    
 advancePos :: Pos -> Char -> Pos 
 advancePos pos '\n' = Pos { line = line pos + 1, column = 1 }
 advancePos pos c    = pos { column = column pos + 1 }
 
-emptyBound :: Bounds 
-emptyBound = Bounds (Pos 0 0) (Pos 0 0) 
+instance Semigroup Bounds where 
+    (Bounds s _) <> (Bounds _ e) = Bounds s e
 
-mixBounds :: Bounds -> Bounds -> Bounds
-mixBounds (Bounds s _) (Bounds _ e) = Bounds s e
+empty :: Bounds 
+empty = Bounds (Pos 0 0) (Pos 0 0) 
