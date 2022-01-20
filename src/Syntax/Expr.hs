@@ -2,7 +2,7 @@ module Syntax.Expr where
 
 import Data.Text (Text)
 import Data.List.NonEmpty (NonEmpty)
-import Syntax.Bounds (Bounds, WithBounds(..))
+import Syntax.Bounds (Bounds)
 
 data NoExt = NoExt
 

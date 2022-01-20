@@ -1,10 +1,9 @@
 module Syntax.Parser.AST where 
 
-import Data.Text (Text)
-import Data.List.NonEmpty (NonEmpty)
+import Data.List.NonEmpty ()
 import Syntax.Bounds (Bounds, WithBounds(..))
-import Syntax.Expr 
 import Data.Void (Void)
+import Syntax.Expr 
 
 data Normal
 
