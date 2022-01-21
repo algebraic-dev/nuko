@@ -32,25 +32,27 @@ showLine :: Text -> Text
 showLine title = T.pack $ printf " %s %s" (badge "ERROR" Red) title
 
 showCode :: Text -> Maybe Pos -> Text 
-showCode file (Just pos) = T.pack (printf "%s:%d:%d" file (B.line pos + 1) (B.column pos))
+showCode file (Just pos) = T.pack $ printf "%s:%d:%d" file (B.line pos + 1) (B.column pos)
 showCode _ Nothing = ""
 
 showCodeLine :: (Int, Text) -> Text 
-showCodeLine (num, text) = T.pack (printf "%4d  | %s" num text)
+showCodeLine (num, text) = T.pack $ printf "%4d  | %s" num text 
 
 space :: Int -> Text 
 space len = T.pack (replicate len ' ')
 
 showTip :: Pos -> Text -> Text 
-showTip pos text = T.pack $ printf "%*s◮  %s" (B.column pos + 7) (" " :: String) text 
+showTip pos text = T.pack $ style Bold 
+                          $ color Red 
+                          $ printf "%*s◮  %s" (B.column pos + 7) (" " :: String) text 
 
 ppShow :: ErrReport -> Text 
 ppShow (M.ErrReport file content kind) = 
     let message = M.messageFromErr kind in
-    T.intercalate "\n\n"  
-        [ showLine (M.errTitle message) 
-        , T.concat ["   ", style Faint . color Cyan $ (showCode file (M.errBounds message))]
-        , T.unlines (map ppShowMessage (M.errComponents message)) ]
+    "\n" <> T.intercalate "\n\n"  
+                [ showLine (M.errTitle message) 
+                , T.concat ["   ", style Faint . color Cyan $ (showCode file (M.errBounds message))]
+                , T.unlines (map ppShowMessage (M.errComponents message)) ]
     where
         ppShowMessage (M.Desc text) = T.concat [ "   ", text, "\n" ]
         ppShowMessage (M.Code bounds anot) = 

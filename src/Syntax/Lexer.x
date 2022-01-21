@@ -37,7 +37,7 @@ $end = [\?\!]
 program :- 
     
 <0> $space+    ;
-<0> $newline+  { \_ -> pushCode newline *> rawScan }
+<0> $newline+  { \_ _ -> pushCode newline *> scan }
 
 <0> "let"      { token TknKwLet   }
 <0> "type"     { token TknKwType  }
@@ -72,8 +72,9 @@ program :-
 <0> "->"       { token TknRArrow   }
 
 <0> $symbol+   { emit TknSymbol  }
-<0> "--"       { \_ -> pushCode linecom *> rawScan }
-<0> \"         { \_ -> pushCode str *> rawScan }
+<0> "--"       { \_ _   -> pushCode linecom *> scan }
+<0> \"         { \_ pos -> pushCode str *> scan >>= \res ->
+                           pure (WithBounds (info res) (Bounds pos (end $ position res)))}
 
 -- Layout Parsing
 
@@ -90,12 +91,12 @@ program :-
 -- Line comments
 
 <linecom> [^\n] ;
-<linecom> \n    { \_ ->  popCode *> rawScan }
+<linecom> \n    { \_ _ ->  popCode *> scan }
 
 -- Strings 
 
-<str> \"   { \_ -> popCode *> (TknLStr <$> resetBuffer) }
-<str> [^\"] { \c -> addToBuffer c *> rawScan }
+<str> \"   { \_ p -> popCode *> resetBuffer >>= \s -> emit TknLStr s p  }
+<str> [^\"] { \c _ -> addToBuffer c *> scan }
 
 {
 
@@ -109,38 +110,34 @@ addToBuffer c = ST.modify (\s -> s { lsBuffer = append (lsBuffer s) c })
 resetBuffer :: Lexer Text
 resetBuffer = ST.state (\s -> (lsBuffer s, s { lsBuffer = "" }))
 
-emptyLayout _ = replaceCode newline *> pure TknClose
+emptyLayout _ _ = replaceCode newline *> pure (ghostBounds TknClose)
 
 handleEOF = lastLayout >>= \case 
-    Nothing -> popCode *> pure (WithBounds TknEOF empty) 
-    Just _  -> popLayout *> pure (WithBounds TknClose empty)
+    Nothing -> popCode *> pure (ghostBounds TknEOF) 
+    Just _  -> popLayout *> pure (ghostBounds TknClose)
 
-offsideRule _ = do 
+offsideRule _ _ = do 
     lay <- lastLayout
     col <- ST.gets (column . inputPos . lsInput)
-    let continue = popCode *> rawScan 
+    let continue = popCode *> scan 
     case lay of 
         Nothing   -> continue
         Just col' -> do 
             case col `compare` col' of
-                EQ -> popCode *> pure TknEnd 
+                EQ -> popCode *> pure (ghostBounds TknEnd)
                 GT -> continue 
-                LT -> popLayout *> pure TknClose
+                LT -> popLayout *> pure (ghostBounds TknClose)
 
-startLayout _ = do  
+startLayout _ _ = do  
     popCode 
     ref <- lastLayout 
     col <- ST.gets (column . inputPos . lsInput)
     if Just col <= ref 
         then pushCode empty_layout
         else pushLayout col
-    pure TknOpen
+    pure $ ghostBounds TknOpen
 
-layoutKw t _ = pushCode layout *> pure t
-
-rawScan = info <$> scan
-
-replacePos = popPos >> pushPos
+layoutKw t text pos = pushCode layout *> token t text pos
 
 scan :: Lexer (WithBounds Token)
 scan = do 
@@ -149,13 +146,10 @@ scan = do
     case alexScan input code of 
         AlexEOF -> handleEOF
         AlexError inp -> ER.throwError $ ERR.UnrecognizableChar (inputPos inp)
-        AlexSkip input' _ -> ST.modify (\s -> s { lsInput = input' }) >> replacePos >> scan 
-        AlexToken input' tokl action -> do
-            pushPos
+        AlexSkip input' _ -> ST.modify (\s -> s { lsInput = input' }) >> scan 
+        AlexToken input' tokl action -> do  
+            pos <- ST.gets (inputPos . lsInput)
             ST.modify (\s -> s { lsInput = input' })
-            res      <- action (decodeUtf8 $ BS.take tokl (inputStream input))
-            input''  <- ST.gets (lsInput)
-            lastPos <- popPos
-            pure (WithBounds res (Bounds lastPos (inputPos input'')))
-
+            res      <- action (decodeUtf8 $ BS.take tokl (inputStream input)) pos
+            pure res
 }

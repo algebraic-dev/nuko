@@ -1,13 +1,13 @@
 module Syntax.Lexer.Support where 
 
-import Data.Text (Text)
-import Data.List (uncons)
-import Data.List.NonEmpty (NonEmpty((:|)))
-import Data.Word (Word8)
-import Data.ByteString (ByteString)
+import Data.Text                (Text)
+import Data.List                (uncons)
+import Data.List.NonEmpty       (NonEmpty((:|)))
+import Data.Word                (Word8)
+import Data.ByteString          (ByteString)
 import Data.ByteString.Internal (w2c)
-import Control.Monad.State (MonadState)
-import Control.Monad.Except (MonadError)
+import Control.Monad.State      (MonadState)
+import Control.Monad.Except     (MonadError)
 
 import qualified Error.Message as ERR
 import qualified Syntax.Bounds as B
@@ -16,7 +16,6 @@ import qualified Data.List.NonEmpty as NE
 import qualified Data.ByteString as BS 
 
 data AlexInput = AlexInput { inputPos     :: B.Pos
-                           , inputLastPos :: NonEmpty B.Pos 
                            , inputLast    :: Word8
                            , inputStream  :: ByteString } deriving Show
 
@@ -34,7 +33,7 @@ alexInputPrevChar = inputLast
 -- Lexer state to store the codes
 
 data LexerState = LexerState { lsInput  :: AlexInput
-                             , lsCodes  :: NonEmpty Int 
+                             , lsCodes  :: NonEmpty Int
                              , lsLayout :: [Int]
                              , lsBuffer :: Text  }
 
@@ -42,7 +41,7 @@ newtype Lexer a = Lexer { getLexer ::  ST.StateT LexerState (Either ERR.ErrorKin
     deriving (Functor, Applicative, Monad, MonadState LexerState, MonadError ERR.ErrorKind)
 
 initState :: ByteString -> LexerState
-initState bs = LexerState (AlexInput (B.Pos 0 1) (B.Pos 0 1 :| []) 10 bs) (0 :| []) [] ""
+initState bs = LexerState (AlexInput (B.Pos 0 1) 10 bs) (0 :| []) [] ""
 
 runLexer :: Lexer a -> ByteString -> Either ERR.ErrorKind a 
 runLexer lexer bs = fst <$> ST.runStateT (getLexer lexer) (initState bs)
@@ -52,32 +51,13 @@ runLexer lexer bs = fst <$> ST.runStateT (getLexer lexer) (initState bs)
 startCode :: Lexer Int
 startCode = ST.gets (NE.head . lsCodes)
 
-remPos :: AlexInput -> (B.Pos, AlexInput)
-remPos input' = 
-    let (new, popped) = 
-            case inputLastPos input' of 
-                x :| []      -> (x :| [], x)
-                x :| x2 : xs -> (x2 :| xs, x) 
-    in (popped, input' { inputLastPos = new })
+emit :: (Text -> a) -> Text -> B.Pos -> Lexer (B.WithBounds a)
+emit fn text pos = do 
+    lastPos <- ST.gets (inputPos . lsInput)
+    pure (B.WithBounds (fn text) (B.Bounds pos lastPos))
 
-pushPos :: Lexer ()
-pushPos = do
-        ST.modify (\s -> s { lsInput = addPos $ lsInput s })
-    where 
-        addPos input' = input' { inputLastPos = NE.cons (inputPos input') 
-                                                        (inputLastPos input') }
-
-popPos :: Lexer B.Pos 
-popPos = do 
-    ST.state $ \s -> 
-        let (val, input) = remPos $ lsInput s in 
-        (val, s { lsInput = input })
-
-emit :: (Text -> a) -> Text -> Lexer a 
-emit fn text = pure (fn text)
-
-token :: a -> Text -> Lexer a 
-token tkn _ = pure tkn
+token :: a -> Text -> B.Pos -> Lexer (B.WithBounds a)
+token = emit . const
 
 pushCode :: Int -> Lexer ()
 pushCode code = ST.modify (\s -> s { lsCodes = NE.cons code (lsCodes s)}) 

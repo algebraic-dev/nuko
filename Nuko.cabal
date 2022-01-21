@@ -32,6 +32,7 @@ library
       Syntax.Parser
       Syntax.Parser.Ast
       Syntax.Tree
+      Type.TypedAst
   other-modules:
       Paths_Nuko
   hs-source-dirs:
