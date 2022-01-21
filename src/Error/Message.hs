@@ -7,6 +7,8 @@ import qualified Syntax.Bounds as B
 
 data ErrorKind 
     = UnfinishedString Pos 
+    | UnrecognizableChar Pos
+    | UnexpectedToken Bounds
 
 -- Data Components
 
@@ -36,3 +38,13 @@ messageFromErr (UnfinishedString pos) =
                "Probably you forgot to close a quote while trying to create a string!"  
                [ Code (onlyCol pos) ]
 
+messageFromErr (UnrecognizableChar pos) = 
+    ErrMessage (Just pos) 
+               "Cannot understand this character bro UwU"  
+               [ Code (onlyCol pos)
+               , Tip "Here!" ]
+
+messageFromErr (UnexpectedToken pos) = 
+    ErrMessage (Just (B.start pos)) 
+               "Cannot uwndustwand this tUwUken"  
+               [ Code pos ]

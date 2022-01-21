@@ -54,6 +54,7 @@ tests:
       - -with-rtsopts=-N
     dependencies:
       - Nuko
-      - tasty-golden
-      - tasty
       - filepath
+      - tasty
+      - tasty-golden
+      - tasty-hunit

@@ -9,6 +9,7 @@ import Data.ByteString.Internal (w2c)
 import Control.Monad.State (MonadState)
 import Control.Monad.Except (MonadError)
 
+import qualified Error.Message as ERR
 import qualified Syntax.Bounds as B
 import qualified Control.Monad.State as ST
 import qualified Data.List.NonEmpty as NE
@@ -37,13 +38,13 @@ data LexerState = LexerState { lsInput  :: AlexInput
                              , lsLayout :: [Int]
                              , lsBuffer :: Text  }
 
-newtype Lexer a = Lexer { getLexer ::  ST.StateT LexerState (Either String) a}
-    deriving (Functor, Applicative, Monad, MonadState LexerState, MonadError String)
+newtype Lexer a = Lexer { getLexer ::  ST.StateT LexerState (Either ERR.ErrorKind) a}
+    deriving (Functor, Applicative, Monad, MonadState LexerState, MonadError ERR.ErrorKind)
 
 initState :: ByteString -> LexerState
 initState bs = LexerState (AlexInput (B.Pos 0 1) (B.Pos 0 1) 10 bs) (0 :| []) [] ""
 
-runLexer :: Lexer a -> ByteString -> Either String a 
+runLexer :: Lexer a -> ByteString -> Either ERR.ErrorKind a 
 runLexer lexer bs = fst <$> ST.runStateT (getLexer lexer) (initState bs)
 
 -- Some primitives to emitting

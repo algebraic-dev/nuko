@@ -1,0 +1,27 @@
+import A.B.C as D 
+import A (a,b,C)
+
+type Maybe a = 
+    | Just a 
+    | Nothing
+
+type User = {
+    name : String,
+    age : Maybe Inte,
+    kind : Syn 
+}
+
+type Kind = | Teacher | Student 
+type Syn = Kind
+
+external add : Int -> Int -> Int = "add be"
+
+let add (a : Int) (b : Int) : Int = a + b + c
+
+let add a b = a + b
+
+let main = do 
+    print "a"
+    print "b"
+    let a = 3
+    print "c"

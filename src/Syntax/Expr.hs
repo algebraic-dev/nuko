@@ -1,11 +1,15 @@
 module Syntax.Expr where 
 
-import Data.Text (Text)
-import Data.List.NonEmpty (NonEmpty)
+import Data.Text (Text, unpack)
+import Syntax.Tree
+
+import qualified Data.List as L
+
+-- Ast definition using TTG Idiom
 
 data NoExt = NoExt
 
-data Name ζ = Name (XName ζ) Text
+data Name ζ = Name {nameExt :: (XName ζ), nameText :: Text}
 
 data Visibility = Public | Private
 
@@ -39,8 +43,10 @@ data Expr ζ
     | App (XApp ζ) (Expr ζ) (Expr ζ)
     | Var (XVar ζ) (Name ζ) 
     | Lit (XLit ζ) (Literal ζ)
-    | Assign (XAssign ζ) (Binder ζ) [Expr ζ] 
+    | Assign (XAssign ζ) (Binder ζ) (Expr ζ)
+    | Block (XBlock ζ) [Expr ζ]
     | Match (XMatch ζ) (Expr ζ) [(Pattern ζ, Expr ζ)]
+    | Binary (XBinary ζ) (Name ζ) (Expr ζ) (Expr ζ)
     | Ext !(XExt ζ)
 
 data TypeCons ζ
@@ -59,30 +65,34 @@ data LetDecl ζ
     = LetDecl { letName   :: Name ζ
               , letArgs   :: [Binder ζ]
               , letReturn :: Maybe (Type ζ)
-              , letBody   :: [Expr ζ]
+              , letBody   :: Expr ζ
               , letExt        :: !(XLet ζ) }
 
-data ExportDecl ζ
-    = ExportDecl { expName   :: Name ζ
-                 , expArgs   :: [Binder ζ]
-                 , expStr    :: Text
-                 , extExt        :: !(XExt ζ) }
+data ExternalDecl ζ
+    = ExternalDecl { extName   :: Name ζ
+                   , extType   :: Type ζ
+                   , extStr    :: Text
+                   , extExt    :: !(XExternal ζ) }
+
+data ImportDecl ζ
+    = ImportDecl { impModule :: [Name ζ] 
+                 , impMode   :: Either (Name ζ) [Name ζ]}
 
 data Program ζ
-    = Program { progExport :: [ExportDecl ζ]
+    = Program { progExternal :: [ExternalDecl ζ]
               , progLet    :: [LetDecl ζ]
-              , progType   :: [TypeDecl ζ] }
+              , progType   :: [TypeDecl ζ]
+              , progImport   :: [ImportDecl ζ] }
 
 -- Parser Helper
 
 data TLKind ζ = TTypeDecl (TypeDecl ζ)
               | TLetDecl (LetDecl ζ)
-              | TExportDecl (ExportDecl ζ)
+              | TExternalDecl (ExternalDecl ζ)
 
 -- Deriving 
 
-instance Show (NoExt) where 
-    show _ = ""
+instance Show (NoExt) where  show _ = ""
 
 -- Type family instances
 
@@ -111,6 +121,7 @@ type family XLExt ζ
 
 type family XLam ζ
 type family XApp ζ
+type family XBinary ζ
 type family XVar ζ
 type family XLit ζ
 type family XAssign ζ
@@ -125,8 +136,72 @@ type family XTcExt ζ
 
 type family XProg ζ
 type family XLet ζ
-type family XExport ζ
+type family XExternal ζ
 type family XType ζ
 
 -- Pretty printing
 
+instance SimpleTree (Name ζ) where 
+    toTree (Name _ name) = Node ("Name: " ++ (unpack name)) []
+
+instance SimpleTree (Binder ζ) where 
+    toTree (Typed _ pat ty) = Node "Typed" [toTree pat, toTree ty]
+    toTree (Raw _ pat) = Node "Raw" [toTree pat]
+
+instance SimpleTree (Type ζ) where 
+    toTree (TSimple _ name) = Node "TSimple" [toTree name]
+    toTree (TPoly _ name) = Node "TPoly" [toTree name]
+    toTree (TArrow _ a b) = Node "TArrow" [toTree a, toTree b]
+    toTree (TCons _ name ty) = Node "TCons" [toTree name, toTree ty]
+    toTree (TExt _) = Node "TExt" []
+
+instance SimpleTree (Pattern ζ) where 
+    toTree (PWild _) = Node "PWild" []
+    toTree (PCons _ a pat) = Node "PCons" [toTree a, toTree pat]
+    toTree (PId _ name) = Node "PId" [toTree name]
+    toTree (PLit _ lit) = Node "PLit" [toTree lit]
+    toTree (PExt _) = Node "PExt" []
+
+instance SimpleTree (Literal ζ) where 
+    toTree (LChar _ _) = Node "LChar" []
+    toTree (LString _ s) = Node ("LString: " ++ show s) []
+    toTree (LInt _ _) = Node "LInt" []
+    toTree (LDouble _ d) = Node ("LDouble: " ++ show d) []
+    toTree (LExt _) = Node "LExt" []
+
+instance SimpleTree (Expr ζ) where 
+    toTree (Lam _ binder expr) = Node "Lam" [toTree binder, toTree expr]
+    toTree (App _ e e2) = Node "App" [toTree e, toTree e2]
+    toTree (Var _ name) = Node "Var" [toTree name]
+    toTree (Lit _ lit) = Node "Lit" [toTree lit]
+    toTree (Assign _ b e) = Node "Assign" [toTree b, toTree e]
+    toTree (Block _ e) = Node "Block" (map toTree e)
+    toTree (Match _ match expr) = Node "Expr" [toTree match, toTree expr]
+    toTree (Binary _ name e e2) = Node "Binary" [toTree name, toTree e, toTree e2]
+    toTree (Ext _) = Node "Ext" []
+
+instance SimpleTree (TypeCons ζ) where 
+    toTree (TcSum _ fields) = Node "TcSum" (map toTree fields)
+    toTree (TcRecord _ fields) = Node "TcReco" (map toTree fields)
+    toTree (TcSyn _ ty) = Node "TcSyn" [toTree ty]
+    toTree (TcExt _) = Node "TcExt" []
+
+instance SimpleTree (TypeDecl ζ) where 
+    toTree (TypeDecl name args cons _) = 
+        Node "TypeDecl" [toTree name, toTree args, toTree cons]
+
+instance SimpleTree (LetDecl ζ) where 
+    toTree (LetDecl name args ret body _) = 
+        Node "LetDecl" [toTree name, toTree args, toTree ret, toTree body]
+
+instance SimpleTree (ExternalDecl ζ) where 
+    toTree (ExternalDecl name ty str _) = 
+        Node "ExternalDecl" [toTree name, toTree ty, toTree str]
+
+instance SimpleTree (ImportDecl ζ) where 
+    toTree (ImportDecl module' mode) = 
+        Node "ImportDecl" [Node (L.intercalate "." (map (unpack . nameText) module')) [], toTree mode]
+
+instance SimpleTree (Program ζ) where 
+    toTree (Program ex le ty imp) = 
+        Node "Program" [toTree ex, toTree le, toTree ty, toTree imp]

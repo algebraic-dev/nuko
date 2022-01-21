@@ -1,16 +1,25 @@
 module Main where 
 
+import GHC.IO.Encoding
+
+import Syntax.Lexer.Support
+import Syntax.Parser
+
+import System.Environment
+
+import qualified Data.ByteString as SB
+import Data.Text.Encoding (decodeUtf8)
+import Data.Text (pack, unpack)
+
+import Syntax.Tree
 import Error.Message
 import Error.PrettyPrint
-import Syntax.Bounds
-
-import Data.Text (unpack)
-import GHC.IO.Encoding
 
 main :: IO ()
 main = do  
   setLocaleEncoding utf8
-  putStrLn 
-    $ unpack 
-    $ ppShow 
-    $ ErrReport "./hello-world.nk" "some error here" (UnfinishedString (Pos 1 2))
+  [file] <- getArgs
+  bs  <- SB.readFile file 
+  case (runLexer parseProgram bs) of 
+      Right res -> putStrLn $ drawTree res
+      Left err -> putStrLn (unpack $ ppShow $ ErrReport (pack file) (decodeUtf8 bs) err)

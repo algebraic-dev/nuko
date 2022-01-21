@@ -9,26 +9,22 @@ import qualified Error.Message as M
 import qualified Data.Text as T
 import qualified System.Console.Pretty as P
 
--- Probably a bunch of things that should'nt be this way..
--- i have to create a better way to show error messages.
+trimLines :: [(Int, Text)] -> [(Int, Text)]
+trimLines []    = []
+trimLines [x]   = [x]
+trimLines other = [head other, last other]
 
 getLines :: Bounds -> Text -> [(Int, Text)]
 getLines bounds text = 
         let lines' = T.lines text 
-            start  = B.line (B.start bounds) - 1
+            start  = B.line (B.start bounds) 
             len    = max (start - B.line (B.end bounds)) 1
         in trimLines $ 
             zip (map (+ (start + 1)) [0..len]) 
-            (take len (drop start lines'))
-    where 
-        trimLines []    = []
-        trimLines [x]   = [x]
-        trimLines other = [head other, last other]   
+                (take len (drop start lines'))
 
-showLine :: Text -> Text 
-showLine title = T.concat [ " ", P.bgColor P.Red " ERROR " 
-                          , " ", title
-                          ]
+showLine :: Text -> Text -> P.Color -> Text 
+showLine title type' color = T.concat [ " ", P.bgColor color " " ++ type'  ++ " ", " ", title]
 
 showCode :: Text -> Maybe Pos -> Text 
 showCode        _ Nothing = ""
@@ -47,15 +43,15 @@ ppShow (M.ErrReport file content kind) =
         let message = M.messageFromErr kind in
         T.intercalate "\n\n"  
             [ ""
-            , showLine (M.errTitle message) 
-            , T.concat ["   ", colorize (showCode file (M.errBounds message))]
+            , showLine (M.errTitle message) "ERROR" P.Red
+            , T.concat ["   ", colorize ("on " ++ showCode file (M.errBounds message))]
             , T.unlines (ppShowMessage (M.errComponents message)) ]
     where
         colorize = P.style P.Faint . P.color P.Cyan
 
         ppShowMessage (M.Code bounds : M.Tip text : tl) = 
             let col   = B.column . B.start $ bounds
-                anot  = T.concat [T.pack (replicate (col + 7) ' '),"◮ ", text ] 
+                anot  = T.concat [T.pack (replicate (col + 6) ' '),"◮  ", text ] 
             in T.unlines (map showCodeLine (getLines bounds content)  ++ [anot]) 
                : ppShowMessage tl
         

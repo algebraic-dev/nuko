@@ -31,6 +31,7 @@ library
       Syntax.Lexer.Tokens
       Syntax.Parser
       Syntax.Parser.AST
+      Syntax.Tree
   other-modules:
       Paths_Nuko
   hs-source-dirs:
@@ -102,5 +103,6 @@ test-suite Nuko-test
     , mtl
     , tasty
     , tasty-golden
+    , tasty-hunit
     , text
   default-language: Haskell2010

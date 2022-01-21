@@ -33,6 +33,7 @@ type instance XVar Normal = NoExt
 type instance XLit Normal = NoExt
 type instance XMatch Normal = Bounds
 type instance XAssign Normal =  Bounds
+type instance XBinary Normal =  Bounds
 type instance XBlock Normal = Bounds
 type instance XExt Normal = Void
 
@@ -43,8 +44,9 @@ type instance XTcExt Normal = Void
 
 type instance XProg Normal = NoExt
 type instance XLet Normal = NoExt
-type instance XExport Normal = NoExt
+type instance XExternal Normal = NoExt
 type instance XType Normal = NoExt
+type instance XExternal Normal = NoExt
 
 type instance XBTyped Normal = Bounds
 type instance XBRaw Normal = NoExt
@@ -60,8 +62,9 @@ deriving instance Show (TypeCons Normal)
 deriving instance Show (Binder Normal)
 deriving instance Show (TypeDecl Normal)
 deriving instance Show (Program Normal)
-deriving instance Show (ExportDecl Normal)
+deriving instance Show (ExternalDecl Normal)
 deriving instance Show (LetDecl Normal)
+deriving instance Show (ImportDecl Normal)
 
 -- Position 
 
@@ -107,6 +110,8 @@ instance HasPosition (Expr Normal) where
     getPos (Lit _ lit) = getPos lit 
     getPos (Assign pos _ _) = pos 
     getPos (Match pos _ _) = pos 
+    getPos (Binary pos _ _ _) = pos
+    getPos (Block pos _) = pos 
 
 instance HasPosition (TypeCons Normal) where 
     getPos (TcSum pos _) = pos 

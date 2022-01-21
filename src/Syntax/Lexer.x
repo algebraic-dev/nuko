@@ -11,8 +11,9 @@ import Syntax.Bounds
 import Data.Text (Text, append)
 import Data.Text.Encoding (decodeUtf8)
 import Data.Text.Read (decimal)
-
 import Syntax.Lexer.Tokens
+
+import qualified Error.Message as ERR
 
 }
 
@@ -38,12 +39,16 @@ program :-
 <0> $space+    ;
 <0> $newline+  { \_ -> pushCode newline *> rawScan }
 
-<0> "let"     { token TknKwLet   }
-<0> "type"    { token TknKwType  }
-<0> "match"   { token TknKwMatch }
-<0> "if"      { token TknKwIf }
-<0> "then"    { token TknKwThen }
-<0> "else"    { token TknKwElse }
+<0> "let"      { token TknKwLet   }
+<0> "type"     { token TknKwType  }
+<0> "match"    { token TknKwMatch }
+<0> "if"       { token TknKwIf }
+<0> "then"     { token TknKwThen }
+<0> "else"     { token TknKwElse }
+<0> "import"   { token TknKwImport }
+<0> "do"       { layoutKw TknKwDo }
+<0> "as"       { token TknKwAs }
+<0> "external" { token TknKwExternal }
 
 <0> "with"     { layoutKw TknKwWith }
 
@@ -56,10 +61,11 @@ program :-
 <0> ")"        { token TknRPar   }
 <0> "{"        { token TknLBrace }
 <0> "}"        { token TknRBrace }
-<0> "="        { layoutKw TknEq  }
+<0> "="        { token TknEq  }
 <0> ":"        { token TknColon  }
 <0> "|"        { token TknPipe   }
 <0> ","        { token TknComma   }
+<0> "."        { token TknDot   }
 <0> "\"        { token TknSlash   }
 <0> "->"       { token TknRArrow   }
 
@@ -138,7 +144,7 @@ scan = do
     code <- startCode 
     case alexScan input code of 
         AlexEOF -> handleEOF
-        AlexError inp -> ER.throwError $ "Error on lexicon " ++ show (inputPos inp)
+        AlexError inp -> ER.throwError $ ERR.UnrecognizableChar (inputPos inp)
         AlexSkip input' _ -> ST.modify (\s -> s { lsInput = upPos input' }) *> scan 
         AlexToken input' tokl action -> do
             ST.modify (\s -> s { lsInput = input' })

@@ -14,6 +14,8 @@ import Data.Text (Text)
 import Data.Function (on)
 import Control.Monad.Except (throwError)
 
+import qualified Error.Message as ERR
+
 }
 
 %name parseProgram Program
@@ -51,21 +53,26 @@ import Control.Monad.Except (throwError)
     ','   { WithBounds TknComma _ }
     '.'   { WithBounds TknDot _ }
 
-    type   { WithBounds TknKwType _ }
-    let    { WithBounds TknKwLet _ }
-    do     { WithBounds TknKwDo _ }
-    if     { WithBounds TknKwIf _ }
-    then   { WithBounds TknKwThen _ }
-    else   { WithBounds TknKwElse _ }
-    match  { WithBounds TknKwMatch _ }
-    with   { WithBounds TknKwWith _ }
+    type     { WithBounds TknKwType _ }
+    let      { WithBounds TknKwLet _ }
+    do       { WithBounds TknKwDo _ }
+    import   { WithBounds TknKwImport _ }
+    as       { WithBounds TknKwAs _ }
+    external { WithBounds TknKwExternal _ }
+    if       { WithBounds TknKwIf _ }
+    then     { WithBounds TknKwThen _ }
+    else     { WithBounds TknKwElse _ }
+    match    { WithBounds TknKwMatch _ }
+    with     { WithBounds TknKwWith _ }
 
 %right '->'
+%left symbol
 
 %%
 
 Lower : lower { Name (position $1) (getData $1) }
 Upper : upper { Name (position $1) (getData $1) }
+Symbol : symbol { Name (position $1) (getData $1) }
 
 Lowers : {- empty -} {[]}
        | Lowers Lower { $2 : $1 }
@@ -88,26 +95,28 @@ RawPat :: { Pattern Normal }
         | ConsPat { $1 }
 
 Pattern :: { Pattern Normal }
-         : PatternAtom { $1 }
-         | Upper { PCons (getPos $1) $1 [] }
+         : PatternAtom     { $1 }
          | '(' ConsPat ')' { $2 }
 
 TypeAtom :: { Type Normal }
-          : Upper { TSimple NoExt $1 }
-          | Lower { TPoly NoExt $1 }
+          : Lower { TPoly NoExt $1 }
+          | Upper { TSimple NoExt $1 }
           | '(' Type ')' { $2 }
 
+ConsType : Upper Types { TCons (headOr $2 ((getPos $1 <>) . getPos) (getPos $1)) $1 (reverse $2) } 
+          | TypeAtom { $1 }
+
 Types :: { [Type Normal] }
-       : {- empty -} { [] }
+       : TypeAtom { [] }
        | Types TypeAtom { $2 : $1 }
 
 Type :: { Type Normal }
       : Type '->' Type { TArrow (getPos $1 <> getPos $3) $1 $3 }
-      | TypeAtom { $1 }
+      | ConsType { $1 }
 
 Binder :: { Binder Normal }
         : Pattern { Raw NoExt $1 }
-        | '(' Pattern ':' Type ')' { Typed ($2 `mix` $4) $2 $4} 
+        | '(' RawPat ':' Type ')' { Typed ($2 `mix` $4) $2 $4} 
 
 Binders :: { [Binder Normal] }
          : Binders Binder { $2 : $1 } 
@@ -132,7 +141,7 @@ Exprs :: { [Expr Normal] }
       | Exprs semi Expr { $3 : $1 }
 
 MatchClause :: { (Pattern Normal, Expr Normal) }
-             : Pattern '->' Expr { ($1, $3) } 
+             : RawPat '->' Expr { ($1, $3) } 
 
 MatchClauses :: { [(Pattern Normal, Expr Normal)] }
               : MatchClause { [$1] }
@@ -140,8 +149,10 @@ MatchClauses :: { [(Pattern Normal, Expr Normal)] }
 
 Expr :: { Expr Normal }
       : '\\' Binder '->' Expr { Lam ($2 `mix` $4) $2 $4}
-      | let Binder '=' open Exprs close { Assign (position $1 <> getPos (head $5)) $2 (reverse $5)}  
+      | let Binder '=' Expr { Assign (position $1 <> getPos $4) $2 $4}  
+      | do open Exprs close { Block (position $1 <> getPos (last $3)) $3 }
       | match Expr with open MatchClauses close { Match (firstAndLast $5) $2 (reverse $5) }
+      | Atom Symbol Expr { Binary ($1 `mix` $3) $2 $1 $3 }
       | Call { $1 }
 
 CoprodClause :: { (Name Normal, [Type Normal])  }
@@ -149,42 +160,61 @@ CoprodClause :: { (Name Normal, [Type Normal])  }
 
 CoprodClauses :: { [(Name Normal, [Type Normal])] }
                : CoprodClause { [$1] }
-               | CoprodClauses semi CoprodClause { $3 : $1 }
+               | CoprodClauses CoprodClause { $2 : $1 }
 
 ProdClause :: { (Name Normal, Type Normal) }
             : Lower ':' Type { ($1, $3) }
 
 ProdClauses :: { [(Name Normal, Type Normal)] }
              : ProdClause  { [$1] }
-             | ProdClauses semi ProdClause { $3 : $1 }
+             | ProdClauses ',' ProdClause { $3 : $1 }
 
 
 TypeCons :: { TypeCons Normal }
-          : ProdClauses { TcRecord (getPos $ reverse $1) (reverse $1) } 
+          : '{' ProdClauses '}' { TcRecord (position $1 <> position $3) (reverse $2) } 
           | CoprodClauses { TcSum (firstAndLast $1) (reverse $1)}
           | Type { TcSyn NoExt $1 }
 
-TypeDecl : type Upper Lowers '=' open TypeCons close { TypeDecl $2 $3 $6 NoExt }
+TypeDecl : type Upper Lowers '=' TypeCons { TypeDecl $2 $3 $5 NoExt }
 
 OptRet : {- empty -} { Nothing }
        | ':' Type { Just $2 } 
 
-LetDecl : let Lower Binders OptRet '=' open Exprs close { LetDecl $2 $3 $4 $7 NoExt }
+LetDecl : let Lower Binders OptRet '=' Expr { LetDecl $2 $3 $4 $6 NoExt }
 
-ProgramDecl : TypeDecl { TTypeDecl $1 }
-             | LetDecl  { TLetDecl $1 }
+Importable : Lower { $1 }
+           | Upper { $1 }
+
+ImportsThings : ImportsThings ',' Importable { $3 : $1 }
+              | Importable { [$1] }
+
+ModuleName : Upper { [$1] }
+           | ModuleName '.' Upper { $3 : $1 }
+
+ImportDecl : import ModuleName '(' ImportsThings ')' { ImportDecl (reverse $2) (Right $ reverse $4)  }
+           | import ModuleName as Upper { ImportDecl (reverse $2) (Left $4)  }
+
+Imports : Imports ImportDecl { $2 : $1 }
+        | {- empty -} { [] }
+
+ExternalDecl : external Lower ':' Type '=' string  
+                  { ExternalDecl $2 $4 (getData $6) NoExt }
+
+ProgramDecl : TypeDecl     { TTypeDecl $1 }
+            | LetDecl      { TLetDecl $1 }
+            | ExternalDecl { TExternalDecl $1 }
 
 ProgramDecls : ProgramDecls ProgramDecl { $2 : $1 }
              | {- empty -} { [] }
 
-Program : ProgramDecls { foldl filterDecls (Program [] [] []) $1 }
-
+Program : Imports ProgramDecls { foldl filterDecls (Program [] [] [] $1) $2 }
+      
 {
 
 filterDecls :: Program x -> TLKind x -> Program x 
 filterDecls program (TTypeDecl tyDecl) = program { progType = tyDecl : progType program} 
 filterDecls program (TLetDecl tyDecl) = program { progLet = tyDecl : progLet program} 
-filterDecls program (TExportDecl tyDecl) = program { progExport = tyDecl : progExport program} 
+filterDecls program (TExternalDecl tyDecl) = program { progExternal = tyDecl : progExternal program} 
 
 firstAndLast :: (HasPosition a, HasPosition b) => [(a, b)] -> Bounds
 firstAndLast [(a,b)] = a `mix` b
@@ -204,7 +234,8 @@ getData :: WithBounds Token -> Text
 getData (WithBounds (TknLowerId tx) _) = tx
 getData (WithBounds (TknUpperId tx) _) = tx
 getData (WithBounds (TknLStr tx) _)    = tx
-getData _ = error "error while trying to get data on parser"
+getData (WithBounds (TknSymbol tx) _)    = tx
+getData (WithBounds tkn _) = error ("error while trying to get data on parser: " ++ show tkn)
 
 getDecimal :: WithBounds Token -> Integer 
 getDecimal (WithBounds (TknNumber num) _) = num
@@ -213,6 +244,6 @@ getDecimal _ = error "error while trying to get number on parser"
 -- Happy primitives
 
 lexer = (scan >>=)
-parseError = throwError . show 
+parseError = throwError . ERR.UnexpectedToken . position 
 
 }
