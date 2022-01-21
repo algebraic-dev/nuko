@@ -23,6 +23,7 @@ default-extensions:
   - FlexibleInstances
   - LambdaCase
   - StandaloneDeriving
+  - FlexibleContexts
 
 library:
   source-dirs: src

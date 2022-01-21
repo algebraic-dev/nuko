@@ -6,7 +6,7 @@ import Syntax.Lexer.Tokens (Token(..))
 import Syntax.Lexer (scan)
 
 import Syntax.Expr
-import Syntax.Parser.AST
+import Syntax.Parser.Ast
 
 import Syntax.Bounds (WithBounds(WithBounds), position, Bounds)
 import Data.Text (Text)
@@ -65,9 +65,10 @@ import qualified Error.Message as ERR
     match    { WithBounds TknKwMatch _ }
     with     { WithBounds TknKwWith _ }
 
-%right '->'
+%right '->' 
+%left B
+%left A
 %left symbol
-
 %%
 
 Lower : lower { Name (position $1) (getData $1) }
@@ -110,6 +111,10 @@ Types :: { [Type Normal] }
        : TypeAtom { [] }
        | Types TypeAtom { $2 : $1 }
 
+TypesZero :: { [Type Normal] }
+       : {- empty -} { [] }
+       | TypesZero TypeAtom { $2 : $1 }
+
 Type :: { Type Normal }
       : Type '->' Type { TArrow (getPos $1 <> getPos $3) $1 $3 }
       | ConsType { $1 }
@@ -125,6 +130,9 @@ Binders :: { [Binder Normal] }
 Literal :: { Literal Normal }
          : string { LString (position $1) (getData $1) }
          | number { LInt (position $1) (getDecimal $1) }
+         | double { LDouble (position $1) (getDouble $1) }
+         | char   { LChar (position $1) (getLitChar $1) }
+
 
 Atom :: { Expr Normal }
       : Literal      { Lit NoExt $1 }
@@ -152,11 +160,11 @@ Expr :: { Expr Normal }
       | let Binder '=' Expr { Assign (position $1 <> getPos $4) $2 $4}  
       | do open Exprs close { Block (position $1 <> getPos (last $3)) $3 }
       | match Expr with open MatchClauses close { Match (firstAndLast $5) $2 (reverse $5) }
-      | Atom Symbol Expr { Binary ($1 `mix` $3) $2 $1 $3 }
+      | Call Symbol Expr { Binary ($1 `mix` $3) $2 $1 $3 }
       | Call { $1 }
 
 CoprodClause :: { (Name Normal, [Type Normal])  }
-              : '|' Upper Types { ($2, $3) }
+              : '|' Upper TypesZero { ($2, $3) }
 
 CoprodClauses :: { [(Name Normal, [Type Normal])] }
                : CoprodClause { [$1] }
@@ -237,13 +245,13 @@ getData (WithBounds (TknLStr tx) _)    = tx
 getData (WithBounds (TknSymbol tx) _)    = tx
 getData (WithBounds tkn _) = error ("error while trying to get data on parser: " ++ show tkn)
 
-getDecimal :: WithBounds Token -> Integer 
 getDecimal (WithBounds (TknNumber num) _) = num
-getDecimal _ = error "error while trying to get number on parser"
+getDouble (WithBounds (TknLDouble num) _) = num
+getLitChar (WithBounds (TknLChar num) _) = num
 
 -- Happy primitives
 
 lexer = (scan >>=)
-parseError = throwError . ERR.UnexpectedToken . position 
+parseError = throwError . ERR.UnexpectedToken . position
 
 }

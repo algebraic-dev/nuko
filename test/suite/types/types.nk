@@ -1,2 +1,2 @@
 
-external add : Maybe a -> Int import = "UwU"
+external add : Maybe a -> Int = "UwU"

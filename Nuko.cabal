@@ -30,7 +30,7 @@ library
       Syntax.Lexer.Support
       Syntax.Lexer.Tokens
       Syntax.Parser
-      Syntax.Parser.AST
+      Syntax.Parser.Ast
       Syntax.Tree
   other-modules:
       Paths_Nuko
@@ -43,6 +43,7 @@ library
       FlexibleInstances
       LambdaCase
       StandaloneDeriving
+      FlexibleContexts
   ghc-options: -Wall
   build-depends:
       array
@@ -67,6 +68,7 @@ executable Nuko-exe
       FlexibleInstances
       LambdaCase
       StandaloneDeriving
+      FlexibleContexts
   ghc-options: -Wall -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       Nuko
@@ -92,6 +94,7 @@ test-suite Nuko-test
       FlexibleInstances
       LambdaCase
       StandaloneDeriving
+      FlexibleContexts
   ghc-options: -Wall -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       Nuko

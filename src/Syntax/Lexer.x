@@ -8,9 +8,9 @@ import qualified Control.Monad.State as ST
 import qualified Control.Monad.Except as ER
 import qualified Data.ByteString as BS
 import Syntax.Bounds
-import Data.Text (Text, append)
+import Data.Text (Text, append, index)
 import Data.Text.Encoding (decodeUtf8)
-import Data.Text.Read (decimal)
+import Data.Text.Read (decimal, double)
 import Syntax.Lexer.Tokens
 
 import qualified Error.Message as ERR
@@ -52,6 +52,8 @@ program :-
 
 <0> "with"     { layoutKw TknKwWith }
 
+<0> "'" [^\'] "'" { emit $ TknLChar . (`Data.Text.index` 1) }
+<0> @number "." @number { emit (TknLDouble . fst . fromRight . double)}
 <0> @wild      { token TknWild }
 <0> @number    { emit (TknNumber . fst . fromRight . decimal) }
 <0> @lower_id  { emit TknLowerId  }
@@ -138,6 +140,8 @@ layoutKw t _ = pushCode layout *> pure t
 
 rawScan = info <$> scan
 
+replacePos = popPos >> pushPos
+
 scan :: Lexer (WithBounds Token)
 scan = do 
     input <- ST.gets lsInput 
@@ -145,12 +149,13 @@ scan = do
     case alexScan input code of 
         AlexEOF -> handleEOF
         AlexError inp -> ER.throwError $ ERR.UnrecognizableChar (inputPos inp)
-        AlexSkip input' _ -> ST.modify (\s -> s { lsInput = upPos input' }) *> scan 
+        AlexSkip input' _ -> ST.modify (\s -> s { lsInput = input' }) >> replacePos >> scan 
         AlexToken input' tokl action -> do
+            pushPos
             ST.modify (\s -> s { lsInput = input' })
-            lastPos <- updateLastPos *> ST.gets (inputLastPos . lsInput)
-            res     <- action (decodeUtf8 $ BS.take tokl (inputStream input))
+            res      <- action (decodeUtf8 $ BS.take tokl (inputStream input))
             input''  <- ST.gets (lsInput)
+            lastPos <- popPos
             pure (WithBounds res (Bounds lastPos (inputPos input'')))
 
 }

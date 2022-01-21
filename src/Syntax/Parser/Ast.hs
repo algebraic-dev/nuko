@@ -1,4 +1,4 @@
-module Syntax.Parser.AST where 
+module Syntax.Parser.Ast where 
 
 import Data.List.NonEmpty ()
 import Syntax.Bounds (Bounds, empty)

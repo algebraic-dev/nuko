@@ -19,6 +19,7 @@ main :: IO ()
 main = do  
   setLocaleEncoding utf8
   [file] <- getArgs
+
   bs  <- SB.readFile file 
   case (runLexer parseProgram bs) of 
       Right res -> putStrLn $ drawTree res

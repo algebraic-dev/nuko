@@ -5,13 +5,11 @@ import Data.Function (on)
 data Pos = Pos { line :: !Int, column :: !Int } 
            deriving Show
 
-data Bounds = Bounds { start :: !Pos, end :: !Pos } 
+data Bounds = Bounds { start :: !Pos, end :: !Pos } deriving Show
         
 data WithBounds a = WithBounds { info :: a, position :: !Bounds } 
                     deriving Show
 
-instance (Show Bounds) where 
-    show _ = "."
 
 instance Semigroup Bounds where 
     (Bounds s _) <> (Bounds _ e) = Bounds s e

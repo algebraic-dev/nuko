@@ -23,5 +23,8 @@ let add a b = a + b
 let main = do 
     print "a"
     print "b"
-    let a = 3
+    let a = Just 3
     print "c"
+    match a with 
+        Just s -> print "a" 
+        Nothing -> print "b"

@@ -9,12 +9,12 @@ data ErrorKind
     = UnfinishedString Pos 
     | UnrecognizableChar Pos
     | UnexpectedToken Bounds
+    deriving Show
 
 -- Data Components
 
 data ErrComponent
-    = Code Bounds 
-    | Tip Text 
+    = Code Bounds (Maybe Text)
     | Desc Text
 
 data ErrMessage = 
@@ -36,15 +36,14 @@ messageFromErr :: ErrorKind -> ErrMessage
 messageFromErr (UnfinishedString pos) = 
     ErrMessage (Just pos) 
                "Probably you forgot to close a quote while trying to create a string!"  
-               [ Code (onlyCol pos) ]
+               [ Code (onlyCol pos) Nothing ]
 
 messageFromErr (UnrecognizableChar pos) = 
     ErrMessage (Just pos) 
                "Cannot understand this character bro UwU"  
-               [ Code (onlyCol pos)
-               , Tip "Here!" ]
+               [ Code (onlyCol pos) (Just "Here!") ]
 
 messageFromErr (UnexpectedToken pos) = 
     ErrMessage (Just (B.start pos)) 
                "Cannot uwndustwand this tUwUken"  
-               [ Code pos ]
+               [ Code pos (Just "Not here >:C it's a joke haha") ]
