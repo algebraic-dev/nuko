@@ -30,6 +30,7 @@ $end = [\?\!]
 @id_char = $letter | $digit | _ 
 @lower_id = $lower @id_char* $end?
 @upper_id = $upper @id_char* $end?
+@wild     = _
 @number   = $digit+
 
 program :- 
@@ -44,9 +45,9 @@ program :-
 <0> "then"    { token TknKwThen }
 <0> "else"    { token TknKwElse }
 
-<0> "do"       { layoutKw TknKwDo }
 <0> "with"     { layoutKw TknKwWith }
 
+<0> @wild      { token TknWild }
 <0> @number    { emit (TknNumber . fst . fromRight . decimal) }
 <0> @lower_id  { emit TknLowerId  }
 <0> @upper_id  { emit TknUpperId  }
@@ -55,7 +56,7 @@ program :-
 <0> ")"        { token TknRPar   }
 <0> "{"        { token TknLBrace }
 <0> "}"        { token TknRBrace }
-<0> "="        { token TknEq     }
+<0> "="        { layoutKw TknEq  }
 <0> ":"        { token TknColon  }
 <0> "|"        { token TknPipe   }
 <0> ","        { token TknComma   }

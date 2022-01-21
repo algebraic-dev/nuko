@@ -1,3 +1,4 @@
-let main = do 
-    print "a"
+let main =
+    let b = 3
+    print b
     print "b"

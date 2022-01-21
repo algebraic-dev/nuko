@@ -1,7 +1,7 @@
 module Syntax.Parser.AST where 
 
 import Data.List.NonEmpty ()
-import Syntax.Bounds (Bounds, WithBounds(..))
+import Syntax.Bounds (Bounds, empty)
 import Data.Void (Void)
 import Syntax.Expr 
 
@@ -18,6 +18,7 @@ type instance XTExt Normal = Void
 type instance XPWild Normal = Bounds
 type instance XPCons Normal = Bounds
 type instance XPLit Normal = NoExt
+type instance XPId Normal = NoExt
 type instance XPExt Normal = Void
 
 type instance XLChar Normal = Bounds
@@ -37,18 +38,46 @@ type instance XExt Normal = Void
 
 type instance XTcSum Normal = Bounds
 type instance XTcRecord Normal = Bounds
-type instance XTcSyn Normal = Bounds
+type instance XTcSyn Normal = NoExt
 type instance XTcExt Normal = Void
 
-type instance XProg Normal = Bounds
-type instance XLet Normal = Bounds
-type instance XExport Normal = Bounds
-type instance XType Normal = Void
+type instance XProg Normal = NoExt
+type instance XLet Normal = NoExt
+type instance XExport Normal = NoExt
+type instance XType Normal = NoExt
+
+type instance XBTyped Normal = Bounds
+type instance XBRaw Normal = NoExt
+
+-- Deriving
+
+deriving instance Show (Name Normal)
+deriving instance Show (Type Normal)
+deriving instance Show (Pattern Normal)
+deriving instance Show (Literal Normal)
+deriving instance Show (Expr Normal)
+deriving instance Show (TypeCons Normal)
+deriving instance Show (Binder Normal)
+deriving instance Show (TypeDecl Normal)
+deriving instance Show (Program Normal)
+deriving instance Show (ExportDecl Normal)
+deriving instance Show (LetDecl Normal)
 
 -- Position 
 
 class HasPosition a where 
     getPos :: a -> Bounds
+
+instance (HasPosition a, HasPosition b) => HasPosition (a,b) where 
+    getPos (a,b) = getPos a <> getPos b
+
+instance HasPosition a => HasPosition [a] where 
+    getPos [] = empty 
+    getPos x = getPos (head x) <> getPos (last x)
+
+instance HasPosition (Binder Normal) where 
+    getPos (Raw _ ty) = getPos ty 
+    getPos (Typed pos _ _) = pos
 
 instance HasPosition (Name Normal) where 
     getPos (Name pos _) = pos
@@ -63,6 +92,7 @@ instance HasPosition (Pattern Normal) where
     getPos (PWild pos) = pos 
     getPos (PCons pos _ _) = pos 
     getPos (PLit _ lit) = getPos lit 
+    getPos (PId _ n) = getPos n
 
 instance HasPosition (Literal Normal) where 
     getPos (LChar pos _) = pos 
@@ -76,8 +106,7 @@ instance HasPosition (Expr Normal) where
     getPos (Var _ name) = getPos name 
     getPos (Lit _ lit) = getPos lit 
     getPos (Assign pos _ _) = pos 
-    getPos (Match pos _) = pos 
-    getPos (Block pos _) = pos 
+    getPos (Match pos _ _) = pos 
 
 instance HasPosition (TypeCons Normal) where 
     getPos (TcSum pos _) = pos 

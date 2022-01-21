@@ -2,7 +2,6 @@ module Syntax.Expr where
 
 import Data.Text (Text)
 import Data.List.NonEmpty (NonEmpty)
-import Syntax.Bounds (Bounds)
 
 data NoExt = NoExt
 
@@ -10,7 +9,9 @@ data Name ζ = Name (XName ζ) Text
 
 data Visibility = Public | Private
 
-data Binder ζ = Typed Bounds (Pattern ζ) (Type ζ) | Raw (Pattern ζ) 
+data Binder ζ 
+    = Typed (XBTyped ζ) (Pattern ζ) (Type ζ) 
+    | Raw (XBRaw ζ) (Pattern ζ) 
 
 data Type ζ
     = TSimple (XTSimple ζ) (Name ζ)
@@ -22,7 +23,8 @@ data Type ζ
 data Pattern ζ
     = PWild (XPWild ζ) 
     | PCons (XPCons ζ) (Name ζ) [Pattern ζ]
-    | PLit (XPCons ζ) (Literal ζ)
+    | PId  (XPId ζ) (Name ζ)
+    | PLit (XPLit ζ) (Literal ζ)
     | PExt !(XPExt ζ)
 
 data Literal ζ
@@ -37,9 +39,8 @@ data Expr ζ
     | App (XApp ζ) (Expr ζ) (Expr ζ)
     | Var (XVar ζ) (Name ζ) 
     | Lit (XLit ζ) (Literal ζ)
-    | Assign (XAssign ζ) (Binder ζ) (Expr ζ) 
-    | Block (XBlock ζ) [Expr ζ]
-    | Match (XMatch ζ) (NonEmpty (Pattern ζ, Expr ζ))
+    | Assign (XAssign ζ) (Binder ζ) [Expr ζ] 
+    | Match (XMatch ζ) (Expr ζ) [(Pattern ζ, Expr ζ)]
     | Ext !(XExt ζ)
 
 data TypeCons ζ
@@ -56,28 +57,39 @@ data TypeDecl ζ
 
 data LetDecl ζ
     = LetDecl { letName   :: Name ζ
-              , letArgs   :: Binder ζ
+              , letArgs   :: [Binder ζ]
               , letReturn :: Maybe (Type ζ)
-              , letBody   :: Expr ζ
-              , letVisibility :: Visibility
+              , letBody   :: [Expr ζ]
               , letExt        :: !(XLet ζ) }
 
 data ExportDecl ζ
     = ExportDecl { expName   :: Name ζ
                  , expArgs   :: [Binder ζ]
                  , expStr    :: Text
-                 , expVisibility :: Visibility
                  , extExt        :: !(XExt ζ) }
 
 data Program ζ
     = Program { progExport :: [ExportDecl ζ]
               , progLet    :: [LetDecl ζ]
-              , progType   :: [TypeDecl ζ]
-              , progVisibility :: Visibility }
+              , progType   :: [TypeDecl ζ] }
+
+-- Parser Helper
+
+data TLKind ζ = TTypeDecl (TypeDecl ζ)
+              | TLetDecl (LetDecl ζ)
+              | TExportDecl (ExportDecl ζ)
+
+-- Deriving 
+
+instance Show (NoExt) where 
+    show _ = ""
 
 -- Type family instances
 
 type family XName ζ
+
+type family XBTyped ζ
+type family XBRaw ζ
 
 type family XTSimple ζ
 type family XTPoly ζ
@@ -88,6 +100,7 @@ type family XTExt ζ
 type family XPWild ζ
 type family XPCons ζ
 type family XPLit ζ
+type family XPId ζ
 type family XPExt ζ
 
 type family XLChar ζ
@@ -114,3 +127,6 @@ type family XProg ζ
 type family XLet ζ
 type family XExport ζ
 type family XType ζ
+
+-- Pretty printing
+

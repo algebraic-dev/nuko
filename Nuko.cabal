@@ -41,6 +41,7 @@ library
       TypeFamilies
       FlexibleInstances
       LambdaCase
+      StandaloneDeriving
   ghc-options: -Wall
   build-depends:
       array
@@ -64,6 +65,7 @@ executable Nuko-exe
       TypeFamilies
       FlexibleInstances
       LambdaCase
+      StandaloneDeriving
   ghc-options: -Wall -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       Nuko
@@ -88,6 +90,7 @@ test-suite Nuko-test
       TypeFamilies
       FlexibleInstances
       LambdaCase
+      StandaloneDeriving
   ghc-options: -Wall -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       Nuko

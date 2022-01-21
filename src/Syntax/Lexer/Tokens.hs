@@ -13,16 +13,17 @@ data Token
     | TknLDouble Double
 
     -- Layout 
-    | TknOpen | TknClose | TknEnd
+    | TknOpen | TknClose | TknEnd | TknWild
 
      -- Ponctuations
     | TknLPar | TknRPar | TknLBrace | TknRBrace
     | TknEq | TknColon | TknPipe | TknRArrow | TknSlash
-    | TknComma | TknDot
+    | TknComma | TknDot | TknDoubleRArrow
 
     -- Keywords
     | TknKwType | TknKwLet | TknKwDo | TknKwIf 
     | TknKwThen | TknKwElse | TknKwWith | TknKwMatch 
+    | TknImport | TknAs
 
     | TknEOF
     deriving (Show, Eq)
