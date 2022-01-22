@@ -14,6 +14,10 @@ import Data.Text (pack, unpack)
 import Syntax.Tree
 import Error.Message
 import Error.PrettyPrint
+import Syntax.Expr 
+import Syntax.Parser.Ast
+
+import Data.Set (Set, toList)
 
 main :: IO ()
 main = do  
@@ -22,5 +26,10 @@ main = do
 
   bs  <- SB.readFile file 
   case (runLexer parseProgram bs) of 
-      Right res -> putStrLn $ drawTree res
+      Right res@(Program _ b _ _) -> do 
+        putStrLn $ drawTree res
+        putStrLn "\n------------------\n"
+        let f = map astFreeVars b
+        let name = map (\(Name (_, t)) -> t)
+        print (map (name . toList) f)
       Left err -> putStrLn (unpack $ ppShow $ ErrReport (pack file) (decodeUtf8 bs) err)

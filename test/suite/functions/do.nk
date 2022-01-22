@@ -1,4 +1,8 @@
-let main = do
-    let b = 3
+let main (d : Int) = do
     print b
-    print "b"
+    let a = f
+    print d
+    print a
+    let b = 3 
+    main 
+    maine

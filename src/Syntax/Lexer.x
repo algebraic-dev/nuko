@@ -100,6 +100,11 @@ program :-
 
 {
 
+ghostBounds :: t -> Lexer (WithBounds t) 
+ghostBounds t = do 
+    pos <- ST.gets (inputPos . lsInput)
+    pure $ WithBounds t (Bounds pos pos)
+
 fromRight :: Either e r -> r 
 fromRight (Right b) = b
 fromRight _ = error "Cannot unpack the data (error on lexer UwU)"
@@ -110,11 +115,11 @@ addToBuffer c = ST.modify (\s -> s { lsBuffer = append (lsBuffer s) c })
 resetBuffer :: Lexer Text
 resetBuffer = ST.state (\s -> (lsBuffer s, s { lsBuffer = "" }))
 
-emptyLayout _ _ = replaceCode newline *> pure (ghostBounds TknClose)
+emptyLayout _ _ = replaceCode newline *> ghostBounds TknClose
 
 handleEOF = lastLayout >>= \case 
-    Nothing -> popCode *> pure (ghostBounds TknEOF) 
-    Just _  -> popLayout *> pure (ghostBounds TknClose)
+    Nothing -> popCode *> ghostBounds TknEOF
+    Just _  -> popLayout *> ghostBounds TknClose
 
 offsideRule _ _ = do 
     lay <- lastLayout
@@ -124,9 +129,9 @@ offsideRule _ _ = do
         Nothing   -> continue
         Just col' -> do 
             case col `compare` col' of
-                EQ -> popCode *> pure (ghostBounds TknEnd)
+                EQ -> popCode *> ghostBounds TknEnd
                 GT -> continue 
-                LT -> popLayout *> pure (ghostBounds TknClose)
+                LT -> popLayout *> ghostBounds TknClose
 
 startLayout _ _ = do  
     popCode 
@@ -135,7 +140,7 @@ startLayout _ _ = do
     if Just col <= ref 
         then pushCode empty_layout
         else pushLayout col
-    pure $ ghostBounds TknOpen
+    ghostBounds TknOpen
 
 layoutKw t text pos = pushCode layout *> token t text pos
 

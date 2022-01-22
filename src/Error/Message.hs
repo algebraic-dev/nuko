@@ -9,6 +9,7 @@ data ErrorKind
     = UnfinishedString Pos 
     | UnrecognizableChar Pos
     | UnexpectedToken Bounds
+    | UnexpectedAssign Bounds
     deriving Show
 
 -- Data Components
@@ -32,18 +33,22 @@ data ErrReport =
 onlyCol :: Pos -> Bounds
 onlyCol pos@(B.Pos line col) = B.Bounds pos (B.Pos line (col + 1))
 
+columnError :: Pos -> Text -> ErrMessage
+columnError pos text = ErrMessage (Just pos) text [ Code (onlyCol pos) Nothing ]
+
+boundsError :: Bounds -> Text -> ErrMessage
+boundsError pos text = ErrMessage (Just $ B.start pos) text [ Code pos (Just "Here!") ]
+
 messageFromErr :: ErrorKind -> ErrMessage
 messageFromErr (UnfinishedString pos) = 
-    ErrMessage (Just pos) 
-               "Probably you forgot to close a quote while trying to create a string!"  
-               [ Code (onlyCol pos) Nothing ]
+    columnError pos "Probably you forgot to close a quote while trying to create a string!" 
 
 messageFromErr (UnrecognizableChar pos) = 
-    ErrMessage (Just pos) 
-               "Cannot understand this character bro UwU"  
-               [ Code (onlyCol pos) (Just "Here!") ]
+    columnError pos "Cannot understand this character bro UwU"  
 
 messageFromErr (UnexpectedToken pos) = 
-    ErrMessage (Just (B.start pos)) 
-               "Cannot uwndustwand this tUwUken"  
-               [ Code pos (Just "Not here >:C it's a joke haha") ]
+    boundsError pos "Cannot uwndustwand this tUwUken"
+
+messageFromErr (UnexpectedAssign pos) = 
+    boundsError pos "You cant use let expressions in the end of a block"  
+               

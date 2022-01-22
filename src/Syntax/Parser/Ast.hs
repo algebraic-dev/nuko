@@ -3,11 +3,12 @@ module Syntax.Parser.Ast where
 import Data.List.NonEmpty ()
 import Syntax.Bounds (Bounds, empty)
 import Data.Void (Void)
+import Data.Text (Text)
 import Syntax.Expr 
 
 data Normal
 
-type instance XName Normal = Bounds
+type instance XName Normal = (Bounds, Text)
 
 type instance XTSimple Normal = NoExt
 type instance XTPoly Normal = NoExt
@@ -35,6 +36,7 @@ type instance XMatch Normal = Bounds
 type instance XAssign Normal =  Bounds
 type instance XBinary Normal =  Bounds
 type instance XBlock Normal = Bounds
+type instance XIf Normal = Bounds
 type instance XExt Normal = Void
 
 type instance XTcSum Normal = Bounds
@@ -59,12 +61,20 @@ deriving instance Show (Pattern Normal)
 deriving instance Show (Literal Normal)
 deriving instance Show (Expr Normal)
 deriving instance Show (TypeCons Normal)
+deriving instance Show (Sttms Normal)
+deriving instance Show (Assign Normal)
 deriving instance Show (Binder Normal)
 deriving instance Show (TypeDecl Normal)
 deriving instance Show (Program Normal)
 deriving instance Show (ExternalDecl Normal)
 deriving instance Show (LetDecl Normal)
 deriving instance Show (ImportDecl Normal)
+
+instance Eq (Name Normal) where 
+    (Name (_, n)) == (Name (_, m)) = n == m
+
+instance Ord (Name Normal) where 
+   compare (Name (_, n)) (Name (_, m)) = compare n m
 
 -- Position 
 
@@ -83,7 +93,7 @@ instance HasPosition (Binder Normal) where
     getPos (Typed pos _ _) = pos
 
 instance HasPosition (Name Normal) where 
-    getPos (Name pos _) = pos
+    getPos (Name (pos, _)) = pos
 
 instance HasPosition (Type Normal) where 
     getPos (TSimple _ name) = getPos name
@@ -108,11 +118,11 @@ instance HasPosition (Expr Normal) where
     getPos (App pos _ _) = pos 
     getPos (Var _ name) = getPos name 
     getPos (Lit _ lit) = getPos lit 
-    getPos (Assign pos _ _) = pos 
     getPos (Match pos _ _) = pos 
     getPos (Binary pos _ _ _) = pos
     getPos (Block pos _) = pos 
-
+    getPos (If pos _ _ _) = pos 
+    
 instance HasPosition (TypeCons Normal) where 
     getPos (TcSum pos _) = pos 
     getPos (TcRecord pos _) = pos 

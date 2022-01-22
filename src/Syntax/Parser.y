@@ -15,6 +15,7 @@ import Data.Function (on)
 import Control.Monad.Except (throwError)
 
 import qualified Error.Message as ERR
+import Debug.Trace 
 
 }
 
@@ -71,9 +72,9 @@ import qualified Error.Message as ERR
 %left symbol
 %%
 
-Lower : lower { Name (position $1) (getData $1) }
-Upper : upper { Name (position $1) (getData $1) }
-Symbol : symbol { Name (position $1) (getData $1) }
+Lower : lower { Name (position $1, getData $1) }
+Upper : upper { Name (position $1, getData $1) }
+Symbol : symbol { Name (position $1, getData $1) }
 
 Lowers : {- empty -} {[]}
        | Lowers Lower { $2 : $1 }
@@ -133,7 +134,6 @@ Literal :: { Literal Normal }
          | double { LDouble (position $1) (getDouble $1) }
          | char   { LChar (position $1) (getLitChar $1) }
 
-
 Atom :: { Expr Normal }
       : Literal      { Lit NoExt $1 }
       | Lower        { Var NoExt $1 }
@@ -155,11 +155,23 @@ MatchClauses :: { [(Pattern Normal, Expr Normal)] }
               : MatchClause { [$1] }
               | MatchClauses semi MatchClause { $3 : $1 }
 
+Assign : let Binder '=' Expr { Assign (position $1 <> getPos $4) $2 $4}
+
+Sttms :: { Sttms Normal }
+       : Expr { End $1 }
+       | Assign {% throwError $ ERR.UnexpectedAssign $ assignPos $ $1   }
+       | Expr semi Sttms   { SExpr $1 $3 } 
+       | Assign semi Sttms { SAssign $1 $3 }
+
+MaybeSttms :: { Sttms Normal }
+            : {- empty -} {% error "Oh no!" }
+            | Sttms { $1 }
+
 Expr :: { Expr Normal }
       : '\\' Binder '->' Expr { Lam ($2 `mix` $4) $2 $4}
-      | let Binder '=' Expr { Assign (position $1 <> getPos $4) $2 $4}  
-      | do open Exprs close { Block (position $1 <> getPos (last $3)) $3 }
+      | do open MaybeSttms close { Block (position $1 <> (getPos . getLastSttm $ $3)) $3 }
       | match Expr with open MatchClauses close { Match (firstAndLast $5) $2 (reverse $5) }
+      | if Expr then Expr else Expr { If (position $1 <> getPos $6) $2 $4 $6 }
       | Call Symbol Expr { Binary ($1 `mix` $3) $2 $1 $3 }
       | Call { $1 }
 
@@ -218,6 +230,11 @@ ProgramDecls : ProgramDecls ProgramDecl { $2 : $1 }
 Program : Imports ProgramDecls { foldl filterDecls (Program [] [] [] $1) $2 }
       
 {
+
+getLastSttm :: Sttms x -> Expr x
+getLastSttm (End x) = x
+getLastSttm (SAssign _ l) = getLastSttm l
+getLastSttm (SExpr _ l) = getLastSttm l
 
 filterDecls :: Program x -> TLKind x -> Program x 
 filterDecls program (TTypeDecl tyDecl) = program { progType = tyDecl : progType program} 

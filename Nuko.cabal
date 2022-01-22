@@ -33,6 +33,7 @@ library
       Syntax.Parser.Ast
       Syntax.Tree
       Type.TypedAst
+      TypeOp
   other-modules:
       Paths_Nuko
   hs-source-dirs:
@@ -45,6 +46,12 @@ library
       LambdaCase
       StandaloneDeriving
       FlexibleContexts
+      UndecidableInstances
+      MultiParamTypeClasses
+      ConstraintKinds
+      DataKinds
+      TypeOperators
+      PolyKinds
   ghc-options: -Wall
   build-depends:
       array
@@ -70,6 +77,12 @@ executable Nuko-exe
       LambdaCase
       StandaloneDeriving
       FlexibleContexts
+      UndecidableInstances
+      MultiParamTypeClasses
+      ConstraintKinds
+      DataKinds
+      TypeOperators
+      PolyKinds
   ghc-options: -Wall -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       Nuko
@@ -96,6 +109,12 @@ test-suite Nuko-test
       LambdaCase
       StandaloneDeriving
       FlexibleContexts
+      UndecidableInstances
+      MultiParamTypeClasses
+      ConstraintKinds
+      DataKinds
+      TypeOperators
+      PolyKinds
   ghc-options: -Wall -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       Nuko

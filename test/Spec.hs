@@ -1,5 +1,3 @@
-import Syntax.Expr
-
 import Test.Tasty
 import Test.Tasty.Golden (findByExtension)
 import Test.Tasty.HUnit
@@ -8,7 +6,6 @@ import System.FilePath (dropExtension, addExtension)
 import Data.Traversable (for)
 import Data.Either (isRight)
 
-import Syntax.Lexer 
 import Syntax.Lexer.Support
 import Syntax.Parser
 

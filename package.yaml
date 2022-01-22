@@ -24,6 +24,12 @@ default-extensions:
   - LambdaCase
   - StandaloneDeriving
   - FlexibleContexts
+  - UndecidableInstances
+  - MultiParamTypeClasses
+  - ConstraintKinds
+  - DataKinds
+  - TypeOperators
+  - PolyKinds
 
 library:
   source-dirs: src

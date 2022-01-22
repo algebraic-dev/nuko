@@ -23,7 +23,7 @@ data Token
     -- Keywords
     | TknKwType | TknKwLet | TknKwDo | TknKwIf 
     | TknKwThen | TknKwElse | TknKwWith | TknKwMatch 
-    | TknKwImport | TknKwAs | TknKwExternal
+    | TknKwImport | TknKwAs | TknKwExternal | TknKwIn
 
     | TknEOF
     deriving (Show, Eq)

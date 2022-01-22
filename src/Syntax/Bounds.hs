@@ -23,6 +23,3 @@ advancePos pos _    = pos { column = column pos + 1 }
 
 empty :: Bounds 
 empty = Bounds (Pos 0 0) (Pos 0 0) 
-
-ghostBounds :: t -> WithBounds t 
-ghostBounds t = WithBounds t empty
