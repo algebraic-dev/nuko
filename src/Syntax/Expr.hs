@@ -1,4 +1,4 @@
-module Syntax.Expr where 
+module Syntax.Expr where
 
 import Data.Text (Text)
 import Syntax.Tree
@@ -17,19 +17,19 @@ data NoExt = NoExt
 
 data Name ζ = Name (XName ζ)
 
-data Binder ζ 
-    = Typed (XBTyped ζ) (Pattern ζ) (Type ζ) 
-    | Raw (XBRaw ζ) (Pattern ζ) 
+data Binder ζ
+    = Typed (XBTyped ζ) (Pattern ζ) (Type ζ)
+    | Raw (XBRaw ζ) (Pattern ζ)
 
 data Type ζ
     = TSimple (XTSimple ζ) (Name ζ)
-    | TPoly (XTPoly ζ) (Name ζ) 
+    | TPoly (XTPoly ζ) (Name ζ)
     | TArrow (XTArrow ζ) (Type ζ) (Type ζ)
     | TCons (XTCons ζ) (Name ζ) [Type ζ]
     | TExt !(XTExt ζ)
 
 data Pattern ζ
-    = PWild (XPWild ζ) 
+    = PWild (XPWild ζ)
     | PCons (XPCons ζ) (Name ζ) [Pattern ζ]
     | PId  (XPId ζ) (Name ζ)
     | PLit (XPLit ζ) (Literal ζ)
@@ -42,19 +42,19 @@ data Literal ζ
     | LDouble (XLDouble ζ) Double
     | LExt !(XLExt ζ)
 
-data Assign ζ = Assign { assignPos :: (XAssign ζ)
-                       , assignName :: (Binder ζ)
-                       , assignVal :: (Expr ζ) }
+data Assign ζ = Assign { assignPos :: XAssign ζ
+                       , assignName :: Binder ζ
+                       , assignVal :: Expr ζ }
 
-data Sttms ζ 
-    = End (Expr ζ) 
-    | SAssign (Assign ζ) (Sttms ζ) 
+data Sttms ζ
+    = End (Expr ζ)
+    | SAssign (Assign ζ) (Sttms ζ)
     | SExpr (Expr ζ) (Sttms ζ)
 
 data Expr ζ
     = Lam (XLam ζ) (Binder ζ) (Expr ζ)
     | App (XApp ζ) (Expr ζ) (Expr ζ)
-    | Var (XVar ζ) (Name ζ) 
+    | Var (XVar ζ) (Name ζ)
     | Lit (XLit ζ) (Literal ζ)
     | Block (XBlock ζ) (Sttms ζ)
     | If (XIf ζ) (Expr ζ) (Expr ζ) (Expr ζ)
@@ -88,7 +88,7 @@ data ExternalDecl ζ
                    , extExt    :: !(XExternal ζ) }
 
 data ImportDecl ζ
-    = ImportDecl { impModule :: [Name ζ] 
+    = ImportDecl { impModule :: [Name ζ]
                  , impMode   :: Either (Name ζ) [Name ζ]}
 
 data Program ζ
@@ -105,7 +105,7 @@ data TLKind ζ = TTypeDecl (TypeDecl ζ)
 
 -- Deriving 
 
-instance Show (NoExt) where  show _ = ""
+instance Show NoExt where  show _ = ""
 
 -- Type family instances
 
@@ -156,42 +156,42 @@ type family XType ζ
 -- Pretty printing
 
 stmtToList :: Sttms ζ -> [Node]
-stmtToList (End expr) = [toTree expr] 
+stmtToList (End expr) = [toTree expr]
 stmtToList (SExpr assign sttms) = toTree assign : stmtToList sttms
 stmtToList (SAssign expr sttms)   = toTree expr : stmtToList sttms
 
-instance SimpleTree (Assign ζ) where 
+instance SimpleTree (Assign ζ) where
     toTree (Assign _ name val) = Node "Assign" [toTree name, toTree val]
 
-instance SimpleTree (Name ζ) where 
-    toTree (Name _) = Node ("Name") []
+instance SimpleTree (Name ζ) where
+    toTree (Name _) = Node "Name" []
 
-instance SimpleTree (Binder ζ) where 
+instance SimpleTree (Binder ζ) where
     toTree (Typed _ pat ty) = Node "Typed" [toTree pat, toTree ty]
     toTree (Raw _ pat) = Node "Raw" [toTree pat]
 
-instance SimpleTree (Type ζ) where 
+instance SimpleTree (Type ζ) where
     toTree (TSimple _ name) = Node "TSimple" [toTree name]
     toTree (TPoly _ name) = Node "TPoly" [toTree name]
     toTree (TArrow _ a b) = Node "TArrow" [toTree a, toTree b]
     toTree (TCons _ name ty) = Node "TCons" [toTree name, toTree ty]
     toTree (TExt _) = Node "TExt" []
 
-instance SimpleTree (Pattern ζ) where 
+instance SimpleTree (Pattern ζ) where
     toTree (PWild _) = Node "PWild" []
     toTree (PCons _ a pat) = Node "PCons" [toTree a, toTree pat]
     toTree (PId _ name) = Node "PId" [toTree name]
     toTree (PLit _ lit) = Node "PLit" [toTree lit]
     toTree (PExt _) = Node "PExt" []
 
-instance SimpleTree (Literal ζ) where 
+instance SimpleTree (Literal ζ) where
     toTree (LChar _ _) = Node "LChar" []
     toTree (LString _ s) = Node ("LString: " ++ show s) []
     toTree (LInt _ _) = Node "LInt" []
     toTree (LDouble _ d) = Node ("LDouble: " ++ show d) []
     toTree (LExt _) = Node "LExt" []
 
-instance SimpleTree (Expr ζ) where 
+instance SimpleTree (Expr ζ) where
     toTree (Lam _ binder expr) = Node "Lam" [toTree binder, toTree expr]
     toTree (App _ e e2) = Node "App" [toTree e, toTree e2]
     toTree (Var _ name) = Node "Var" [toTree name]
@@ -202,79 +202,79 @@ instance SimpleTree (Expr ζ) where
     toTree (Binary _ name e e2) = Node "Binary" [toTree name, toTree e, toTree e2]
     toTree (Ext _) = Node "Ext" []
 
-instance SimpleTree (TypeCons ζ) where 
+instance SimpleTree (TypeCons ζ) where
     toTree (TcSum _ fields) = Node "TcSum" (map toTree fields)
     toTree (TcRecord _ fields) = Node "TcReco" (map toTree fields)
     toTree (TcSyn _ ty) = Node "TcSyn" [toTree ty]
     toTree (TcExt _) = Node "TcExt" []
 
-instance SimpleTree (TypeDecl ζ) where 
-    toTree (TypeDecl name args cons _) = 
+instance SimpleTree (TypeDecl ζ) where
+    toTree (TypeDecl name args cons _) =
         Node "TypeDecl" [toTree name, toTree args, toTree cons]
 
-instance SimpleTree (LetDecl ζ) where 
-    toTree (LetDecl name args ret body _) = 
+instance SimpleTree (LetDecl ζ) where
+    toTree (LetDecl name args ret body _) =
         Node "LetDecl" [toTree name, toTree args, toTree ret, toTree body]
 
-instance SimpleTree (ExternalDecl ζ) where 
-    toTree (ExternalDecl name ty str _) = 
+instance SimpleTree (ExternalDecl ζ) where
+    toTree (ExternalDecl name ty str _) =
         Node "ExternalDecl" [toTree name, toTree ty, toTree str]
 
-instance SimpleTree (ImportDecl ζ) where 
-    toTree (ImportDecl _ mode) = 
+instance SimpleTree (ImportDecl ζ) where
+    toTree (ImportDecl _ mode) =
         Node "ImportDecl" [Node "Module" [], toTree mode]
 
-instance SimpleTree (Program ζ) where 
-    toTree (Program ex le ty imp) = 
+instance SimpleTree (Program ζ) where
+    toTree (Program ex le ty imp) =
         Node "Program" [toTree ex, toTree le, toTree ty, toTree imp]
 
 -- FreeVars
 
-type Exts ζ = All (FreeVars ζ) '[XExt ζ, XPExt ζ, XTcExt ζ, XLExt ζ] 
-type FV ζ = (Ord (Name ζ), Exts ζ)  
+type Exts ζ = All (FreeVars ζ) '[XExt ζ, XPExt ζ, XTcExt ζ, XLExt ζ]
+type FV ζ = (Ord (Name ζ), Exts ζ)
 
-class FreeVars ζ a where 
+class FreeVars ζ a where
     freeVars :: a -> Set (Name ζ)
 
 instance Ord (Name ζ) => FreeVars ζ Void where freeVars = absurd
 instance Ord (Name ζ) => FreeVars ζ NoExt where freeVars NoExt = Set.empty
 
-instance (FreeVars ζ a, Ord (Name ζ)) => FreeVars ζ [a] where 
+instance (FreeVars ζ a, Ord (Name ζ)) => FreeVars ζ [a] where
     freeVars = foldl union Set.empty . map freeVars
 
-instance FV ζ => FreeVars ζ (Pattern ζ) where 
-    freeVars (PWild _) = Set.empty 
+instance FV ζ => FreeVars ζ (Pattern ζ) where
+    freeVars (PWild _) = Set.empty
     freeVars (PCons _ _ pats) = freeVars pats
     freeVars (PId _ name) = Set.singleton name
-    freeVars (PLit _ _) = Set.empty 
+    freeVars (PLit _ _) = Set.empty
     freeVars (PExt ext) = freeVars ext
 
-instance FV ζ => FreeVars ζ (Binder ζ) where 
+instance FV ζ => FreeVars ζ (Binder ζ) where
     freeVars (Typed _ pat _) = freeVars pat
     freeVars (Raw _ pat) = freeVars pat
 
-instance FV ζ => FreeVars ζ (Sttms ζ) where 
-    freeVars (End expr) = freeVars expr 
-    freeVars (SExpr expr sttms) = (freeVars sttms) `union` (freeVars expr)
-    freeVars (SAssign (Assign _ name val) sttms) = 
-        ((freeVars sttms) `difference` (freeVars name)) `union` (freeVars val) 
+instance FV ζ => FreeVars ζ (Sttms ζ) where
+    freeVars (End expr) = freeVars expr
+    freeVars (SExpr expr sttms) = freeVars sttms `union` freeVars expr
+    freeVars (SAssign (Assign _ name val) sttms) =
+        (freeVars sttms `difference` freeVars name) `union` freeVars val
 
 instance FV ζ => FreeVars ζ (Pattern ζ, Expr ζ) where
     freeVars (pat, expr) = difference (freeVars expr) (freeVars pat)
 
-instance FV ζ => FreeVars ζ (Expr ζ) where 
+instance FV ζ => FreeVars ζ (Expr ζ) where
     freeVars (Lam _ binder expr) = difference (freeVars expr) (freeVars binder)
     freeVars (App _ a b) = (union `on` freeVars) a b
-    freeVars (Var _ a) = Set.singleton a 
-    freeVars (Lit _ _) = Set.empty 
+    freeVars (Var _ a) = Set.singleton a
+    freeVars (Lit _ _) = Set.empty
     freeVars (If _ cond if' else') = foldl union (freeVars cond) [freeVars if', freeVars else']
     freeVars (Block _ sttms) = freeVars sttms
-    freeVars (Match _ cond pats) = union (freeVars cond) (foldl union Set.empty $ map freeVars pats) 
+    freeVars (Match _ cond pats) = freeVars cond `union` foldl union Set.empty (map freeVars pats)
     freeVars (Binary _ a b c) = freeVars b `union` Set.singleton a  `union` freeVars c
     freeVars (Ext a) = freeVars a
 
-instance FV ζ => FreeVars ζ (LetDecl ζ) where 
-    freeVars (LetDecl name args _ body _) = 
+instance FV ζ => FreeVars ζ (LetDecl ζ) where
+    freeVars (LetDecl name args _ body _) =
         Set.difference (freeVars body) (Set.union (freeVars args) (Set.singleton name))
 
 astFreeVars :: FreeVars ζ (x ζ) => x ζ -> Set (Name ζ)

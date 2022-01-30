@@ -30,6 +30,7 @@ default-extensions:
   - DataKinds
   - TypeOperators
   - PolyKinds
+  - GADTs
 
 library:
   source-dirs: src

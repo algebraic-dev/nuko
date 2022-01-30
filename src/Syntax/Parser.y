@@ -20,6 +20,7 @@ import Debug.Trace
 }
 
 %name parseProgram Program
+%name parseExpr Expr
 
 %tokentype { WithBounds Token }
 %monad { Lexer }

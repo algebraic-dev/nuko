@@ -1,4 +1,4 @@
-module Main where 
+module Main where
 
 import GHC.IO.Encoding
 
@@ -14,22 +14,24 @@ import Data.Text (pack, unpack)
 import Syntax.Tree
 import Error.Message
 import Error.PrettyPrint
-import Syntax.Expr 
-import Syntax.Parser.Ast
+import Syntax.Expr
 
-import Data.Set (Set, toList)
+import Data.Set (toList)
+import Type.Checker 
+import Type.Types
+import Type.Context
+
 
 main :: IO ()
-main = do  
+main = do
   setLocaleEncoding utf8
   [file] <- getArgs
 
-  bs  <- SB.readFile file 
-  case (runLexer parseProgram bs) of 
-      Right res@(Program _ b _ _) -> do 
+  bs  <- SB.readFile file
+  case runLexer parseExpr bs of
+      Right res -> do
         putStrLn $ drawTree res
-        putStrLn "\n------------------\n"
-        let f = map astFreeVars b
-        let name = map (\(Name (_, t)) -> t)
-        print (map (name . toList) f)
+        print $ runGen $ do 
+          (ty, ctx) <- exprTypeSynth [CtxAlpha "Int", CtxAlpha "String"] res
+          pure (applyContext ctx ty)
       Left err -> putStrLn (unpack $ ppShow $ ErrReport (pack file) (decodeUtf8 bs) err)

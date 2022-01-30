@@ -32,7 +32,10 @@ library
       Syntax.Parser
       Syntax.Parser.Ast
       Syntax.Tree
-      Type.TypedAst
+      Type.Ast
+      Type.Checker
+      Type.Context
+      Type.Types
       TypeOp
   other-modules:
       Paths_Nuko
@@ -52,6 +55,7 @@ library
       DataKinds
       TypeOperators
       PolyKinds
+      GADTs
   ghc-options: -Wall
   build-depends:
       array
@@ -83,6 +87,7 @@ executable Nuko-exe
       DataKinds
       TypeOperators
       PolyKinds
+      GADTs
   ghc-options: -Wall -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       Nuko
@@ -115,6 +120,7 @@ test-suite Nuko-test
       DataKinds
       TypeOperators
       PolyKinds
+      GADTs
   ghc-options: -Wall -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       Nuko
