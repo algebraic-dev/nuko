@@ -11,16 +11,11 @@ import qualified Data.ByteString as SB
 import Data.Text.Encoding (decodeUtf8)
 import Data.Text (pack, unpack)
 
-import Syntax.Tree
-import Error.Message
-import Error.PrettyPrint
-import Syntax.Expr
-
-import Data.Set (toList)
-import Type.Checker 
-import Type.Types
-import Type.Context
-
+import Syntax.Tree ( drawTree )
+import Error.Message ( ErrReport(ErrReport) )
+import Error.PrettyPrint ( ppShow )
+import Type.Checker ( exprTypeSynth, runGen ) 
+import Type.Context ( applyContext, CtxElem(CtxAlpha) )
 
 main :: IO ()
 main = do

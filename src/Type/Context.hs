@@ -1,7 +1,7 @@
 module Type.Context where 
   
 
-import Type.Types (Type(..), TypeKind(..), TypeId)
+import Type.Types (RType(..), TypeKind(..), TypeId)
 
 import qualified Data.List as List
 import qualified Type.Types as Ty
@@ -9,9 +9,9 @@ import qualified Control.Arrow as Bi
 
 data CtxElem 
   = CtxAlpha TypeId 
-  | CtxVar TypeId (Ty.Type 'Poly)
+  | CtxVar TypeId (RType 'Poly)
   | CtxExists TypeId 
-  | CtxSolved TypeId (Ty.Type 'Mono)
+  | CtxSolved TypeId (RType 'Mono)
   | CtxMarker TypeId 
   deriving Eq 
 
@@ -43,7 +43,7 @@ existentials ctx = ctx >>= go
 markers :: Context -> [TypeId]
 markers ctx = [x | CtxMarker x <- ctx]
 
-findVar :: TypeId -> Context -> Maybe (Ty.Type 'Poly)
+findVar :: TypeId -> Context -> Maybe (RType 'Poly)
 findVar name = \case 
   (CtxVar varName ty : xs) 
     | varName == name -> Just ty
@@ -51,7 +51,7 @@ findVar name = \case
   (_ : xs)            -> findVar name xs 
   []                  -> Nothing 
 
-getSolved :: TypeId -> Context -> Maybe (Ty.Type 'Mono)
+getSolved :: TypeId -> Context -> Maybe (RType 'Mono)
 getSolved name (CtxSolved x ty : xs) 
   | x == name = Just ty  
   | otherwise = getSolved name xs
@@ -64,7 +64,7 @@ breakMarker ctx tag = Bi.second tail $ List.span (/= tag) ctx
 dropMarker :: Context -> CtxElem -> Context 
 dropMarker ctx = snd . breakMarker ctx
 
-applyContext :: Context -> Ty.Type 'Poly -> Ty.Type 'Poly 
+applyContext :: Context -> RType 'Poly -> RType 'Poly 
 applyContext ctx = \case 
   TyExists s  -> case getSolved s ctx of
                     Nothing -> TyExists s 
@@ -74,7 +74,7 @@ applyContext ctx = \case
   TyFun ty ty'  -> TyFun (applyContext ctx ty) (applyContext ctx ty')
   TyForall s ty -> TyForall s (applyContext ctx ty)
 
-typeWellFormed :: Context -> Ty.Type 'Poly -> Bool 
+typeWellFormed :: Context -> RType 'Poly -> Bool 
 typeWellFormed ctx = \case 
   TyUnit -> True
   TyAlpha s  | s `elem` alphas ctx -> True  
@@ -84,7 +84,7 @@ typeWellFormed ctx = \case
   TyFun ty ty' -> typeWellFormed ctx ty && typeWellFormed ctx ty'
   TyForall s ty -> typeWellFormed (CtxAlpha s : ctx) ty
 
-solve :: Context -> TypeId -> Type 'Mono -> Context 
+solve :: Context -> TypeId -> RType 'Mono -> Context 
 solve ctx ex ty = let (l, r) = breakMarker ctx (CtxExists ex) in l <> (CtxSolved ex ty : r)
 
 insertAt :: Context -> CtxElem -> [CtxElem] -> Context 

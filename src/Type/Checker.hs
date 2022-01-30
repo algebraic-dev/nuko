@@ -1,31 +1,39 @@
 module Type.Checker where
 
-import Type.Types      (Type(..), TypeKind(..), TypeId)
+import Type.Types      (RType(..), TypeKind(..), TypeId)
 import Type.Context     (Context, CtxElem(..))
 import Syntax.Parser.Ast (Normal)
-import Syntax.Expr hiding (Type)
+import Syntax.Expr 
 
 import qualified Data.Text           as Text
 import qualified Type.Types          as Ty
 import qualified Type.Context        as Ctx
 import qualified Control.Monad.State as State
 import Control.Monad (replicateM)
-import Debug.Trace
 
 type Checker = State.MonadState [String]
+
+fromAstType :: Type Normal -> RType 'Poly 
+fromAstType = \case  
+  TSimple xs na    -> undefined
+  TPoly xp na      -> undefined
+  TArrow xa ty ty' -> undefined
+  TCons xc na tys  -> undefined
+  TForall xf na ty -> undefined
+  TExt xe          -> undefined
 
 freshName :: Checker m => m String
 freshName = State.state $ \case
    [] -> error "There's no fresh name for it!"
    s : ss -> (s, ss)
 
-checkWF :: Checker m => Context -> Type 'Poly -> m ()
+checkWF :: Checker m => Context -> RType 'Poly -> m ()
 checkWF ctx ty =
   if Ctx.typeWellFormed ctx ty
     then pure ()
     else error $ "The type is not well formed: " ++ show ty
 
-subType :: Checker m => Context -> Type 'Poly -> Type 'Poly -> m Context
+subType :: Checker m => Context -> RType 'Poly -> RType 'Poly -> m Context
 subType ctx ty ty' = do
   checkWF ctx ty
   checkWF ctx ty'
@@ -48,7 +56,7 @@ subType ctx ty ty' = do
     (b, TyExists a) | a `notElem` Ty.freeVars b -> instantiateR ctx b a
     (a, b) -> error $ show a ++ " is not a subtype (idk) of " ++ show b
 
-instantiateL :: Checker m => Context -> TypeId -> Type 'Poly -> m Context
+instantiateL :: Checker m => Context -> TypeId -> RType 'Poly -> m Context
 instantiateL ctx ex = \case
   TyUnit -> pure $ Ctx.solve ctx ex TyUnit
   TyAlpha s -> pure $ Ctx.solve ctx ex (TyAlpha s)
@@ -67,7 +75,7 @@ instantiateL ctx ex = \case
     ctx' <- instantiateL (CtxAlpha b : ctx) ex (Ty.substitute s (TyAlpha b) ty)
     pure $ Ctx.dropMarker ctx' (CtxAlpha b)
 
-instantiateR :: Checker m => Context -> Type 'Poly ->  TypeId -> m Context
+instantiateR :: Checker m => Context -> RType 'Poly ->  TypeId -> m Context
 instantiateR ctx typ ex = case typ of
   TyUnit -> pure $ Ctx.solve ctx ex TyUnit
   TyAlpha s -> pure $ Ctx.solve ctx ex (TyAlpha s)
@@ -86,7 +94,7 @@ instantiateR ctx typ ex = case typ of
     ctx' <- instantiateR (CtxExists b : CtxMarker b : ctx) (Ty.substitute s (TyExists b) ty) ex
     pure $ Ctx.dropMarker ctx' (CtxMarker b)
 
-exprTypeCheck :: Checker m => Context -> Expr Normal -> Type 'Poly ->  m Context
+exprTypeCheck :: Checker m => Context -> Expr Normal -> RType 'Poly ->  m Context
 exprTypeCheck ctx expr ty = case (expr, ty) of 
   (Lam _ (Raw _ (PId _ (Name (_, id')))) ex, TyFun a b) -> do
     let var = CtxVar (Text.unpack id') a 
@@ -98,14 +106,14 @@ exprTypeCheck ctx expr ty = case (expr, ty) of
     (b, ctx') <- exprTypeSynth ctx expr'
     subType ctx' (Ctx.applyContext ctx' ty) (Ctx.applyContext ctx' b)  
 
-litTypeSynth :: Literal Normal -> Type 'Poly
+litTypeSynth :: Literal Normal -> RType 'Poly
 litTypeSynth = \case
   LChar _ _     -> TyAlpha "Char"
   LString _ _   -> TyAlpha "String"
   LInt _ _      -> TyAlpha "Int"
   LDouble _ _   -> TyAlpha "Double"
 
-exprTypeSynth :: Checker m => Context -> Expr Normal -> m (Type 'Poly, Context)
+exprTypeSynth :: Checker m => Context -> Expr Normal -> m (RType 'Poly, Context)
 exprTypeSynth ctx = \case
   Lit _ lit            -> pure (litTypeSynth lit, ctx) -- 1I⇒
   Var _ (Name (_, i)) -> case Ctx.findVar (Text.unpack i) ctx of -- Var
@@ -116,7 +124,7 @@ exprTypeSynth ctx = \case
     let var = CtxVar (Text.unpack id') (TyExists a)
     let ctx' = var : CtxExists a : CtxExists b : CtxMarker a : ctx
     delta <- exprTypeCheck ctx' ex (TyExists b)
-    let (l, r) = traceShow delta $ Ctx.breakMarker delta (CtxMarker a)
+    let (l, r) = Ctx.breakMarker delta (CtxMarker a)
     let tau = Ctx.applyContext l (TyFun (TyExists a) (TyExists b))
     let oldVars = Ctx.unsolved l
     vars <- traverse (const freshName) oldVars 
@@ -127,11 +135,11 @@ exprTypeSynth ctx = \case
     typeApplySynth ctx' (Ctx.applyContext ctx' ty) ex' 
   _ -> error "Cannot process this kind of thing now!"
 
-typeApplySynth :: Checker m => Context -> Type 'Poly -> Expr Normal -> m (Type 'Poly, Context)
+typeApplySynth :: Checker m => Context -> RType 'Poly -> Expr Normal -> m (RType 'Poly, Context)
 typeApplySynth ctx ty expr = case (ty, expr) of 
   (TyExists alpha, e) -> do 
     (a,b) <- (,) <$> freshName <*> freshName
-    let ctx' = Ctx.solve (CtxExists b : CtxExists a : ctx) alpha (TyFun (TyExists a) (TyExists b)) 
+    let ctx' = Ctx.insertAt ctx (CtxExists alpha) [CtxExists b, CtxExists a, CtxSolved alpha (TyFun (TyExists a) (TyExists b))]
     resCtx <- exprTypeCheck ctx' e (TyExists a)
     pure (TyExists b, resCtx)
   (TyFun a b, e) -> do 

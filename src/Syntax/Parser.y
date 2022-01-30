@@ -66,6 +66,7 @@ import Debug.Trace
     else     { WithBounds TknKwElse _ }
     match    { WithBounds TknKwMatch _ }
     with     { WithBounds TknKwWith _ }
+    forall   { WithBounds TknKwForall _ }
 
 %right '->' 
 %left B
@@ -119,6 +120,7 @@ TypesZero :: { [Type Normal] }
 
 Type :: { Type Normal }
       : Type '->' Type { TArrow (getPos $1 <> getPos $3) $1 $3 }
+      | forall Lower '.' Type { TForall (getPos $2 <> getPos $4) $2 $4 }
       | ConsType { $1 }
 
 Binder :: { Binder Normal }

@@ -26,6 +26,7 @@ data Type ζ
     | TPoly (XTPoly ζ) (Name ζ)
     | TArrow (XTArrow ζ) (Type ζ) (Type ζ)
     | TCons (XTCons ζ) (Name ζ) [Type ζ]
+    | TForall (XTForall ζ) (Name ζ) (Type ζ)
     | TExt !(XTExt ζ)
 
 data Pattern ζ
@@ -114,17 +115,18 @@ type family XName ζ
 type family XBTyped ζ
 type family XBRaw ζ
 
+type family XTForall ζ
 type family XTSimple ζ
 type family XTPoly ζ
 type family XTArrow ζ
-type family XTCons ζ
+type family XTCons ζ 
 type family XTExt ζ
 
 type family XPWild ζ
 type family XPCons ζ
 type family XPLit ζ
 type family XPId ζ
-type family XPExt ζ
+type family XPExt ζ 
 
 type family XLChar ζ
 type family XLString ζ

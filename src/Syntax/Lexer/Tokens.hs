@@ -24,6 +24,7 @@ data Token
     | TknKwType | TknKwLet | TknKwDo | TknKwIf 
     | TknKwThen | TknKwElse | TknKwWith | TknKwMatch 
     | TknKwImport | TknKwAs | TknKwExternal | TknKwIn
+    | TknKwForall
 
     | TknEOF
     deriving (Show, Eq)

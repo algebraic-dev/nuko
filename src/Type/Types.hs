@@ -5,16 +5,16 @@ import qualified Data.Set as Set ( Set, delete, empty, singleton, union )
 type TypeId = String
 data TypeKind = Poly | Mono 
 
-data Type :: TypeKind -> * where 
-  TyUnit   :: Type a 
-  TyAlpha  :: TypeId -> Type a 
-  TyExists :: TypeId -> Type a 
-  TyFun    :: Type a -> Type a -> Type a 
-  TyForall :: TypeId -> Type 'Poly -> Type 'Poly 
+data RType :: TypeKind -> * where 
+  TyUnit   :: RType a 
+  TyAlpha  :: TypeId -> RType a 
+  TyExists :: TypeId -> RType a 
+  TyFun    :: RType a -> RType a -> RType a 
+  TyForall :: TypeId -> RType 'Poly -> RType 'Poly 
 
-deriving instance Eq (Type a)
+deriving instance Eq (RType a)
 
-instance Show (Type a) where 
+instance Show (RType a) where 
   show = \case 
     TyUnit -> "()"
     TyAlpha s -> s
@@ -25,7 +25,7 @@ instance Show (Type a) where
     TyForall s ty -> "∀ " ++ s ++ " . " ++ show ty
 
 
-freeVars :: Type a -> Set.Set TypeId 
+freeVars :: RType a -> Set.Set TypeId 
 freeVars = \case 
   TyUnit       -> Set.empty
   TyAlpha i    -> Set.singleton i
@@ -33,7 +33,7 @@ freeVars = \case
   TyFun a b    -> Set.union (freeVars a) (freeVars b)
   TyForall b t -> Set.delete b (freeVars t) 
 
-occursIn :: TypeId -> Type a -> Bool
+occursIn :: TypeId -> RType a -> Bool
 occursIn name = \case 
   TyUnit        -> False
   TyAlpha s     -> s == name 
@@ -41,7 +41,7 @@ occursIn name = \case
   TyFun ty ty'  -> occursIn name ty || occursIn name ty'
   TyForall s ty -> s == name || occursIn name ty
 
-substitute :: TypeId -> Type a -> Type a -> Type a
+substitute :: TypeId -> RType a -> RType a -> RType a
 substitute from to = \case 
   TyUnit        -> TyUnit
   TyFun ty ty'  -> TyFun (substitute from to ty) (substitute from to ty')
@@ -52,7 +52,7 @@ substitute from to = \case
   TyForall s ty  | s == from -> TyForall s ty 
                  | otherwise -> TyForall s (substitute from to ty) 
 
-toMono :: Type 'Poly -> Maybe (Type 'Mono) 
+toMono :: RType 'Poly -> Maybe (RType 'Mono) 
 toMono = \case 
   TyUnit -> Just TyUnit
   TyAlpha s -> Just $ TyAlpha s
@@ -60,7 +60,7 @@ toMono = \case
   TyFun ty ty' -> TyFun <$> toMono ty <*> toMono ty' 
   TyForall _ _ -> Nothing
 
-toPoly :: Type 'Mono -> Type 'Poly
+toPoly :: RType 'Mono -> RType 'Poly
 toPoly = \case
   TyUnit -> TyUnit
   TyAlpha s -> TyAlpha s

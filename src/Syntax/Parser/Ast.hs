@@ -14,6 +14,7 @@ type instance XTSimple Normal = NoExt
 type instance XTPoly Normal = NoExt
 type instance XTArrow Normal = Bounds
 type instance XTCons Normal = Bounds
+type instance XTForall Normal = Bounds
 type instance XTExt Normal = Void
 
 type instance XPWild Normal = Bounds
