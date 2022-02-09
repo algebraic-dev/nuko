@@ -1,8 +1,7 @@
 module Syntax.Parser.Ast where 
 
-import Data.List.NonEmpty ()
 import Syntax.Bounds (Bounds, empty)
-import Data.Void (Void)
+import Data.Void      (Void)
 import Data.Text (Text)
 import Syntax.Expr 
 
@@ -57,7 +56,7 @@ type instance XBRaw Normal = NoExt
 -- Deriving
 
 deriving instance Show (Name Normal)
-deriving instance Show (Type Normal)
+deriving instance Show (Typer Normal)
 deriving instance Show (Pattern Normal)
 deriving instance Show (Literal Normal)
 deriving instance Show (Expr Normal)
@@ -96,12 +95,13 @@ instance HasPosition (Binder Normal) where
 instance HasPosition (Name Normal) where 
     getPos (Name (pos, _)) = pos
 
-instance HasPosition (Type Normal) where 
+instance HasPosition (Typer Normal) where 
     getPos (TSimple _ name) = getPos name
     getPos (TPoly _ name) = getPos name
     getPos (TArrow pos _ _) = pos 
     getPos (TCons pos _ _) = pos
-
+    getPos (TForall pos _ _) = pos 
+     
 instance HasPosition (Pattern Normal) where
     getPos (PWild pos) = pos 
     getPos (PCons pos _ _) = pos 

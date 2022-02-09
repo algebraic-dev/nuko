@@ -1,68 +1,61 @@
 module Type.Types where 
 
-import qualified Data.Set as Set ( Set, delete, empty, singleton, union )
+import Data.Text (Text)
+import Syntax.Bounds (Bounds)
 
-type TypeId = String
+import qualified Data.Set as Set
+import Data.Function (on)
+
+type TypeId = Text
 data TypeKind = Poly | Mono 
 
-data RType :: TypeKind -> * where 
-  TyUnit   :: RType a 
-  TyAlpha  :: TypeId -> RType a 
-  TyExists :: TypeId -> RType a 
-  TyFun    :: RType a -> RType a -> RType a 
-  TyForall :: TypeId -> RType 'Poly -> RType 'Poly 
+data Type :: TypeKind -> * where 
+  TyAlpha  :: Maybe Bounds -> TypeId -> Type a 
+  TyExists :: Maybe Bounds -> TypeId -> Type a 
+  TyForall :: Maybe Bounds -> TypeId -> Type 'Poly -> Type 'Poly
+  TyFun    :: Maybe Bounds -> Type a -> Type a -> Type a
 
-deriving instance Eq (RType a)
+instance Eq (Type a) where 
+  TyAlpha _ a    == TyAlpha _ b      = a == b
+  TyExists _ a   == TyExists _ b     = a == b
+  TyForall _ a b == TyForall _ a' b' = a == a' && b == b' 
+  TyFun _ a b    == TyFun _ a' b'    = a == a' && b == b'
+  _              == _                = False
 
-instance Show (RType a) where 
-  show = \case 
-    TyUnit -> "()"
-    TyAlpha s -> s
-    TyExists s -> '^' : s
-    TyFun ty@(TyForall _ _) ty' -> "(" ++ show ty ++ ") -> " ++ show ty'
-    TyFun ty@(TyFun _ _) ty' -> "(" ++ show ty ++ ") -> " ++ show ty'
-    TyFun ty ty' -> show ty ++ " -> " ++ show ty'
-    TyForall s ty -> "∀ " ++ s ++ " . " ++ show ty
-
-
-freeVars :: RType a -> Set.Set TypeId 
-freeVars = \case 
-  TyUnit       -> Set.empty
-  TyAlpha i    -> Set.singleton i
-  TyExists i   -> Set.singleton i 
-  TyFun a b    -> Set.union (freeVars a) (freeVars b)
-  TyForall b t -> Set.delete b (freeVars t) 
-
-occursIn :: TypeId -> RType a -> Bool
-occursIn name = \case 
-  TyUnit        -> False
-  TyAlpha s     -> s == name 
-  TyExists s    -> s == name
-  TyFun ty ty'  -> occursIn name ty || occursIn name ty'
-  TyForall s ty -> s == name || occursIn name ty
-
-substitute :: TypeId -> RType a -> RType a -> RType a
+substitute :: TypeId -> Type a -> Type a -> Type a
 substitute from to = \case 
-  TyUnit        -> TyUnit
-  TyFun ty ty'  -> TyFun (substitute from to ty) (substitute from to ty')
-  TyAlpha s      | s == from -> to   
-                 | otherwise -> TyAlpha s 
-  TyExists s     | s == from -> to 
-                 | otherwise -> TyExists s
-  TyForall s ty  | s == from -> TyForall s ty 
-                 | otherwise -> TyForall s (substitute from to ty) 
+  TyFun b ty ty'   -> TyFun b (substitute from to ty) (substitute from to ty')
+  TyAlpha b txt     | txt == from -> to
+                    | otherwise   -> TyAlpha b txt
+  TyExists b txt    | txt == from -> to 
+                    | otherwise   -> TyExists b txt
+  TyForall b txt ty | txt == from -> TyForall b txt ty 
+                    | otherwise   -> TyForall b txt (substitute from to ty)   
 
-toMono :: RType 'Poly -> Maybe (RType 'Mono) 
+tyFreeVars :: Type a -> Set.Set Text 
+tyFreeVars = \case 
+  TyAlpha _ txt     -> Set.singleton txt
+  TyExists _ txt    -> Set.singleton txt
+  TyForall _ txt ty -> Set.delete txt (tyFreeVars ty)
+  TyFun _ ty ty'    -> (Set.union `on` tyFreeVars) ty ty'
+
+toPoly :: Type 'Mono -> Type 'Poly 
+toPoly = \case 
+  TyAlpha m_bo txt  -> TyAlpha m_bo txt
+  TyExists m_bo txt -> TyExists m_bo txt
+  TyFun m_bo ty ty' -> TyFun m_bo (toPoly ty) (toPoly ty')
+
+toMono :: Type 'Poly -> Maybe (Type 'Mono)
 toMono = \case 
-  TyUnit -> Just TyUnit
-  TyAlpha s -> Just $ TyAlpha s
-  TyExists s -> Just $ TyExists s
-  TyFun ty ty' -> TyFun <$> toMono ty <*> toMono ty' 
-  TyForall _ _ -> Nothing
+  TyAlpha m_bo txt  -> Just $ TyAlpha m_bo txt
+  TyExists m_bo txt -> Just $ TyExists m_bo txt
+  TyFun m_bo ty ty' -> TyFun m_bo <$> toMono ty <*> toMono ty'
+  TyForall {}       -> Nothing
 
-toPoly :: RType 'Mono -> RType 'Poly
-toPoly = \case
-  TyUnit -> TyUnit
-  TyAlpha s -> TyAlpha s
-  TyExists s -> TyExists s
-  TyFun ty ty' -> TyFun (toPoly ty) (toPoly ty')
+occoursIn :: TypeId -> Type 'Poly -> Bool 
+occoursIn name = \case 
+  TyAlpha _ txt     -> txt == name
+  TyExists _ txt    -> txt == name
+  TyForall _ txt ty -> txt /= name && occoursIn name ty
+  TyFun _ ty ty'    -> occoursIn name ty || occoursIn name ty'
+

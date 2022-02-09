@@ -1,7 +1,7 @@
 module Syntax.Expr where
 
 import Data.Text (Text)
-import Syntax.Tree
+import Syntax.Tree ( Node(..), SimpleTree(..) )
 
 import Data.Void (Void, absurd)
 import Data.Set (Set, union, difference)
@@ -9,24 +9,24 @@ import Data.Function (on)
 
 import qualified Data.Set as Set
 
-import TypeOp
+import TypeOp ( All )
 
 -- Ast definition using TTG Idiom
 
 data NoExt = NoExt
 
-data Name ζ = Name (XName ζ)
+newtype Name ζ = Name (XName ζ)
 
 data Binder ζ
-    = Typed (XBTyped ζ) (Pattern ζ) (Type ζ)
+    = Typed (XBTyped ζ) (Pattern ζ) (Typer ζ)
     | Raw (XBRaw ζ) (Pattern ζ)
 
-data Type ζ
+data Typer ζ
     = TSimple (XTSimple ζ) (Name ζ)
     | TPoly (XTPoly ζ) (Name ζ)
-    | TArrow (XTArrow ζ) (Type ζ) (Type ζ)
-    | TCons (XTCons ζ) (Name ζ) [Type ζ]
-    | TForall (XTForall ζ) (Name ζ) (Type ζ)
+    | TArrow (XTArrow ζ) (Typer ζ) (Typer ζ)
+    | TCons (XTCons ζ) (Name ζ) [Typer ζ]
+    | TForall (XTForall ζ) (Name ζ) (Typer ζ)
     | TExt !(XTExt ζ)
 
 data Pattern ζ
@@ -64,9 +64,9 @@ data Expr ζ
     | Ext !(XExt ζ)
 
 data TypeCons ζ
-    = TcSum (XTcSum ζ) [(Name ζ, [Type ζ])]
-    | TcRecord (XTcRecord ζ) [(Name ζ, Type ζ)]
-    | TcSyn (XTcSyn ζ) (Type ζ)
+    = TcSum (XTcSum ζ) [(Name ζ, [Typer ζ])]
+    | TcRecord (XTcRecord ζ) [(Name ζ, Typer ζ)]
+    | TcSyn (XTcSyn ζ) (Typer ζ)
     | TcExt !(XTcExt ζ)
 
 data TypeDecl ζ
@@ -78,13 +78,13 @@ data TypeDecl ζ
 data LetDecl ζ
     = LetDecl { letName   :: Name ζ
               , letArgs   :: [Binder ζ]
-              , letReturn :: Maybe (Type ζ)
+              , letReturn :: Maybe (Typer ζ)
               , letBody   :: Expr ζ
               , letExt        :: !(XLet ζ) }
 
 data ExternalDecl ζ
     = ExternalDecl { extName   :: Name ζ
-                   , extType   :: Type ζ
+                   , extType   :: Typer ζ
                    , extStr    :: Text
                    , extExt    :: !(XExternal ζ) }
 
@@ -172,11 +172,12 @@ instance SimpleTree (Binder ζ) where
     toTree (Typed _ pat ty) = Node "Typed" [toTree pat, toTree ty]
     toTree (Raw _ pat) = Node "Raw" [toTree pat]
 
-instance SimpleTree (Type ζ) where
+instance SimpleTree (Typer ζ) where
     toTree (TSimple _ name) = Node "TSimple" [toTree name]
     toTree (TPoly _ name) = Node "TPoly" [toTree name]
     toTree (TArrow _ a b) = Node "TArrow" [toTree a, toTree b]
     toTree (TCons _ name ty) = Node "TCons" [toTree name, toTree ty]
+    toTree (TForall _ b ty) = Node "TForall" [toTree b, toTree ty]
     toTree (TExt _) = Node "TExt" []
 
 instance SimpleTree (Pattern ζ) where

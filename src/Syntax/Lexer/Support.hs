@@ -9,18 +9,19 @@ import Data.ByteString.Internal (w2c)
 import Control.Monad.State      (MonadState)
 import Control.Monad.Except     (MonadError)
 
-import qualified Error.Message as ERR
-import qualified Syntax.Bounds as B
-import qualified Control.Monad.State as ST
-import qualified Data.List.NonEmpty as NE
-import qualified Data.ByteString as BS 
+import qualified Error.Message       as Err
+import qualified Syntax.Bounds       as B
+import qualified Control.Monad.State as State
+import qualified Data.List.NonEmpty  as NonEmpty
+import qualified Data.ByteString     as ByteString 
 
-data AlexInput = AlexInput { inputPos     :: B.Pos
-                           , inputLast    :: Word8
-                           , inputStream  :: ByteString } deriving Show
+data AlexInput = AlexInput 
+    { inputPos     :: B.Pos
+    , inputLast    :: Word8
+    , inputStream  :: ByteString } deriving Show
 
 alexGetByte :: AlexInput -> Maybe (Word8, AlexInput)
-alexGetByte input = update <$> BS.uncons (inputStream input)
+alexGetByte input = update <$> ByteString.uncons (inputStream input)
     where newPos = B.advancePos (inputPos input) . w2c
           update (char, rest) = 
             (char, input { inputPos = newPos char
@@ -32,39 +33,40 @@ alexInputPrevChar = inputLast
 
 -- Lexer state to store the codes
 
-data LexerState = LexerState { lsInput  :: AlexInput
-                             , lsCodes  :: NonEmpty Int
-                             , lsLayout :: [Int]
-                             , lsBuffer :: Text  }
+data LexerState = LexerState 
+    { lsInput  :: AlexInput
+    , lsCodes  :: NonEmpty Int
+    , lsLayout :: [Int]
+    , lsBuffer :: Text  }
 
-newtype Lexer a = Lexer { getLexer ::  ST.StateT LexerState (Either ERR.ErrorKind) a}
-    deriving (Functor, Applicative, Monad, MonadState LexerState, MonadError ERR.ErrorKind)
+newtype Lexer a = Lexer { getLexer ::  State.StateT LexerState (Either Err.ErrorKind) a}
+    deriving (Functor, Applicative, Monad, MonadState LexerState, MonadError Err.ErrorKind)
 
 initState :: ByteString -> LexerState
 initState bs = LexerState (AlexInput (B.Pos 0 1) 10 bs) (0 :| []) [] ""
 
-runLexer :: Lexer a -> ByteString -> Either ERR.ErrorKind a 
-runLexer lexer bs = fst <$> ST.runStateT (getLexer lexer) (initState bs)
+runLexer :: Lexer a -> ByteString -> Either Err.ErrorKind a 
+runLexer lexer bs = fst <$> State.runStateT (getLexer lexer) (initState bs)
 
 -- Some primitives to emitting
 
 startCode :: Lexer Int
-startCode = ST.gets (NE.head . lsCodes)
+startCode = State.gets (NonEmpty.head . lsCodes)
 
 emit :: (Text -> a) -> Text -> B.Pos -> Lexer (B.WithBounds a)
 emit fn text pos = do 
-    lastPos <- ST.gets (inputPos . lsInput)
+    lastPos <- State.gets (inputPos . lsInput)
     pure (B.WithBounds (fn text) (B.Bounds pos lastPos))
 
 token :: a -> Text -> B.Pos -> Lexer (B.WithBounds a)
 token = emit . const
 
 pushCode :: Int -> Lexer ()
-pushCode code = ST.modify (\s -> s { lsCodes = NE.cons code (lsCodes s)}) 
+pushCode code = State.modify (\s -> s { lsCodes = NonEmpty.cons code (lsCodes s)}) 
 
 popCode :: Lexer ()
-popCode = ST.modify $ \s -> 
-    case snd $ NE.uncons (lsCodes s) of
+popCode = State.modify $ \s -> 
+    case snd $ NonEmpty.uncons (lsCodes s) of
         Just r  -> s { lsCodes = r }
         Nothing -> s { lsCodes = 0 :| []}
 
@@ -74,13 +76,13 @@ replaceCode code = popCode *> pushCode code
 -- Primitives for layout parsing
 
 pushLayout :: Int -> Lexer ()
-pushLayout layout = ST.modify (\s -> s { lsLayout = layout : lsLayout s }) 
+pushLayout layout = State.modify (\s -> s { lsLayout = layout : lsLayout s }) 
 
 popLayout :: Lexer ()
-popLayout = ST.modify $ \s -> 
+popLayout = State.modify $ \s -> 
     case lsLayout s of
         _ : xs -> s { lsLayout = xs }
         []     -> s { lsLayout = [] }
 
 lastLayout :: Lexer (Maybe Int) 
-lastLayout = ST.gets (fmap fst . uncons . lsLayout)
+lastLayout = State.gets (fmap fst . uncons . lsLayout)

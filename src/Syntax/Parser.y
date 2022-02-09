@@ -102,7 +102,7 @@ Pattern :: { Pattern Normal }
          : PatternAtom     { $1 }
          | '(' ConsPat ')' { $2 }
 
-TypeAtom :: { Type Normal }
+TypeAtom :: { Typer Normal }
           : Lower { TPoly NoExt $1 }
           | Upper { TSimple NoExt $1 }
           | '(' Type ')' { $2 }
@@ -110,15 +110,15 @@ TypeAtom :: { Type Normal }
 ConsType : Upper Types { TCons (headOr $2 ((getPos $1 <>) . getPos) (getPos $1)) $1 (reverse $2) } 
           | TypeAtom { $1 }
 
-Types :: { [Type Normal] }
+Types :: { [Typer Normal] }
        : TypeAtom { [] }
        | Types TypeAtom { $2 : $1 }
 
-TypesZero :: { [Type Normal] }
+TypesZero :: { [Typer Normal] }
        : {- empty -} { [] }
        | TypesZero TypeAtom { $2 : $1 }
 
-Type :: { Type Normal }
+Type :: { Typer Normal }
       : Type '->' Type { TArrow (getPos $1 <> getPos $3) $1 $3 }
       | forall Lower '.' Type { TForall (getPos $2 <> getPos $4) $2 $4 }
       | ConsType { $1 }
@@ -178,17 +178,17 @@ Expr :: { Expr Normal }
       | Call Symbol Expr { Binary ($1 `mix` $3) $2 $1 $3 }
       | Call { $1 }
 
-CoprodClause :: { (Name Normal, [Type Normal])  }
+CoprodClause :: { (Name Normal, [Typer Normal])  }
               : '|' Upper TypesZero { ($2, $3) }
 
-CoprodClauses :: { [(Name Normal, [Type Normal])] }
+CoprodClauses :: { [(Name Normal, [Typer Normal])] }
                : CoprodClause { [$1] }
                | CoprodClauses CoprodClause { $2 : $1 }
 
-ProdClause :: { (Name Normal, Type Normal) }
+ProdClause :: { (Name Normal, Typer Normal) }
             : Lower ':' Type { ($1, $3) }
 
-ProdClauses :: { [(Name Normal, Type Normal)] }
+ProdClauses :: { [(Name Normal, Typer Normal)] }
              : ProdClause  { [$1] }
              | ProdClauses ',' ProdClause { $3 : $1 }
 

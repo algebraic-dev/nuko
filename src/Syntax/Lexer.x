@@ -2,17 +2,17 @@
 
 module Syntax.Lexer where
 
+
+import Data.Text            (Text, append, index)
+import Data.Text.Encoding   (decodeUtf8)
+import Data.Text.Read       (decimal, double)
 import Syntax.Lexer.Support
+import Syntax.Bounds
+import Syntax.Lexer.Tokens
 
 import qualified Control.Monad.State as ST
 import qualified Control.Monad.Except as ER
 import qualified Data.ByteString as BS
-import Syntax.Bounds
-import Data.Text (Text, append, index)
-import Data.Text.Encoding (decodeUtf8)
-import Data.Text.Read (decimal, double)
-import Syntax.Lexer.Tokens
-
 import qualified Error.Message as ERR
 
 }

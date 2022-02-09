@@ -1,21 +1,18 @@
 module Main where
 
-import GHC.IO.Encoding
+import GHC.IO.Encoding ( utf8, setLocaleEncoding )
+import Syntax.Lexer.Support ( runLexer )
+import Syntax.Parser ( parseExpr )
+import System.Environment ( getArgs )
 
-import Syntax.Lexer.Support
-import Syntax.Parser
-
-import System.Environment
-
-import qualified Data.ByteString as SB
 import Data.Text.Encoding (decodeUtf8)
 import Data.Text (pack, unpack)
 
 import Syntax.Tree ( drawTree )
 import Error.Message ( ErrReport(ErrReport) )
 import Error.PrettyPrint ( ppShow )
-import Type.Checker ( exprTypeSynth, runGen ) 
-import Type.Context ( applyContext, CtxElem(CtxAlpha) )
+
+import qualified Data.ByteString as SB
 
 main :: IO ()
 main = do
@@ -26,7 +23,4 @@ main = do
   case runLexer parseExpr bs of
       Right res -> do
         putStrLn $ drawTree res
-        print $ runGen $ do 
-          (ty, ctx) <- exprTypeSynth [CtxAlpha "Int", CtxAlpha "String"] res
-          pure (applyContext ctx ty)
       Left err -> putStrLn (unpack $ ppShow $ ErrReport (pack file) (decodeUtf8 bs) err)

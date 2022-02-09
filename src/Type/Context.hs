@@ -1,95 +1,52 @@
-module Type.Context where 
-  
+module Type.Context where
 
-import Type.Types (RType(..), TypeKind(..), TypeId)
+import Syntax.Parser.Ast (Normal)
+import Type.Types (TypeKind(..), Type(..))
+import Data.Sequence (Seq)
 
-import qualified Data.List as List
-import qualified Type.Types as Ty
-import qualified Control.Arrow as Bi
+import qualified Type.Types    as Types
+import qualified Syntax.Expr   as Expr
+import qualified Data.Sequence as Sequence
 
-data CtxElem 
-  = CtxAlpha TypeId 
-  | CtxVar TypeId (RType 'Poly)
-  | CtxExists TypeId 
-  | CtxSolved TypeId (RType 'Mono)
-  | CtxMarker TypeId 
-  deriving Eq 
+data CtxElem
+  = CtxTy Types.TypeId
+  | CtxExists Types.TypeId
+  | CtxMarker Types.TypeId
+  | CtxSolved Types.TypeId (Types.Type 'Mono)
+  | CtxVar (Expr.Name Normal) (Types.Type 'Poly)
+  deriving Eq
 
-instance Show CtxElem where 
-  show = \case
-    CtxAlpha s -> s
-    CtxVar s ty -> s ++ " : " ++ show ty
-    CtxExists s -> '^' : s
-    CtxSolved s ty -> '^' : s ++ " = " ++ show ty 
-    CtxMarker s -> "▶" ++ s
+newtype Ctx = Ctx (Seq CtxElem) deriving (Semigroup, Monoid)
 
-type Context = [CtxElem]
+-- Context operations
 
-alphas :: Context -> [TypeId] 
-alphas ctx = [x | CtxAlpha x <- ctx]
+-- These is..Elem are necessary to avoid some big changes in the future
+-- while i try to annotate the elems with position and shit like that.
 
-vars :: Context -> [TypeId] 
-vars ctx = [x | CtxVar x _ <- ctx]
+(|>) :: Ctx -> CtxElem -> Ctx 
+(|>) (Ctx ctx) elm = Ctx (ctx Sequence.|> elm)
 
-unsolved :: Context -> [TypeId] 
-unsolved ctx = [x | CtxExists x <- ctx]
+isElem :: (CtxElem -> Bool) -> Ctx -> Bool 
+isElem pred' (Ctx ctx) = not . null $ Sequence.filter pred' ctx
 
-existentials :: Context -> [TypeId]
-existentials ctx = ctx >>= go 
-  where go (CtxExists x)   = [x]
-        go (CtxSolved x _) = [x]
-        go _ = []
+hasTy :: Types.TypeId -> Ctx -> Bool
+hasTy elm = isElem $ \case {CtxTy name -> name == elm; _ -> False}
 
-markers :: Context -> [TypeId]
-markers ctx = [x | CtxMarker x <- ctx]
+isSolved :: Types.TypeId -> Ctx -> Bool
+isSolved elm = isElem $ \case {CtxSolved var _ -> var == elm; _ -> False}
 
-findVar :: TypeId -> Context -> Maybe (RType 'Poly)
-findVar name = \case 
-  (CtxVar varName ty : xs) 
-    | varName == name -> Just ty
-    | otherwise -> findVar name xs   
-  (_ : xs)            -> findVar name xs 
-  []                  -> Nothing 
+hasExist :: Types.TypeId -> Ctx -> Bool
+hasExist name = isElem isExt
+  where isExt (CtxExists x)   = x == name 
+        isExt (CtxSolved x _) = x == name 
+        isExt _ = False
 
-getSolved :: TypeId -> Context -> Maybe (RType 'Mono)
-getSolved name (CtxSolved x ty : xs) 
-  | x == name = Just ty  
-  | otherwise = getSolved name xs
-getSolved name (_ : xs) = getSolved name xs 
-getSolved _    [] = Nothing 
+-- Type operations with contexts
 
-breakMarker :: Context -> CtxElem -> (Context, Context)
-breakMarker ctx tag = Bi.second tail $ List.span (/= tag) ctx
-
-dropMarker :: Context -> CtxElem -> Context 
-dropMarker ctx = snd . breakMarker ctx
-
-applyContext :: Context -> RType 'Poly -> RType 'Poly 
-applyContext ctx = \case 
-  TyExists s  -> case getSolved s ctx of
-                    Nothing -> TyExists s 
-                    Just ty -> applyContext ctx (Ty.toPoly ty) 
-  TyUnit        -> TyUnit 
-  TyAlpha s     -> TyAlpha s 
-  TyFun ty ty'  -> TyFun (applyContext ctx ty) (applyContext ctx ty')
-  TyForall s ty -> TyForall s (applyContext ctx ty)
-
-typeWellFormed :: Context -> RType 'Poly -> Bool 
-typeWellFormed ctx = \case 
-  TyUnit -> True
-  TyAlpha s  | s `elem` alphas ctx -> True  
-             | otherwise -> False 
-  TyExists s | s `elem` existentials ctx -> True 
-             | otherwise -> False
-  TyFun ty ty' -> typeWellFormed ctx ty && typeWellFormed ctx ty'
-  TyForall s ty -> typeWellFormed (CtxAlpha s : ctx) ty
-
-solve :: Context -> TypeId -> RType 'Mono -> Context 
-solve ctx ex ty = let (l, r) = breakMarker ctx (CtxExists ex) in l <> (CtxSolved ex ty : r)
-
-insertAt :: Context -> CtxElem -> [CtxElem] -> Context 
-insertAt ctx ex ty = let (l, r) = breakMarker ctx ex in l <> ty <> r
-
-
-isOrdered :: Context -> TypeId -> TypeId -> Bool 
-isOrdered ctx a b = a `elem` existentials (dropMarker ctx (CtxExists b))
+typeWellFormed :: Ctx -> Type a -> Bool
+typeWellFormed ctx = \case
+  TyAlpha _ txt      | txt `hasTy` ctx -> True
+  TyExists _ txt     | txt `hasExist` ctx -> True
+  TyForall _ txt ty -> typeWellFormed (ctx |> CtxTy txt) ty
+  TyFun _ ty ty'    -> typeWellFormed ctx ty && typeWellFormed ctx ty' 
+  _                 -> False
