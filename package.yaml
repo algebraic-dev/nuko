@@ -15,6 +15,7 @@ dependencies:
   - bytestring
   - containers
   - array
+  - monad-chronicle
 
 default-extensions:
   - GeneralizedNewtypeDeriving
@@ -31,6 +32,8 @@ default-extensions:
   - TypeOperators
   - PolyKinds
   - GADTs
+  - PatternSynonyms
+  - ViewPatterns
 
 library:
   source-dirs: src

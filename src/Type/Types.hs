@@ -15,6 +15,8 @@ data Type :: TypeKind -> * where
   TyForall :: Maybe Bounds -> TypeId -> Type 'Poly -> Type 'Poly
   TyFun    :: Maybe Bounds -> Type a -> Type a -> Type a
 
+deriving instance (Show (Type a))
+
 instance Eq (Type a) where 
   TyAlpha _ a    == TyAlpha _ b      = a == b
   TyExists _ a   == TyExists _ b     = a == b
@@ -22,15 +24,32 @@ instance Eq (Type a) where
   TyFun _ a b    == TyFun _ a' b'    = a == a' && b == b'
   _              == _                = False
 
-substitute :: TypeId -> Type a -> Type a -> Type a
-substitute from to = \case 
-  TyFun b ty ty'   -> TyFun b (substitute from to ty) (substitute from to ty')
-  TyAlpha b txt     | txt == from -> to
+relabel :: Maybe Bounds -> Type a -> Type a 
+relabel bounds = \case 
+  TyAlpha _ txt -> TyAlpha bounds txt
+  TyExists _ txt -> TyExists bounds txt
+  TyForall _ txt ty -> TyForall bounds txt ty
+  TyFun _ ty ty' -> TyFun bounds ty ty'
+
+typeSubst :: TypeId -> Type a -> Type a -> Type a
+typeSubst from to = \case 
+  TyFun b ty ty'   -> TyFun b (typeSubst from to ty) (typeSubst from to ty')
+  TyAlpha b txt     | txt == from -> relabel b to
                     | otherwise   -> TyAlpha b txt
-  TyExists b txt    | txt == from -> to 
+  TyExists b txt    | txt == from -> relabel b to 
                     | otherwise   -> TyExists b txt
   TyForall b txt ty | txt == from -> TyForall b txt ty 
-                    | otherwise   -> TyForall b txt (substitute from to ty)   
+                    | otherwise   -> TyForall b txt (typeSubst from to ty)   
+
+typeRename :: TypeId -> TypeId -> Type a -> Type a
+typeRename from to = \case 
+  TyFun b ty ty'   -> TyFun b (typeRename from to ty) (typeRename from to ty')
+  TyAlpha b txt     | txt == from -> TyAlpha b to
+                    | otherwise   -> TyAlpha b txt
+  TyExists b txt    | txt == from -> TyExists b to 
+                    | otherwise   -> TyExists b txt
+  TyForall b txt ty | txt == from -> TyForall b txt ty 
+                    | otherwise   -> TyForall b txt (typeRename from to ty)   
 
 tyFreeVars :: Type a -> Set.Set Text 
 tyFreeVars = \case 

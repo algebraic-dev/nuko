@@ -35,6 +35,7 @@ library
       Type.Ast
       Type.Checker
       Type.Context
+      Type.State
       Type.Types
       TypeOp
   other-modules:
@@ -56,12 +57,15 @@ library
       TypeOperators
       PolyKinds
       GADTs
+      PatternSynonyms
+      ViewPatterns
   ghc-options: -Wall
   build-depends:
       array
     , base >=4.7 && <5
     , bytestring
     , containers
+    , monad-chronicle
     , mtl
     , pretty-terminal
     , text
@@ -88,6 +92,8 @@ executable Nuko-exe
       TypeOperators
       PolyKinds
       GADTs
+      PatternSynonyms
+      ViewPatterns
   ghc-options: -Wall -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       Nuko
@@ -95,6 +101,7 @@ executable Nuko-exe
     , base >=4.7 && <5
     , bytestring
     , containers
+    , monad-chronicle
     , mtl
     , text
   default-language: Haskell2010
@@ -121,6 +128,8 @@ test-suite Nuko-test
       TypeOperators
       PolyKinds
       GADTs
+      PatternSynonyms
+      ViewPatterns
   ghc-options: -Wall -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       Nuko
@@ -129,6 +138,7 @@ test-suite Nuko-test
     , bytestring
     , containers
     , filepath
+    , monad-chronicle
     , mtl
     , tasty
     , tasty-golden
