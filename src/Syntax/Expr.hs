@@ -1,17 +1,17 @@
+{-| Base module for every Syntax tree in "Trees that grow" format that 
+    will be used in the project. Probably this project will have only 
+    a few types of abstract trees
+
+    - Normal: Only positions are stored inside the tree
+    - Typed: Positions and types together
+    - Lowered: No types or patterns are included here, it's an untyped ast
+    - Optimized: No lambdas or things like that, it will have a few structures
+-}
+
 module Syntax.Expr where
 
 import Data.Text (Text)
-import Syntax.Tree ( Node(..), SimpleTree(..) )
-
-import Data.Void (Void, absurd)
-import Data.Set (Set, union, difference)
-import Data.Function (on)
-
-import qualified Data.Set as Set
-
-import TypeOp ( All )
-
--- Ast definition using TTG Idiom
+import Pretty.Tree ( Node(..), SimpleTree(..) )
 
 data NoExt = NoExt
 
@@ -230,55 +230,3 @@ instance SimpleTree (ImportDecl ζ) where
 instance SimpleTree (Program ζ) where
     toTree (Program ex le ty imp) =
         Node "Program" [toTree ex, toTree le, toTree ty, toTree imp]
-
--- FreeVars
-
-type Exts ζ = All (FreeVars ζ) '[XExt ζ, XPExt ζ, XTcExt ζ, XLExt ζ]
-type FV ζ = (Ord (Name ζ), Exts ζ)
-
-class FreeVars ζ a where
-    freeVars :: a -> Set (Name ζ)
-
-instance Ord (Name ζ) => FreeVars ζ Void where freeVars = absurd
-instance Ord (Name ζ) => FreeVars ζ NoExt where freeVars NoExt = Set.empty
-
-instance (FreeVars ζ a, Ord (Name ζ)) => FreeVars ζ [a] where
-    freeVars = foldl union Set.empty . map freeVars
-
-instance FV ζ => FreeVars ζ (Pattern ζ) where
-    freeVars (PWild _) = Set.empty
-    freeVars (PCons _ _ pats) = freeVars pats
-    freeVars (PId _ name) = Set.singleton name
-    freeVars (PLit _ _) = Set.empty
-    freeVars (PExt ext) = freeVars ext
-
-instance FV ζ => FreeVars ζ (Binder ζ) where
-    freeVars (Typed _ pat _) = freeVars pat
-    freeVars (Raw _ pat) = freeVars pat
-
-instance FV ζ => FreeVars ζ (Sttms ζ) where
-    freeVars (End expr) = freeVars expr
-    freeVars (SExpr expr sttms) = freeVars sttms `union` freeVars expr
-    freeVars (SAssign (Assign _ name val) sttms) =
-        (freeVars sttms `difference` freeVars name) `union` freeVars val
-
-instance FV ζ => FreeVars ζ (Pattern ζ, Expr ζ) where
-    freeVars (pat, expr) = difference (freeVars expr) (freeVars pat)
-
-instance FV ζ => FreeVars ζ (Expr ζ) where
-    freeVars (Lam _ binder expr) = difference (freeVars expr) (freeVars binder)
-    freeVars (App _ a b) = (union `on` freeVars) a b
-    freeVars (Var _ a) = Set.singleton a
-    freeVars (Lit _ _) = Set.empty
-    freeVars (If _ cond if' else') = foldl union (freeVars cond) [freeVars if', freeVars else']
-    freeVars (Block _ sttms) = freeVars sttms
-    freeVars (Match _ cond pats) = freeVars cond `union` foldl union Set.empty (map freeVars pats)
-    freeVars (Binary _ a b c) = freeVars b `union` Set.singleton a  `union` freeVars c
-    freeVars (Ext a) = freeVars a
-
-instance FV ζ => FreeVars ζ (LetDecl ζ) where
-    freeVars (LetDecl name args _ body _) =
-        Set.difference (freeVars body) (Set.union (freeVars args) (Set.singleton name))
-
-astFreeVars :: FreeVars ζ (x ζ) => x ζ -> Set (Name ζ)
-astFreeVars = freeVars

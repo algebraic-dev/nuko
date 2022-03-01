@@ -15,11 +15,16 @@ import qualified Control.Monad.State as State
 import qualified Data.List.NonEmpty  as NonEmpty
 import qualified Data.ByteString     as ByteString 
 
+-- AlexInput is the Data Type used by the Alex lexer generator
+-- to track the position, input and last word/char inside the 
+-- generated lexer.
 data AlexInput = AlexInput 
     { inputPos     :: B.Pos
     , inputLast    :: Word8
     , inputStream  :: ByteString } deriving Show
 
+-- "Modifies" the AlexInput and gets the "current" word8/char.
+-- It's a required function to the Alex generated lexer.
 alexGetByte :: AlexInput -> Maybe (Word8, AlexInput)
 alexGetByte input = update <$> ByteString.uncons (inputStream input)
     where newPos = B.advancePos (inputPos input) . w2c
@@ -28,11 +33,12 @@ alexGetByte input = update <$> ByteString.uncons (inputStream input)
                          , inputStream = rest
                          , inputLast = char })
 
+-- Function required by the Alex to get the previous character.
 alexInputPrevChar :: AlexInput -> Word8
 alexInputPrevChar = inputLast
 
--- Lexer state to store the codes
-
+-- Lexer state to store the input, each code (the place like (<thing>) 
+-- that it is in the lexer) and each "layout" place to work by indentation.
 data LexerState = LexerState 
     { lsInput  :: AlexInput
     , lsCodes  :: NonEmpty Int
@@ -48,7 +54,7 @@ initState bs = LexerState (AlexInput (B.Pos 0 1) 10 bs) (0 :| []) [] ""
 runLexer :: Lexer a -> ByteString -> Either Err.ErrorKind a 
 runLexer lexer bs = fst <$> State.runStateT (getLexer lexer) (initState bs)
 
--- Some primitives to emitting
+-- Emition of start code / tokens.
 
 startCode :: Lexer Int
 startCode = State.gets (NonEmpty.head . lsCodes)
@@ -73,7 +79,7 @@ popCode = State.modify $ \s ->
 replaceCode :: Int -> Lexer ()
 replaceCode code = popCode *> pushCode code
 
--- Primitives for layout parsing
+-- Layout parsing
 
 pushLayout :: Int -> Lexer ()
 pushLayout layout = State.modify (\s -> s { lsLayout = layout : lsLayout s }) 

@@ -272,6 +272,6 @@ getLitChar (WithBounds (TknLChar num) _) = num
 -- Happy primitives
 
 lexer = (scan >>=)
-parseError = throwError . ERR.UnexpectedToken . position
+parseError = throwError . ERR.UnexpectedToken
 
 }

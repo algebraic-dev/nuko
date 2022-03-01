@@ -8,9 +8,9 @@ import System.Environment ( getArgs )
 import Data.Text.Encoding (decodeUtf8)
 import Data.Text (pack, unpack)
 
-import Syntax.Tree ( drawTree )
 import Error.Message ( ErrReport(ErrReport) )
 import Error.PrettyPrint ( ppShow )
+import Pretty.Tree ( drawTree )
 
 import qualified Data.ByteString as SB
 
@@ -18,9 +18,8 @@ main :: IO ()
 main = do
   setLocaleEncoding utf8
   [file] <- getArgs
-
-  bs  <- SB.readFile file
-  case runLexer parseExpr bs of
+  str    <- SB.readFile file
+  case runLexer parseExpr str of
       Right res -> do
         putStrLn $ drawTree res
-      Left err -> putStrLn (unpack $ ppShow $ ErrReport (pack file) (decodeUtf8 bs) err)
+      Left err -> putStrLn (unpack $ ppShow $ ErrReport (pack file) (decodeUtf8 str) err)

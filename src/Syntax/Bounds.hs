@@ -1,4 +1,14 @@
-module Syntax.Bounds where
+{-| This module is useful for tracking source code position inside
+    Data structures like Tokens or the Abstract syntax tree. After the 
+    Type checking and lowering it is unused
+-}
+module Syntax.Bounds (
+  Pos(..),
+  Bounds(..),
+  WithBounds(..),
+  advancePos,
+  empty
+  ) where
 
 import Data.Function (on)
 

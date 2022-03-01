@@ -24,6 +24,7 @@ library
   exposed-modules:
       Error.Message
       Error.PrettyPrint
+      Pretty.Tree
       Syntax.Bounds
       Syntax.Expr
       Syntax.Lexer
@@ -31,13 +32,6 @@ library
       Syntax.Lexer.Tokens
       Syntax.Parser
       Syntax.Parser.Ast
-      Syntax.Tree
-      Type.Ast
-      Type.Checker
-      Type.Context
-      Type.State
-      Type.Types
-      TypeOp
   other-modules:
       Paths_Nuko
   hs-source-dirs:
