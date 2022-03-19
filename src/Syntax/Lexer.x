@@ -2,7 +2,6 @@
 
 module Syntax.Lexer where
 
-
 import Data.Text            (Text, append, index)
 import Data.Text.Encoding   (decodeUtf8)
 import Data.Text.Read       (decimal, double)
@@ -39,16 +38,15 @@ program :-
 <0> $space+    ;
 <0> $newline+  { \_ _ -> pushCode newline *> scan }
 
+<0> "type"     { nonLwToken TknKwType  }
 <0> "let"      { token TknKwLet   }
-<0> "type"     { token TknKwType  }
 <0> "match"    { token TknKwMatch }
 <0> "if"       { token TknKwIf }
 <0> "then"     { token TknKwThen }
 <0> "else"     { token TknKwElse }
 <0> "import"   { token TknKwImport }
-<0> "do"       { layoutKw TknKwDo }
 <0> "as"       { token TknKwAs }
-<0> "external" { token TknKwExternal }
+<0> "external" { nonLwToken TknKwExternal }
 
 <0> "with"     { layoutKw TknKwWith }
 
@@ -63,13 +61,13 @@ program :-
 <0> ")"        { token TknRPar   }
 <0> "{"        { token TknLBrace }
 <0> "}"        { token TknRBrace }
-<0> "="        { token TknEq  }
+<0> "="        { layoutKw TknEq  }
 <0> ":"        { token TknColon  }
 <0> "|"        { token TknPipe   }
-<0> ","        { token TknComma   }
-<0> "."        { token TknDot   }
-<0> "\"        { token TknSlash   }
-<0> "->"       { token TknRArrow   }
+<0> ","        { token TknComma  }
+<0> "."        { token TknDot    }
+<0> "\"        { token TknSlash  }
+<0> "->"       { token TknRArrow  }
 
 <0> $symbol+   { emit TknSymbol  }
 <0> "--"       { \_ _   -> pushCode linecom *> scan }
@@ -117,6 +115,11 @@ resetBuffer = ST.state (\s -> (lsBuffer s, s { lsBuffer = "" }))
 
 emptyLayout _ _ = replaceCode newline *> ghostBounds TknClose
 
+nonLwToken tkn text pos = do 
+    ST.modify (\s -> s { lsAfterNonLW = True })
+    token tkn text pos
+
+
 handleEOF = lastLayout >>= \case 
     Nothing -> popCode *> ghostBounds TknEOF
     Just _  -> popLayout *> ghostBounds TknClose
@@ -142,7 +145,16 @@ startLayout _ _ = do
         else pushLayout col
     ghostBounds TknOpen
 
-layoutKw t text pos = pushCode layout *> token t text pos
+layoutKw t text pos = do
+    isAfterNonLayoutKW <- ST.gets lsAfterNonLW
+    if isAfterNonLayoutKW 
+        then ST.modify (\s -> s { lsAfterNonLW = False })
+        else pushCode layout
+    token t text pos
+
+
+endBlock :: Token -> Text -> Pos -> Lexer (WithBounds Token)
+endBlock tkn t p = popCode *> token tkn t p
 
 scan :: Lexer (WithBounds Token)
 scan = do 

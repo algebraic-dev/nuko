@@ -1,7 +1,7 @@
 {
 module Syntax.Parser where 
 
-import Syntax.Lexer.Support (Lexer)
+import Syntax.Lexer.Support (Lexer, popLayout)
 import Syntax.Lexer.Tokens (Token(..))
 import Syntax.Lexer (scan)
 
@@ -20,7 +20,6 @@ import Debug.Trace
 }
 
 %name parseProgram Program
-%name parseExpr Expr
 
 %tokentype { WithBounds Token }
 %monad { Lexer }
@@ -57,7 +56,6 @@ import Debug.Trace
 
     type     { WithBounds TknKwType _ }
     let      { WithBounds TknKwLet _ }
-    do       { WithBounds TknKwDo _ }
     import   { WithBounds TknKwImport _ }
     as       { WithBounds TknKwAs _ }
     external { WithBounds TknKwExternal _ }
@@ -72,60 +70,72 @@ import Debug.Trace
 %left B
 %left A
 %left symbol
+%right LArr
+
 %%
 
-Lower : lower { Name (position $1, getData $1) }
-Upper : upper { Name (position $1, getData $1) }
-Symbol : symbol { Name (position $1, getData $1) }
+Lower : lower { Name (position $1) (getData $1) }
+Upper : upper { Name (position $1) (getData $1) }
+Symbol : symbol { Name (position $1) (getData $1) }
 
 Lowers : {- empty -} {[]}
        | Lowers Lower { $2 : $1 }
-      
-ConsPat : Upper Patterns { PCons (getPos $1 <> headOr $2 getPos (getPos $1)) 
-                              $1 (reverse $2) }
 
-Patterns :: { [Pattern Normal] }
-          : Patterns PatternAtom { $2 : $1 } 
-          | {- empty -} { [] }
+{- Pattern processing -}      
+
+PatternAtoms :: { [Pattern Normal] }
+          : PatternAtoms PatternAtom { $2 : $1 } 
+          | PatternAtom { [$1] }
 
 PatternAtom :: { Pattern Normal }
-             : '_'     { PWild (position $1) }
-             | Literal { PLit NoExt $1 }
-             | Lower   { PId NoExt $1 }
-             | '(' RawPat ')' { $2 } 
+         : '_'             { PWild (position $1) }
+         | Literal         { PLit NoExt $1 }
+         | Lower           { PId NoExt $1 }
+         | Upper           { PCons (getPos $1) $1 [] }
+         | '(' Pattern ')' { $2 } 
 
-RawPat :: { Pattern Normal }
-        : PatternAtom { $1 }
-        | ConsPat { $1 }
+PatternCons :: { Pattern Normal }
+             : Upper PatternAtoms { PCons (getPos $1 <> headOr $2 getPos (getPos $1)) $1 (reverse $2)}
 
 Pattern :: { Pattern Normal }
-         : PatternAtom     { $1 }
-         | '(' ConsPat ')' { $2 }
+         : PatternCons { $1 }
+         | PatternAtom { $1 }
+
+{- Type processing -}
+
+TypeAtoms :: { [Typer Normal] }
+       : TypeAtoms TypeAtom { $2 : $1 }
+       | TypeAtom { [$1] } 
+
+TypeAtomsZ :: { [Typer Normal] }
+       : TypeAtomsZ TypeAtom { $2 : $1 }
+       | {- empty -} { [] } 
+
+TypeConst :: { Typer Normal } 
+          : Upper TypeAtoms { TCons (headOr $2 ((getPos $1 <>) . getPos) (getPos $1)) $1 (reverse $2) }
 
 TypeAtom :: { Typer Normal }
           : Lower { TPoly NoExt $1 }
           | Upper { TSimple NoExt $1 }
           | '(' Type ')' { $2 }
 
-ConsType : Upper Types { TCons (headOr $2 ((getPos $1 <>) . getPos) (getPos $1)) $1 (reverse $2) } 
-          | TypeAtom { $1 }
+TypeLvl :: { Typer Normal }
+         : TypeAtom { $1 }
+         | TypeConst { $1 }
 
-Types :: { [Typer Normal] }
-       : TypeAtom { [] }
-       | Types TypeAtom { $2 : $1 }
-
-TypesZero :: { [Typer Normal] }
-       : {- empty -} { [] }
-       | TypesZero TypeAtom { $2 : $1 }
+TypeArrow :: { Typer Normal }
+           : TypeLvl '->' TypeArrow { TArrow (getPos $1 <> getPos $3) $1 $3 }
+           | TypeLvl                { $1 }
 
 Type :: { Typer Normal }
-      : Type '->' Type { TArrow (getPos $1 <> getPos $3) $1 $3 }
+      : TypeArrow { $1 }
       | forall Lower '.' Type { TForall (getPos $2 <> getPos $4) $2 $4 }
-      | ConsType { $1 }
+
+{- Binders -}
 
 Binder :: { Binder Normal }
-        : Pattern { Raw NoExt $1 }
-        | '(' RawPat ':' Type ')' { Typed ($2 `mix` $4) $2 $4} 
+        : PatternAtom { Raw NoExt $1 }
+        | '(' Pattern ':' Type ')' { Typed ($2 `mix` $4) $2 $4} 
 
 Binders :: { [Binder Normal] }
          : Binders Binder { $2 : $1 } 
@@ -152,7 +162,7 @@ Exprs :: { [Expr Normal] }
       | Exprs semi Expr { $3 : $1 }
 
 MatchClause :: { (Pattern Normal, Expr Normal) }
-             : RawPat '->' Expr { ($1, $3) } 
+             : Pattern '->' Expr { ($1, $3) } 
 
 MatchClauses :: { [(Pattern Normal, Expr Normal)] }
               : MatchClause { [$1] }
@@ -166,20 +176,22 @@ Sttms :: { Sttms Normal }
        | Expr semi Sttms   { SExpr $1 $3 } 
        | Assign semi Sttms { SAssign $1 $3 }
 
-MaybeSttms :: { Sttms Normal }
-            : {- empty -} {% error "Oh no!" }
-            | Sttms { $1 }
+Close :: { () }
+       : close { () }
+       | error {% popLayout }
 
 Expr :: { Expr Normal }
       : '\\' Binder '->' Expr { Lam ($2 `mix` $4) $2 $4}
-      | do open MaybeSttms close { Block (position $1 <> (getPos . getLastSttm $ $3)) $3 }
-      | match Expr with open MatchClauses close { Match (firstAndLast $5) $2 (reverse $5) }
+      | open Sttms Close { Block (position $1 <> (getPos . getLastSttm $ $2)) $2 }
+      | match Expr with open MatchClauses Close { Match (firstAndLast $5) $2 (reverse $5) }
       | if Expr then Expr else Expr { If (position $1 <> getPos $6) $2 $4 $6 }
       | Call Symbol Expr { Binary ($1 `mix` $3) $2 $1 $3 }
       | Call { $1 }
 
+{- Type declarations -}
+
 CoprodClause :: { (Name Normal, [Typer Normal])  }
-              : '|' Upper TypesZero { ($2, $3) }
+              : '|' Upper TypeAtomsZ { ($2, reverse $3) }
 
 CoprodClauses :: { [(Name Normal, [Typer Normal])] }
                : CoprodClause { [$1] }
@@ -192,7 +204,6 @@ ProdClauses :: { [(Name Normal, Typer Normal)] }
              : ProdClause  { [$1] }
              | ProdClauses ',' ProdClause { $3 : $1 }
 
-
 TypeCons :: { TypeCons Normal }
           : '{' ProdClauses '}' { TcRecord (position $1 <> position $3) (reverse $2) } 
           | CoprodClauses { TcSum (firstAndLast $1) (reverse $1)}
@@ -200,8 +211,8 @@ TypeCons :: { TypeCons Normal }
 
 TypeDecl : type Upper Lowers '=' TypeCons { TypeDecl $2 $3 $5 NoExt }
 
-OptRet : {- empty -} { Nothing }
-       | ':' Type { Just $2 } 
+OptRet : ':' Type { Just $2 } 
+       | {- empty -} { Nothing }
 
 LetDecl : let Lower Binders OptRet '=' Expr { LetDecl $2 $3 $4 $6 NoExt }
 
@@ -213,6 +224,10 @@ ImportsThings : ImportsThings ',' Importable { $3 : $1 }
 
 ModuleName : Upper { [$1] }
            | ModuleName '.' Upper { $3 : $1 }
+
+{- 
+      Program level declarations 
+-}
 
 ImportDecl : import ModuleName '(' ImportsThings ')' { ImportDecl (reverse $2) (Right $ reverse $4)  }
            | import ModuleName as Upper { ImportDecl (reverse $2) (Left $4)  }

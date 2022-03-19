@@ -27,7 +27,7 @@ instance SimpleTree a => SimpleTree [a] where
   toTree = Node "List" . map toTree
 
 instance (SimpleTree a, SimpleTree b) => SimpleTree (a, b) where
-  toTree (a, b) = Node "Tuple" [toTree a, toTree b]
+  toTree (a, b) = Node "L-Tuple" [toTree a, toTree b]
 
 instance SimpleTree Text where
   toTree t = Node (unpack t) []

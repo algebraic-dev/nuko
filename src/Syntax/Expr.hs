@@ -12,10 +12,11 @@ module Syntax.Expr where
 
 import Data.Text (Text)
 import Pretty.Tree ( Node(..), SimpleTree(..) )
+import qualified Data.Text as Text
 
 data NoExt = NoExt
 
-newtype Name ζ = Name (XName ζ)
+data Name ζ = Name (XName ζ) Text
 
 data Binder ζ
     = Typed (XBTyped ζ) (Pattern ζ) (Typer ζ)
@@ -166,7 +167,7 @@ instance SimpleTree (Assign ζ) where
     toTree (Assign _ name val) = Node "Assign" [toTree name, toTree val]
 
 instance SimpleTree (Name ζ) where
-    toTree (Name _) = Node "Name" []
+    toTree (Name _ n) = Node ("Name: " ++ (Text.unpack n)) []
 
 instance SimpleTree (Binder ζ) where
     toTree (Typed _ pat ty) = Node "Typed" [toTree pat, toTree ty]

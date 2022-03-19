@@ -1,13 +1,12 @@
 module Syntax.Parser.Ast where 
 
 import Syntax.Bounds (Bounds, empty)
-import Data.Void      (Void)
-import Data.Text (Text)
+import Data.Void     (Void)
 import Syntax.Expr 
 
 data Normal
 
-type instance XName Normal = (Bounds, Text)
+type instance XName Normal = Bounds
 
 type instance XTSimple Normal = NoExt
 type instance XTPoly Normal = NoExt
@@ -71,10 +70,10 @@ deriving instance Show (LetDecl Normal)
 deriving instance Show (ImportDecl Normal)
 
 instance Eq (Name Normal) where 
-    (Name (_, n)) == (Name (_, m)) = n == m
+    (Name _ n) == (Name _ m) = n == m
 
 instance Ord (Name Normal) where 
-   compare (Name (_, n)) (Name (_, m)) = compare n m
+   compare (Name _ n) (Name _ m) = compare n m
 
 -- Position 
 
@@ -93,7 +92,7 @@ instance HasPosition (Binder Normal) where
     getPos (Typed pos _ _) = pos
 
 instance HasPosition (Name Normal) where 
-    getPos (Name (pos, _)) = pos
+    getPos (Name pos _) = pos
 
 instance HasPosition (Typer Normal) where 
     getPos (TSimple _ name) = getPos name

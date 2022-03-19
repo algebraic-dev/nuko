@@ -40,16 +40,17 @@ alexInputPrevChar = inputLast
 -- Lexer state to store the input, each code (the place like (<thing>) 
 -- that it is in the lexer) and each "layout" place to work by indentation.
 data LexerState = LexerState 
-    { lsInput  :: AlexInput
-    , lsCodes  :: NonEmpty Int
-    , lsLayout :: [Int]
-    , lsBuffer :: Text  }
+    { lsInput      :: AlexInput
+    , lsCodes      :: NonEmpty Int
+    , lsLayout     :: [Int]
+    , lsBuffer     :: Text
+    , lsAfterNonLW :: Bool  }
 
 newtype Lexer a = Lexer { getLexer ::  State.StateT LexerState (Either Err.ErrorKind) a}
     deriving (Functor, Applicative, Monad, MonadState LexerState, MonadError Err.ErrorKind)
 
 initState :: ByteString -> LexerState
-initState bs = LexerState (AlexInput (B.Pos 0 1) 10 bs) (0 :| []) [] ""
+initState bs = LexerState (AlexInput (B.Pos 0 1) 10 bs) (0 :| []) [] "" False
 
 runLexer :: Lexer a -> ByteString -> Either Err.ErrorKind a 
 runLexer lexer bs = fst <$> State.runStateT (getLexer lexer) (initState bs)

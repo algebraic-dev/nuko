@@ -21,7 +21,7 @@ data Token
     | TknComma | TknDot | TknDoubleRArrow
 
     -- Keywords
-    | TknKwType | TknKwLet | TknKwDo | TknKwIf 
+    | TknKwType | TknKwLet | TknKwIf 
     | TknKwThen | TknKwElse | TknKwWith | TknKwMatch 
     | TknKwImport | TknKwAs | TknKwExternal | TknKwIn
     | TknKwForall
