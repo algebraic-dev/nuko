@@ -1,12 +1,3 @@
 type Nat =
     | Z
     | S Nat
-
-let five : Nat = S (S (S (S (S Z))))
-
-let toInt (a: Nat): Int = 
-    match a with 
-        S n -> toInt n + 1
-        Z   -> 0
-
-let main = print (toInt five)

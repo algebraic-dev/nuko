@@ -1,1 +1,2 @@
-\z -> 2
+type Ata = 
+    | B a b 

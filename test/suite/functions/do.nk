@@ -1,4 +1,4 @@
-let main (d : Int) = do
+let main (d : Int) =
     print b
     let a = f
     print d

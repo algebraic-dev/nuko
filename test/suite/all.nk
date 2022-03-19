@@ -20,11 +20,11 @@ let add (a : Int) (b : Int) : Int = a + b + c
 
 let add a b = a + b
 
-let main = do 
+let main = 
     print "a"
     print "b"
     let a = Just 3
     print "c"
     match a with 
-        Just s -> print "a" 
+        Just s  -> print "a" 
         Nothing -> print "b"
