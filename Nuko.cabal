@@ -32,6 +32,10 @@ library
       Syntax.Lexer.Tokens
       Syntax.Parser
       Syntax.Parser.Ast
+      Typer.Context
+      Typer.Infer
+      Typer.Types
+      Typer.Unify
   other-modules:
       Paths_Nuko
   hs-source-dirs:

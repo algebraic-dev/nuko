@@ -157,6 +157,17 @@ Call :: { Expr Normal }
       : Call Atom { App ($1 `mix` $2) $1 $2 }
       | Atom { $1 }
 
+ExprAtom :: { Expr Normal }
+          : Call { $1 }
+          | ExprAtom Symbol Call { Binary ($1 `mix` $3) $2 $1 $3 }
+
+Expr :: { Expr Normal }
+      : '\\' Binder '->' Expr { Lam ($2 `mix` $4) $2 $4}
+      | open Sttms Close { Block (position $1 <> (getPos . getLastSttm $ $2)) $2 }
+      | match Expr with open MatchClauses Close { Match (firstAndLast $5) $2 (reverse $5) }
+      | if Expr then Expr else Expr { If (position $1 <> getPos $6) $2 $4 $6 }
+      | ExprAtom { $1 }
+
 Exprs :: { [Expr Normal] }
       : Expr { [$1] } 
       | Exprs semi Expr { $3 : $1 }
@@ -179,14 +190,6 @@ Sttms :: { Sttms Normal }
 Close :: { () }
        : close { () }
        | error {% popLayout }
-
-Expr :: { Expr Normal }
-      : '\\' Binder '->' Expr { Lam ($2 `mix` $4) $2 $4}
-      | open Sttms Close { Block (position $1 <> (getPos . getLastSttm $ $2)) $2 }
-      | match Expr with open MatchClauses Close { Match (firstAndLast $5) $2 (reverse $5) }
-      | if Expr then Expr else Expr { If (position $1 <> getPos $6) $2 $4 $6 }
-      | Call Symbol Expr { Binary ($1 `mix` $3) $2 $1 $3 }
-      | Call { $1 }
 
 {- Type declarations -}
 
