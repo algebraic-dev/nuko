@@ -26,7 +26,7 @@ data Typer ζ
     = TSimple (XTSimple ζ) (Name ζ)
     | TPoly (XTPoly ζ) (Name ζ)
     | TArrow (XTArrow ζ) (Typer ζ) (Typer ζ)
-    | TCons (XTCons ζ) (Name ζ) [Typer ζ]
+    | TApp (XTApp ζ) (Typer ζ) (Typer ζ)
     | TForall (XTForall ζ) (Name ζ) (Typer ζ)
     | TExt !(XTExt ζ)
 
@@ -120,14 +120,14 @@ type family XTForall ζ
 type family XTSimple ζ
 type family XTPoly ζ
 type family XTArrow ζ
-type family XTCons ζ 
+type family XTApp ζ
 type family XTExt ζ
 
 type family XPWild ζ
 type family XPCons ζ
 type family XPLit ζ
 type family XPId ζ
-type family XPExt ζ 
+type family XPExt ζ
 
 type family XLChar ζ
 type family XLString ζ
@@ -158,6 +158,9 @@ type family XType ζ
 
 -- Pretty printing
 
+getId :: Name e -> Text 
+getId (Name _ k) = k
+
 stmtToList :: Sttms ζ -> [Node]
 stmtToList (End expr) = [toTree expr]
 stmtToList (SExpr assign sttms) = toTree assign : stmtToList sttms
@@ -167,7 +170,7 @@ instance SimpleTree (Assign ζ) where
     toTree (Assign _ name val) = Node "Assign" [toTree name, toTree val]
 
 instance SimpleTree (Name ζ) where
-    toTree (Name _ n) = Node ("Name: " ++ (Text.unpack n)) []
+    toTree (Name _ n) = Node ("Name: " ++ Text.unpack n) []
 
 instance SimpleTree (Binder ζ) where
     toTree (Typed _ pat ty) = Node "Typed" [toTree pat, toTree ty]
@@ -177,7 +180,7 @@ instance SimpleTree (Typer ζ) where
     toTree (TSimple _ name) = Node "TSimple" [toTree name]
     toTree (TPoly _ name) = Node "TPoly" [toTree name]
     toTree (TArrow _ a b) = Node "TArrow" [toTree a, toTree b]
-    toTree (TCons _ name ty) = Node "TCons" [toTree name, toTree ty]
+    toTree (TApp _ ty ty') = Node "TApp" [toTree ty, toTree ty']
     toTree (TForall _ b ty) = Node "TForall" [toTree b, toTree ty]
     toTree (TExt _) = Node "TExt" []
 

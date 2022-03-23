@@ -103,6 +103,10 @@ Pattern :: { Pattern Normal }
 
 {- Type processing -}
 
+TypeAtomsCons :: { [Typer Normal] }
+       : TypeAtoms TypeAtom { $2 : $1 }
+       | TypeAtom { [$1] } 
+
 TypeAtoms :: { [Typer Normal] }
        : TypeAtoms TypeAtom { $2 : $1 }
        | TypeAtom { [$1] } 
@@ -112,7 +116,9 @@ TypeAtomsZ :: { [Typer Normal] }
        | {- empty -} { [] } 
 
 TypeConst :: { Typer Normal } 
-          : Upper TypeAtoms { TCons (headOr $2 ((getPos $1 <>) . getPos) (getPos $1)) $1 (reverse $2) }
+          : Upper TypeAtoms { 
+            let pos = (headOr $2 ((getPos $1 <>) . getPos) (getPos $1)) in 
+            foldl (TApp pos) (TSimple NoExt $1) (reverse $2) }
 
 TypeAtom :: { Typer Normal }
           : Lower { TPoly NoExt $1 }

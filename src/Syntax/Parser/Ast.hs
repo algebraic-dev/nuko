@@ -3,6 +3,7 @@ module Syntax.Parser.Ast where
 import Syntax.Bounds (Bounds, empty)
 import Data.Void     (Void)
 import Syntax.Expr 
+import qualified Data.Text as Text
 
 data Normal
 
@@ -11,7 +12,7 @@ type instance XName Normal = Bounds
 type instance XTSimple Normal = NoExt
 type instance XTPoly Normal = NoExt
 type instance XTArrow Normal = Bounds
-type instance XTCons Normal = Bounds
+type instance XTApp Normal = Bounds
 type instance XTForall Normal = Bounds
 type instance XTExt Normal = Void
 
@@ -55,7 +56,15 @@ type instance XBRaw Normal = NoExt
 -- Deriving
 
 deriving instance Show (Name Normal)
-deriving instance Show (Typer Normal)
+
+instance Show (Typer Normal) where 
+    show = \case
+      TSimple _ (Name _ na) -> Text.unpack na
+      TPoly _ (Name _ na) -> Text.unpack na
+      TArrow _ ty ty' -> "(" ++ show ty ++ " -> " ++ show ty' ++ ")"
+      TApp _ ty ty' -> "(" ++ show ty ++ " " ++ show ty' ++ ")"
+      TForall _ (Name _ na) ty -> "(∀" ++ Text.unpack na ++ "." ++ show ty ++ ")"
+
 deriving instance Show (Pattern Normal)
 deriving instance Show (Literal Normal)
 deriving instance Show (Expr Normal)
@@ -98,7 +107,7 @@ instance HasPosition (Typer Normal) where
     getPos (TSimple _ name) = getPos name
     getPos (TPoly _ name) = getPos name
     getPos (TArrow pos _ _) = pos 
-    getPos (TCons pos _ _) = pos
+    getPos (TApp pos _ _) = pos
     getPos (TForall pos _ _) = pos 
      
 instance HasPosition (Pattern Normal) where

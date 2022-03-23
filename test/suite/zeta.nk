@@ -1,2 +1,1 @@
-type Ata = 
-    | B a b 
+let b (a : Cons a b) = 3
