@@ -1,7 +1,7 @@
 {
 module Syntax.Parser where 
 
-import Syntax.Lexer.Support (Lexer, popLayout)
+import Syntax.Lexer.Support (Lexer, popLayout, ErrKind(..))
 import Syntax.Lexer.Tokens (Token(..))
 import Syntax.Lexer (scan)
 
@@ -19,7 +19,7 @@ import Debug.Trace
 
 }
 
-%name parseProgram Program
+%name parseType Type
 
 %tokentype { WithBounds Token }
 %monad { Lexer }
@@ -116,9 +116,10 @@ TypeAtomsZ :: { [Typer Normal] }
        | {- empty -} { [] } 
 
 TypeConst :: { Typer Normal } 
-          : Upper TypeAtoms { 
-            let pos = (headOr $2 ((getPos $1 <>) . getPos) (getPos $1)) in 
-            foldl (TApp pos) (TSimple NoExt $1) (reverse $2) }
+          : TypeAtoms { 
+            let rev = reverse $1 in
+            let pos = (getPos (head rev) <> getPos (last rev)) in 
+            foldl (TApp pos) (head rev) (tail rev) }
 
 TypeAtom :: { Typer Normal }
           : Lower { TPoly NoExt $1 }
@@ -126,8 +127,7 @@ TypeAtom :: { Typer Normal }
           | '(' Type ')' { $2 }
 
 TypeLvl :: { Typer Normal }
-         : TypeAtom { $1 }
-         | TypeConst { $1 }
+         : TypeConst { $1 }
 
 TypeArrow :: { Typer Normal }
            : TypeLvl '->' TypeArrow { TArrow (getPos $1 <> getPos $3) $1 $3 }
@@ -189,7 +189,7 @@ Assign : let Binder '=' Expr { Assign (position $1 <> getPos $4) $2 $4}
 
 Sttms :: { Sttms Normal }
        : Expr { End $1 }
-       | Assign {% throwError $ ERR.UnexpectedAssign $ assignPos $ $1   }
+       | Assign {% throwError $ UnexpectedAssign $ assignPos $ $1   }
        | Expr semi Sttms   { SExpr $1 $3 } 
        | Assign semi Sttms { SAssign $1 $3 }
 
@@ -296,6 +296,6 @@ getLitChar (WithBounds (TknLChar num) _) = num
 -- Happy primitives
 
 lexer = (scan >>=)
-parseError = throwError . ERR.UnexpectedToken
+parseError = throwError . UnexpectedToken
 
 }

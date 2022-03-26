@@ -1,49 +1,56 @@
 module Error.Message where
 
 import Data.Text (Text)
-import Syntax.Bounds (Bounds, Pos, WithBounds)
-import qualified Syntax.Bounds as B
-import Syntax.Lexer.Tokens (Token (TknEOF))
-
-data ErrorKind
-  = UnfinishedString Pos
-  | UnrecognizableChar Pos
-  | UnexpectedToken (WithBounds Token)
-  | UnexpectedAssign Bounds
-  deriving (Show)
+import Syntax.Bounds
 
 -- Data Components
 
+data Color
+  = Red
+  | Blue
+  | Green
+
+data Style
+  = Normal Text
+  | Colored Color Text
+
 data ErrComponent
-  = Code Bounds (Maybe Text)
+  = Code Color Bounds (Maybe Text)
   | Desc Text
 
 data ErrMessage = ErrMessage
   { errBounds :: Maybe Pos,
-    errTitle :: Text,
+    errTitle :: [Style],
     errComponents :: [ErrComponent]
   }
 
-data ErrReport = ErrReport
+data ErrReport a = ErrorReport a => ErrReport
   { reportFile :: Text,
     reportContent :: Text,
-    reportKind :: ErrorKind
+    reportKind :: a
   }
 
--- Instatiation
+class ErrorReport a where
+  toErrMessage :: a -> ErrMessage
+
+normal :: Text -> [Style]
+normal t = [Normal t]
 
 onlyCol :: Pos -> Bounds
-onlyCol pos@(B.Pos line col) = B.Bounds pos (B.Pos line (col + 1))
+onlyCol pos@(Pos line' col) = Bounds pos (Pos line' (col + 1))
 
-columnError :: Pos -> Text -> ErrMessage
-columnError pos text = ErrMessage (Just pos) text [Code (onlyCol pos) (Just "Here!!")]
+columnError :: Pos -> [Style] -> ErrMessage
+columnError pos text = ErrMessage (Just pos) text [Code Red (onlyCol pos) (Just "Here!!")]
 
-boundsError :: Bounds -> Text -> ErrMessage
-boundsError pos text = ErrMessage (Just $ B.start pos) text [Code pos (Just "Here!")]
+boundsError :: Bounds -> [Style] -> ErrMessage
+boundsError pos text = ErrMessage (Just $ start pos) text [Code Red pos (Just "Here!")]
 
-messageFromErr :: ErrorKind -> ErrMessage
-messageFromErr (UnexpectedToken (B.WithBounds TknEOF pos)) = boundsError pos "Unexpected end of file! "
-messageFromErr (UnexpectedToken (B.WithBounds _ pos)) = boundsError pos "Cannot uwndustwand this tUwUken"
-messageFromErr (UnfinishedString pos) = columnError pos "Probably you forgot to close a quote while trying to create a string!"
-messageFromErr (UnrecognizableChar pos) = columnError pos "Cannot understand this character bro UwU"
-messageFromErr (UnexpectedAssign pos) = boundsError pos "You cant use let expressions in the end of a block"
+orZero :: Maybe Bounds -> Bounds
+orZero (Just b) = b
+orZero Nothing = Bounds (Pos 0 0) (Pos 0 0)
+
+coloredCode :: Color -> Bounds -> ErrComponent
+coloredCode color b = Code color b Nothing
+
+code :: Color -> Text -> Bounds -> ErrComponent
+code color t b = Code color b (Just t)

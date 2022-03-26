@@ -12,7 +12,6 @@ import Syntax.Lexer.Tokens
 import qualified Control.Monad.State as ST
 import qualified Control.Monad.Except as ER
 import qualified Data.ByteString as BS
-import qualified Error.Message as ERR
 
 }
 
@@ -45,6 +44,7 @@ program :-
 <0> "then"     { token TknKwThen }
 <0> "else"     { token TknKwElse }
 <0> "import"   { token TknKwImport }
+<0> "forall"   { token TknKwForall }
 <0> "as"       { token TknKwAs }
 <0> "external" { nonLwToken TknKwExternal }
 
@@ -162,11 +162,11 @@ scan = do
     code <- startCode 
     case alexScan input code of 
         AlexEOF -> handleEOF
-        AlexError inp -> ER.throwError $ ERR.UnrecognizableChar (inputPos inp)
+        AlexError inp -> ER.throwError $ UnrecognizableChar (inputPos inp)
         AlexSkip input' _ -> ST.modify (\s -> s { lsInput = input' }) >> scan 
         AlexToken input' tokl action -> do  
             pos <- ST.gets (inputPos . lsInput)
             ST.modify (\s -> s { lsInput = input' })
-            res      <- action (decodeUtf8 $ BS.take tokl (inputStream input)) pos
+            res <- action (decodeUtf8 $ BS.take tokl (inputStream input)) pos
             pure res
 }
