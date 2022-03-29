@@ -6,7 +6,7 @@ import Data.Text (Text)
 import qualified Data.Text   as Text
 import GHC.IO (unsafePerformIO)
 import Syntax.Bounds (Bounds)
-import Control.Applicative
+import Control.Applicative ( Alternative((<|>)) )
 
 -- Lol this is helpful...
 
@@ -26,7 +26,6 @@ toSubscript num
         let (q, r) = x `quotRem` 10 in
         (subs !! r) : go q
 
-
 data EvalStatus = Pure | Eval
 
 type Lvl = Int
@@ -39,9 +38,7 @@ data Hole a
 data Kind :: EvalStatus -> * where
   Star  :: Kind s
   KFun  :: Kind s -> Kind s -> Kind s
-  -- This one is used inside the context
   KGen  :: Lvl    -> Kind 'Pure
-  -- These two things are only used inside the type checker.
   KHole :: IORef (Hole (Kind 'Eval)) -> Kind 'Eval
   KLoc  :: Bounds -> Kind 'Eval -> Kind 'Eval
 
@@ -49,11 +46,10 @@ data KindScheme = KindScheme { kindCount :: Lvl, kindTy :: Kind 'Pure }
 
 data Type :: EvalStatus -> * where
   TyNamed   :: Text   -> Type s
-  TyBounded :: Lvl    -> Type s
   TyFun     :: Type s -> Type s -> Type s
   TyApp     :: Kind s -> Type s -> Type s -> Type s
   TyForall  :: Text   -> Type s -> Type s
-
+  TyBounded :: Lvl    -> Type s
   TyHole    :: IORef (Hole (Type 'Eval)) -> Type 'Eval
   TyLoc     :: Bounds -> Type 'Eval -> Type 'Eval
 
@@ -69,7 +65,6 @@ instance Eq (Kind s) where
 instance Eq (Type a) where 
   f == s = case (f, s) of
     (TyNamed a, TyNamed b) -> a == b 
-    (TyBounded a, TyBounded b) -> a == b 
     (TyFun a b, TyFun a' b') -> a == a' && b == b'
     (TyApp k a b, TyApp k' a' b') ->  a == a' && b == b' && k == k'
     (TyForall t a, TyForall t' a') -> t == t' && a == a'
@@ -79,14 +74,14 @@ instance Eq (Type a) where
 
 instance Show (Type a) where
   show = \case
+    TyBounded s -> "b" ++ toSubscript s
     TyLoc _ a -> show a
     TyNamed s -> Text.unpack s
-    TyBounded s -> show s
     TyFun t@TyForall {} t'  -> concat [ "(", show t, ") -> ", show t' ]
     TyFun ty@TyFun {} ty'   -> concat [ "(", show ty, ") -> ", show ty' ]
     TyFun (TyHole ty) ty' ->
      case unsafePerformIO (readIORef ty) of
-       Empty lvl -> concat [show lvl, " -> ", show ty']
+       Empty lvl -> concat ["h" ++ toSubscript lvl, " -> ", show ty']
        Filled ty'' -> show (TyFun ty'' ty')
     TyFun ty ty'            -> concat [ show ty, " -> ", show ty' ]
     TyApp _ ty ty'          -> concat [ show ty, " ", show ty' ]
@@ -125,8 +120,8 @@ getPosKind = \case
 
 getPos :: Type a -> Maybe Bounds
 getPos = \case
-  TyNamed _ -> Nothing
   TyBounded _ -> Nothing 
+  TyNamed _ -> Nothing
   TyFun ty ty' -> getPos ty <|> getPos ty'
   TyApp _ ty ty' -> getPos ty <|> getPos ty'
   TyForall _ ty -> getPos ty

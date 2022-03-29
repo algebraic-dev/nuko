@@ -7,7 +7,6 @@
     - Lowered: No types or patterns are included here, it's an untyped ast
     - Optimized: No lambdas or things like that, it will have a few structures
 -}
-
 module Syntax.Expr where
 
 import Data.Text (Text)
@@ -62,6 +61,7 @@ data Expr ζ
     | If (XIf ζ) (Expr ζ) (Expr ζ) (Expr ζ)
     | Match (XMatch ζ) (Expr ζ) [(Pattern ζ, Expr ζ)]
     | Binary (XBinary ζ) (Name ζ) (Expr ζ) (Expr ζ)
+    | Ann (XAnn ζ) (Expr ζ) (Typer ζ)
     | Ext !(XExt ζ)
 
 data TypeCons ζ
@@ -143,6 +143,7 @@ type family XLit ζ
 type family XAssign ζ
 type family XIf ζ
 type family XMatch ζ
+type family XAnn ζ
 type family XBlock ζ
 type family XExt ζ
 
@@ -207,6 +208,7 @@ instance SimpleTree (Expr ζ) where
     toTree (Block _ sttms) = Node "block" $ stmtToList sttms
     toTree (Match _ match expr) = Node "Expr" [toTree match, toTree expr]
     toTree (Binary _ name e e2) = Node "Binary" [toTree name, toTree e, toTree e2]
+    toTree (Ann _ a b) = Node "Abb" [toTree a, toTree b]
     toTree (Ext _) = Node "Ext" []
 
 instance SimpleTree (TypeCons ζ) where

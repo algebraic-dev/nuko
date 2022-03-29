@@ -19,7 +19,7 @@ import Debug.Trace
 
 }
 
-%name parseType Type
+%name parseExpr Expr
 
 %tokentype { WithBounds Token }
 %monad { Lexer }
@@ -135,7 +135,7 @@ TypeArrow :: { Typer Normal }
 
 Type :: { Typer Normal }
       : TypeArrow { $1 }
-      | forall Lower '.' Type { TForall (getPos $2 <> getPos $4) $2 $4 }
+      | forall Lower '.' Type { TForall (position $1 <> getPos $4) $2 $4 }
 
 {- Binders -}
 
@@ -167,12 +167,19 @@ ExprAtom :: { Expr Normal }
           : Call { $1 }
           | ExprAtom Symbol Call { Binary ($1 `mix` $3) $2 $1 $3 }
 
-Expr :: { Expr Normal }
-      : '\\' Binder '->' Expr { Lam ($2 `mix` $4) $2 $4}
+NanoExpr :: { Expr Normal }
+      : '\\' Binder '->' NanoExpr { Lam ($2 `mix` $4) $2 $4}
       | open Sttms Close { Block (position $1 <> (getPos . getLastSttm $ $2)) $2 }
-      | match Expr with open MatchClauses Close { Match (firstAndLast $5) $2 (reverse $5) }
-      | if Expr then Expr else Expr { If (position $1 <> getPos $6) $2 $4 $6 }
+      | match NanoExpr with open MatchClauses Close { Match (firstAndLast $5) $2 (reverse $5) }
+      | if NanoExpr then NanoExpr else NanoExpr { If (position $1 <> getPos $6) $2 $4 $6 }
       | ExprAtom { $1 }
+
+Expr :: { Expr Normal }
+      : NanoExpr OptRet { 
+            case $2 of 
+                  Just r -> Ann (getPos $1 <> getPos r) $1 r
+                  Nothing -> $1
+       } 
 
 Exprs :: { [Expr Normal] }
       : Expr { [$1] } 

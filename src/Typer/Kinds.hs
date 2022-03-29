@@ -176,5 +176,5 @@ infer ctx t = do
       binderHole <- newHole ctx
       let newCtx = upKindLvl $ addToEval ctx (Expr.getId na) (KLoc pos binderHole)
       (t', k)    <- infer newCtx ty
-      pure (TyLoc pos $ TyForall (Expr.getId na) t', KLoc pos $ KFun binderHole k)
+      pure (TyLoc pos $ TyForall (Expr.getId na) t', KLoc pos k)
 

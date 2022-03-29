@@ -31,6 +31,7 @@ type instance XLExt Normal = Void
 type instance XLam Normal = Bounds
 type instance XApp Normal = Bounds
 type instance XVar Normal = NoExt
+type instance XAnn Normal = Bounds
 type instance XLit Normal = NoExt
 type instance XMatch Normal = Bounds
 type instance XAssign Normal =  Bounds
