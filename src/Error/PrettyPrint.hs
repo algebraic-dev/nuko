@@ -56,19 +56,19 @@ ppNote _ _ _ Nothing = ""
 -- I'll probably have to rewrite this lol. it's ugly as fuck
 ppLines :: Maybe Text -> SCP.Color -> Text -> Range -> Text
 ppLines note clr source (B.Range start end)
-  | B.line start == B.line end =
-      let line = T.lines source !! B.line start
+  | start.line == end.line =
+      let line = T.lines source !! start.line
        in T.concat
-            [ ppLine' (B.line start) (B.column start) (B.column end) line,
-              ppNote clr (B.column start) (B.column end - B.column start) note
+            [ ppLine' (start.line) start.column end.column line,
+              ppNote clr start.column (end.column - start.column) note
             ]
   | otherwise =
       let lines' = T.lines source
-          line = lines' !! B.line start
-          line' = lines' !! B.line end
-          fstLine = ppLine' (B.line start) (B.column start) (T.length line) line
-          sndLine = ppLine' (B.line end) 0 (B.column end) line'
-       in T.unlines [fstLine, ppNote clr (B.column start) (T.length line - B.column start) note, sndLine]
+          line   = lines' !! start.line
+          line'  = lines' !! end.line
+          fstLine = ppLine' (start.line) start.column (T.length line) line
+          sndLine = ppLine' (end.line) 0 end.column line'
+       in T.unlines [fstLine, ppNote clr start.column (T.length line - start.column) note, sndLine]
   where
     ppLine' line st en = ppLine line . colorizeLine clr st en
 

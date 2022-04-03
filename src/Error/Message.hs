@@ -1,3 +1,6 @@
+{- | Here we define a lot of cool stuctures to print errors
+     in a beautiful way
+-}
 module Error.Message
   ( Color (..),
     Style (..),

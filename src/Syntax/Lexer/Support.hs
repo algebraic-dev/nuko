@@ -1,4 +1,22 @@
-module Syntax.Lexer.Support where
+module Syntax.Lexer.Support (
+  alexGetByte,
+  alexInputPrevChar,
+  LexerState(..),
+  initState,
+  runLexer,
+  startCode,
+  emit,
+  token,
+  pushCode,
+  popCode,
+  replaceCode,
+  pushLayout,
+  popLayout,
+  lastLayout,
+  Lexer(..),
+  AlexInput(..),
+  ErrKind(..)
+) where
 
 import Control.Monad.Except (MonadError)
 import Control.Monad.State (MonadState)
@@ -106,6 +124,7 @@ replaceCode :: Int -> Lexer ()
 replaceCode code = popCode *> pushCode code
 
 -- Layout parsing
+
 
 pushLayout :: Int -> Lexer ()
 pushLayout layout = State.modify (\s -> s {lsLayout = layout : lsLayout s})

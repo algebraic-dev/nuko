@@ -22,7 +22,7 @@ data Point = Point
 data Range = Range
   { start :: !Point,
     end :: !Point
-  }
+  } deriving Show
 
 data Ranged a = Ranged
   { info :: a,
@@ -40,9 +40,6 @@ instance Monoid Range where
   mempty = Range (Point 0 0) (Point 0 0)
 
 instance Eq a => Eq (Ranged a) where (==) = (==) `on` info
-
-instance Show Range where
-  show _ = ""
 
 instance Show a => Show (Ranged a) where
   show a = show $ info a

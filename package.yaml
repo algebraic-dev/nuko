@@ -10,11 +10,8 @@ description: <https://github.com/githubuser/Nuko#readme>
 
 dependencies:
   - base >= 4.7 && < 5
-  - mtl
   - text
   - bytestring
-  - containers
-  - array
 
 default-extensions:
   - GeneralizedNewtypeDeriving
@@ -50,9 +47,11 @@ library:
   ghc-options:
     - -Wall
   dependencies:
-    - pretty-terminal
-
-
+  - mtl
+  - containers
+  - array
+  - pretty-terminal
+  
 executables:
   Nuko-exe:
     main: Main.hs

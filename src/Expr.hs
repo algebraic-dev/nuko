@@ -70,7 +70,6 @@ import Data.Text (Text)
 import qualified Data.Text as Text
 import Pretty.Tree (Node (..), SimpleTree (..))
 
-
 data NoExt = NoExt
 
 data Name x = Name (XName x) Text
