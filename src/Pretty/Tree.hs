@@ -1,4 +1,4 @@
-module Pretty.Tree where
+module Pretty.Tree (drawTree, Node(..), SimpleTree(..)) where
 
 import Data.Text (Text, unpack)
 

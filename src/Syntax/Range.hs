@@ -2,36 +2,39 @@
     Data structures like Tokens or the Abstract syntax tree. After the 
     Type checking and lowering it is unused
 -}
-module Syntax.Bounds (
+module Syntax.Range (
   Pos(..),
-  Bounds(..),
-  WithBounds(..),
+  Range(..),
+  Ranged(..),
   advancePos,
-  empty
+  empty,
+  HasPosition(..)
   ) where
 
 import Data.Function (on)
 
 data Pos = Pos {line :: !Int, column :: !Int} deriving Show
-data Bounds = Bounds {start :: !Pos, end :: !Pos}
-data WithBounds a = WithBounds {info :: a, position :: !Bounds}
+data Range = Range {start :: !Pos, end :: !Pos}
+data Ranged a = Ranged {info :: a, position :: !Range}
 
-instance Semigroup Bounds where
-  (Bounds s _) <> (Bounds _ e) = Bounds s e
+instance Semigroup Range where
+  (Range s _) <> (Range _ e) = Range s e
 
-instance Eq a => Eq (WithBounds a) where
+instance Eq a => Eq (Ranged a) where
   (==) = (==) `on` info
 
-instance Show Bounds where 
+instance Show Range where 
   show _ = ""
 
-
-instance Show a => Show (WithBounds a) where 
+instance Show a => Show (Ranged a) where 
   show a = show $ info a
 
 advancePos :: Pos -> Char -> Pos
 advancePos pos '\n' = Pos {line = line pos + 1, column = 1}
 advancePos pos _ = pos {column = column pos + 1}
 
-empty :: Bounds
-empty = Bounds (Pos 0 0) (Pos 0 0)
+empty :: Range
+empty = Range (Pos 0 0) (Pos 0 0)
+
+class HasPosition a where 
+    getPos :: a -> Range

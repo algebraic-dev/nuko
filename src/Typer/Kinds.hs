@@ -1,48 +1,61 @@
-{-# OPTIONS_GHC -Wno-unused-matches #-}
-module Typer.Kinds where
+module Typer.Kinds (
+  newHole,
+  HoleRef,
+  instantiate,
+  generalize,
+  findType,
+  findKind,
+  findKindEval,
+  unifyHoles,
+  unifyHole,
+  unify,
+  check,
+  infer,
+) where
 
-import Data.Text   (Text)
-import Data.IntMap (IntMap)
-import Data.IORef  (IORef, readIORef, newIORef, writeIORef)
+import Data.Text         (Text)
+import Data.IntMap       (IntMap)
+import Data.IORef        (IORef, readIORef, newIORef, writeIORef)
 import Control.Exception (throwIO)
-import GHC.IO (catch)
-
 import Syntax.Parser.Ast (Normal)
-import Syntax.Bounds     (Bounds)
-
-import Typer.Types
-import Typer.Context
-import Typer.Errors
+import Syntax.Range      (Range)
+import Typer.Types       (KindScheme(..), Hole(..), Kind(..), Lvl, EvalStatus(..), TType(..), Loc (Ghost, Loc))
+import Typer.Context     (addToEval, upKindLvl, Ctx(..))
+import Typer.Errors      (TypeError(..))
+import Typer.Tracer
+import Control.Monad.IO.Class (liftIO)
 
 import qualified Data.Map    as Map
 import qualified Data.IntMap as IMap
 import qualified Syntax.Expr as Expr
+import qualified Syntax.Range as Ranged
+import qualified Syntax.Parser.Ast as Ast
 
 type HoleRef = IORef (Hole (Kind 'Eval))
 
-newHole :: Ctx -> IO (Kind 'Eval)
-newHole ctx = do
-  ref <- newIORef (Empty (ctxKindLvl ctx))
-  pure (KHole ref)
+newHole :: MonadTyper m => Loc -> Ctx -> m (Kind 'Eval)
+newHole loc ctx = do
+  ref <- liftIO $ newIORef (Empty (ctxKindLvl ctx))
+  pure (KHole loc ref)
 
 -- | Tries to transform a kind scheme to a normal eval kind 
-instantiate :: Ctx -> KindScheme -> IO (Kind 'Eval)
+instantiate :: MonadTyper m => Ctx -> KindScheme -> m (Kind 'Eval)
 instantiate ctx (KindScheme _ ty) = do
       fst <$> go IMap.empty ty
     where
-      go :: IntMap (Kind 'Eval) -> Kind 'Pure -> IO (Kind 'Eval, IntMap (Kind 'Eval))
+      go :: MonadTyper m => IntMap (Kind 'Eval) -> Kind 'Pure -> m (Kind 'Eval, IntMap (Kind 'Eval))
       go kindVarMap = \case
-        Star -> do
-          pure (Star, kindVarMap)
-        KFun ki ki' -> do
+        Star loc -> do
+          pure (Star loc, kindVarMap)
+        KFun loc ki ki' -> do
           (res, map')   <- go kindVarMap ki
           (res', map'') <- go map' ki'
-          pure (KFun res res', map'')
-        KGen s -> do
+          pure (KFun loc res res', map'')
+        KGen loc s -> do
           case IMap.lookup s kindVarMap of
             Just hole -> pure (hole, kindVarMap)
             Nothing   -> do
-              kind <- newHole ctx
+              kind <- newHole loc ctx
               pure (kind, IMap.insert s kind kindVarMap)
 
 -- | Transforms an impuer kind eval with holes into a kind scheme
@@ -53,128 +66,119 @@ generalize kindEval = do
   where
     go :: [(HoleRef, Int)] -> Int -> Kind 'Eval -> IO (Kind 'Pure, Int, [(HoleRef, Int)])
     go map' count = \case
-      Star -> pure (Star, count, map')
-      KFun ki ki' -> do
+      Star loc -> pure (Star loc, count, map')
+      KFun loc ki ki' -> do
         (kindRes, nCount, nMap)    <- go map' count ki
         (kindRes', nCount', nMap') <- go nMap nCount ki'
-        pure (KFun kindRes kindRes', nCount', nMap')
-      KHole hole -> do
+        pure (KFun loc kindRes kindRes', nCount', nMap')
+      KHole loc hole -> do
         holeRes <- readIORef hole
         case holeRes of
           Empty _ ->
             case lookup hole map' of
-              Nothing -> pure (KGen count, count + 1, (hole,count) : map')
-              Just n -> pure (KGen n, count, map')
+              Nothing -> pure (KGen loc count, count + 1, (hole,count) : map')
+              Just n -> pure (KGen loc n, count, map')
           Filled ki -> go map' count ki
-      KLoc _ ki -> go map' count ki
 
-findType :: Ctx -> Bounds -> Text -> IO (Type 'Eval)
+findType :: MonadTyper m => Ctx -> Range -> Text -> m (TType 'Eval)
 findType Ctx { ctxVars = vars } pos key = case Map.lookup key vars of
-  Nothing -> throwIO (CantFindVar pos key)
+  Nothing -> liftIO $ throwIO (CantFindVar pos key)
   Just ki -> pure ki
 
-findKind :: Ctx -> Bounds -> Text -> IO (Kind 'Eval)
+findKind :: MonadTyper m => Ctx -> Range -> Text -> m (Kind 'Eval)
 findKind ctx@Ctx { ctxTypes = types } pos key = case Map.lookup key types of
-  Nothing -> throwIO (CantFindKind pos key)
+  Nothing -> liftIO $ throwIO (CantFindKind pos key)
   Just ki -> instantiate ctx ki
 
-findKindEval :: Ctx -> Bounds -> Text -> IO (Kind 'Eval)
+findKindEval :: MonadTyper m => Ctx -> Range -> Text -> m (Kind 'Eval)
 findKindEval Ctx { ctxHoles = holes } pos key = case Map.lookup key holes of
-  Nothing -> throwIO (CantFindKind pos key)
+  Nothing -> liftIO $ throwIO (CantFindKind pos key)
   Just ki -> pure ki
 
-unifyHoles :: HoleRef -> HoleRef -> IO ()
-unifyHoles h h' = do
-  valueH  <- readIORef h
-  valueH' <- readIORef h'
+unifyHoles :: MonadTyper m => Loc -> Loc -> HoleRef -> HoleRef -> m ()
+unifyHoles l l' h h' = do
+  valueH  <- liftIO $ readIORef h
+  valueH' <- liftIO $ readIORef h'
   case (valueH, valueH') of
-    (Filled a, _) -> unifyHole True h' a
-    (_, Filled a) -> unifyHole False h a
+    (Filled a, _) -> unifyHole l' True h' a
+    (_, Filled a) -> unifyHole l False h a
     (Empty lvlH, Empty lvlH') ->
       if lvlH > lvlH'
-        then writeIORef h (Filled (KHole h'))
-        else writeIORef h' (Filled (KHole h))
+        then liftIO $ writeIORef h (Filled (KHole l' h'))
+        else liftIO $ writeIORef h' (Filled (KHole l h))
 
-unifyHole :: Bool -> HoleRef -> Kind 'Eval -> IO ()
-unifyHole inverted hole kind = do
-    holeInt <- readIORef hole
+unifyHole :: MonadTyper m => Loc -> Bool -> HoleRef -> Kind 'Eval -> m ()
+unifyHole loc inverted hole kind = do
+    holeInt <- liftIO $ readIORef hole
     case holeInt of
       Filled t -> unify t kind
       Empty  lvl -> do
-        catch (occoursCheck lvl kind) $ \case
-          OccoursCheckKind _ _ -> throwIO $
-            if inverted
-              then OccoursCheckKind kind (KHole hole)
-              else OccoursCheckKind (KHole hole) kind
-          other            -> throwIO other
-        writeIORef hole (Filled kind)
+        occoursCheck lvl kind
+        liftIO $ writeIORef hole (Filled kind)
   where
-    occoursCheck :: Lvl -> Kind 'Eval -> IO ()
+    occoursCheck :: MonadTyper m => Lvl -> Kind 'Eval -> m ()
     occoursCheck lvl = \case
-      KLoc _ s -> occoursCheck lvl s
-      Star -> pure ()
-      KFun ki ki' -> occoursCheck lvl ki >> occoursCheck lvl ki'
-      KHole hole' -> do
+      Star _ -> pure ()
+      KFun _ ki ki' -> occoursCheck lvl ki >> occoursCheck lvl ki'
+      KHole p hole' -> do
         if hole == hole'
-          then throwIO $ if inverted
-                  then OccoursCheckKind (KHole hole) (KHole hole')
-                  else OccoursCheckKind (KHole hole') (KHole hole)
+          then liftIO $ throwIO $ if inverted
+                  then OccoursCheckKind (KHole loc hole) (KHole p hole')
+                  else OccoursCheckKind (KHole p hole') (KHole loc hole)
           else pure ()
-        resHole' <- readIORef hole'
+        resHole' <- liftIO $ readIORef hole'
         case resHole' of
           Empty lvlHole' ->
             if lvlHole' > lvl
-              then writeIORef hole' (Empty lvl)
+              then liftIO $ writeIORef hole' (Empty lvl)
               else pure ()
           Filled ki -> occoursCheck lvl ki
 
-unify :: Kind 'Eval -> Kind 'Eval -> IO ()
-unify t t' = do
+unify :: MonadTyper m => Kind 'Eval -> Kind 'Eval -> m ()
+unify t t' = scope (UnifyKind t t') $ do
   case (t, t') of
-    (Star, Star)                  -> pure ()
-    (KHole h, KHole h') | h == h' -> pure ()
-    (KFun a b, KFun a' b') -> unify a a' >> unify b b'
-    (KHole h, KHole h')    -> unifyHoles h h'
-    (b', KHole h)          -> unifyHole True h b'
-    (KHole h, b')          -> unifyHole False h b'
-    (KLoc _ a, KLoc _ b)   -> unify a b
-    (KLoc _ a, b)          -> unify a b
-    (a, KLoc _ b)          -> unify a b
-    _                      -> throwIO (CantUnifyKind t t')
+    (Star _, Star _)                  -> pure ()
+    (KHole _ h, KHole _ h') | h == h' -> pure ()
+    (KFun _ a b, KFun _ a' b') -> unify a a' >> unify b b'
+    (KHole l h, KHole l' h')    -> unifyHoles l l' h h'
+    (b', KHole l h)          -> unifyHole l True h b'
+    (KHole l h, b')          -> unifyHole l False h b'
+    _                      -> do
+      fstSub <- lastUnifyStep
+      most <- getInnermostType
+      liftIO $ throwIO
+             $ maybe (CantUnifyKind most t t')
+                     (uncurry $ CantUnifyKind most)
+                     fstSub
 
-check :: Ctx -> Expr.Typer Normal -> Kind 'Eval -> IO (Type 'Eval)
-check ctx ty kind = do
+check :: MonadTyper m => Ctx -> Expr.Typer Normal -> Kind 'Eval -> m (TType 'Eval)
+check ctx ty kind = scope (CheckKind ty kind) $ do
     (ty', kind') <- infer ctx ty
-    catch (unify kind kind') $ \case
-      CantUnifyKind fn@KFun {} _ -> throwIO $ NotATypeConstructor kind'
-      CantUnifyKind _ fn@KFun {} -> throwIO $ NotEnoughArgs kind'
-      CantUnifyKind _ _          -> throwIO $ CantUnifyKind kind kind'
-      OccoursCheckKind _ _ -> throwIO $ OccoursCheckKind kind kind'
-      other -> throwIO other
+    unify kind kind'
     pure ty'
 
-infer :: Ctx -> Expr.Typer Normal -> IO (Type 'Eval, Kind 'Eval)
-infer ctx t = do
+infer :: MonadTyper m => Ctx -> Expr.Typer Normal -> m (TType 'Eval, Kind 'Eval)
+infer ctx t = scope (InferKind t) $ do
   case t of
     Expr.TSimple _ (Expr.Name pos id') -> do
       kind <- findKind ctx pos id'
-      pure (TyLoc pos $ TyNamed id', KLoc pos kind)
+      pure (TyNamed id', kind)
     Expr.TPoly _ (Expr.Name pos id') -> do -- To bounded vars
       kind <- findKindEval ctx pos id'
-      pure (TyNamed id', KLoc pos kind)
+      pure (TyNamed id', kind)
     Expr.TArrow pos ty ty' -> do
-      tyFrom <- check ctx ty Star
-      tyTo <- check ctx ty' Star
-      pure (TyLoc pos $ TyFun tyFrom tyTo, KLoc pos Star)
+      tyFrom <- check ctx ty (Star $ Loc $ Aat.getPos ty)
+      tyTo <- check ctx ty' (Star $ Loc $ Aat.getPos ty')
+      pure (TyFun tyFrom tyTo, Star $ Loc pos)
     Expr.TApp pos fTy argTy'   -> do
-      holeArg <- newHole ctx
-      holeRet <- newHole ctx
-      tyArg <- check ctx fTy (KFun holeArg holeRet)
+      holeArg <- newHole (Loc $ Ast.getPos fTy) ctx
+      holeRet <- newHole (Loc $ Ast.getPos argTy') ctx
+      tyArg <- check ctx fTy (KFun (Loc pos) holeArg holeRet)
       tyRet <- check ctx argTy' holeArg
-      pure (TyLoc pos $ TyApp holeRet tyArg tyRet, KLoc pos holeRet)
+      pure (TyApp holeRet tyArg tyRet, holeRet)
     Expr.TForall pos na ty -> do
-      binderHole <- newHole ctx
-      let newCtx = upKindLvl $ addToEval ctx (Expr.getId na) (KLoc pos binderHole)
+      binderHole <- newHole (Loc $ Ast.getPos na) ctx
+      let newCtx = upKindLvl $ addToEval ctx pos (Expr.getId na) binderHole
       (t', k)    <- infer newCtx ty
-      pure (TyLoc pos $ TyForall (Expr.getId na) t', KLoc pos k)
+      pure (TyForall (Expr.getId na) t', k)
 

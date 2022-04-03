@@ -12,7 +12,7 @@ import Data.Word (Word8)
 
 import Syntax.Lexer.Tokens (Token (TknEOF))
 
-import qualified Syntax.Bounds as B
+import qualified Syntax.Range as B
 import qualified Error.Message as Err
 import qualified Control.Monad.State as State
 import qualified Data.ByteString as ByteString
@@ -24,15 +24,15 @@ import qualified Data.List.NonEmpty as NonEmpty
 data ErrKind
   = UnfinishedString B.Pos
   | UnrecognizableChar B.Pos
-  | UnexpectedToken (B.WithBounds Token)
-  | UnexpectedAssign B.Bounds
+  | UnexpectedToken (B.Ranged Token)
+  | UnexpectedAssign B.Range
 
 instance Err.ErrorReport ErrKind where
   toErrMessage = \case
     UnfinishedString pos -> Err.columnError pos (Err.normal "Probably you forgot to close a quote while trying to create a string!")
     UnrecognizableChar pos -> Err.columnError pos (Err.normal "Cannot understand this character bro UwU")
-    (UnexpectedToken (B.WithBounds TknEOF pos)) -> Err.boundsError pos (Err.normal "Unexpected end of file! ")
-    (UnexpectedToken (B.WithBounds _ pos)) -> Err.boundsError pos (Err.normal "Cannot uwndustwand this tUwUken")
+    (UnexpectedToken (B.Ranged TknEOF pos)) -> Err.boundsError pos (Err.normal "Unexpected end of file! ")
+    (UnexpectedToken (B.Ranged _ pos)) -> Err.boundsError pos (Err.normal "Cannot uwndustwand this tUwUken")
     (UnexpectedAssign pos) -> Err.boundsError pos (Err.normal "You cant use let expressions in the end of a block")
 
 -- AlexInput is the Data Type used by the Alex lexer generator
@@ -88,12 +88,12 @@ runLexer lexer bs = fst <$> State.runStateT (getLexer lexer) (initState bs)
 startCode :: Lexer Int
 startCode = State.gets (NonEmpty.head . lsCodes)
 
-emit :: (Text -> a) -> Text -> B.Pos -> Lexer (B.WithBounds a)
+emit :: (Text -> a) -> Text -> B.Pos -> Lexer (B.Ranged a)
 emit fn text pos = do
   lastPos <- State.gets (inputPos . lsInput)
-  pure (B.WithBounds (fn text) (B.Bounds pos lastPos))
+  pure (B.Ranged (fn text) (B.Range pos lastPos))
 
-token :: a -> Text -> B.Pos -> Lexer (B.WithBounds a)
+token :: a -> Text -> B.Pos -> Lexer (B.Ranged a)
 token = emit . const
 
 pushCode :: Int -> Lexer ()

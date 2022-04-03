@@ -1,12 +1,22 @@
-module Typer.Types where
+module Typer.Types (
+  Kind(..),
+  TType(..),
+  KindScheme(..),
+  getPos,
+  EvalStatus(..),
+  Hole(..),
+  Loc(..),
+  Lvl
+) where
 
-import Data.IORef (IORef, readIORef)
-import Data.Text (Text)
+import Data.IORef          (IORef, readIORef)
+import Data.Text           (Text)
+import Data.Kind           (Type)
+import GHC.IO              (unsafePerformIO)
+import Syntax.Range       (Range, HasPosition (getPos))
+import Control.Applicative (Alternative((<|>)) )
 
 import qualified Data.Text   as Text
-import GHC.IO (unsafePerformIO)
-import Syntax.Bounds (Bounds)
-import Control.Applicative ( Alternative((<|>)) )
 
 -- Lol this is helpful...
 
@@ -35,47 +45,44 @@ data Hole a
   | Filled a
   deriving Eq
 
-data Kind :: EvalStatus -> * where
-  Star  :: Kind s
-  KFun  :: Kind s -> Kind s -> Kind s
-  KGen  :: Lvl    -> Kind 'Pure
-  KHole :: IORef (Hole (Kind 'Eval)) -> Kind 'Eval
-  KLoc  :: Bounds -> Kind 'Eval -> Kind 'Eval
+data Loc = Ghost | Loc Range
+
+data Kind :: EvalStatus -> Type where
+  Star  :: Loc -> Kind s
+  KFun  :: Loc -> Kind s -> Kind s -> Kind s
+  KGen  :: Loc -> Lvl    -> Kind 'Pure
+  KHole :: Loc -> IORef (Hole (Kind 'Eval)) -> Kind 'Eval
 
 data KindScheme = KindScheme { kindCount :: Lvl, kindTy :: Kind 'Pure }
 
-data Type :: EvalStatus -> * where
-  TyNamed   :: Text   -> Type s
-  TyFun     :: Type s -> Type s -> Type s
-  TyApp     :: Kind s -> Type s -> Type s -> Type s
-  TyForall  :: Text   -> Type s -> Type s
-  TyBounded :: Lvl    -> Type s
-  TyHole    :: IORef (Hole (Type 'Eval)) -> Type 'Eval
-  TyLoc     :: Bounds -> Type 'Eval -> Type 'Eval
+data TType :: EvalStatus -> Type where
+  TyNamed   :: Text   -> TType s
+  TyFun     :: TType s -> TType s -> TType s
+  TyApp     :: Kind s -> TType s -> TType s -> TType s
+  TyForall  :: Text   -> TType s -> TType s
+  TyRigid   :: Lvl    -> TType s
+  TyHole    :: IORef (Hole (TType 'Eval)) -> TType 'Eval
 
 instance Eq (Kind s) where
   f == s = case (f,s) of
-    (Star,     Star) -> True 
-    (KFun a b, KFun a' b') -> a == a' && b == b'
-    (KGen a,   KGen b) -> a == b 
-    (KHole a,  KHole b) -> a == b 
-    (KLoc _ a, KLoc _ b)  -> a == b 
+    (Star _,     Star _) -> True 
+    (KFun _ a b, KFun _ a' b') -> a == a' && b == b'
+    (KGen _ a,   KGen _ b) -> a == b 
+    (KHole _ a,  KHole _ b) -> a == b 
     (_,        _) -> False
 
-instance Eq (Type a) where 
+instance Eq (TType a) where 
   f == s = case (f, s) of
     (TyNamed a, TyNamed b) -> a == b 
     (TyFun a b, TyFun a' b') -> a == a' && b == b'
     (TyApp k a b, TyApp k' a' b') ->  a == a' && b == b' && k == k'
     (TyForall t a, TyForall t' a') -> t == t' && a == a'
     (TyHole a, TyHole b) -> a == b 
-    (TyLoc _ a, TyLoc _ b)  -> a == b 
     (_, _) -> False
 
-instance Show (Type a) where
+instance Show (TType a) where
   show = \case
-    TyBounded s -> "b" ++ toSubscript s
-    TyLoc _ a -> show a
+    TyRigid s -> "b" ++ toSubscript s
     TyNamed s -> Text.unpack s
     TyFun t@TyForall {} t'  -> concat [ "(", show t, ") -> ", show t' ]
     TyFun ty@TyFun {} ty'   -> concat [ "(", show ty, ") -> ", show ty' ]
@@ -93,40 +100,26 @@ instance Show (Type a) where
 
 instance Show (Kind a) where
   show = \case
-    KGen s   -> "'" ++ show s
-    KLoc _ s -> show s
-    Star -> "*"
-    KFun ki@KFun {} ki' -> concat ["(", show ki, ") -> ", show ki']
-    KFun (KHole ki) ki' ->
+    KGen _ s   -> "'" ++ show s
+    Star _ -> "*"
+    KFun _ ki@KFun {} ki' -> concat ["(", show ki, ") -> ", show ki']
+    KFun b (KHole _ ki) ki' ->
      case unsafePerformIO (readIORef ki) of
        Empty lvl -> concat ["k" ++ toSubscript lvl, " -> ", show ki']
-       Filled ki'' -> show (KFun ki'' ki')
-    KFun ki ki' -> concat [show ki, " -> ", show ki']
-    KHole ir ->
+       Filled ki'' -> show (KFun b ki'' ki')
+    KFun _ ki ki' -> concat [show ki, " -> ", show ki']
+    KHole _ ir ->
      case unsafePerformIO (readIORef ir) of
        Empty lvl -> "k" ++ toSubscript lvl
        Filled ki -> show ki
 
-getPosKind :: Kind a -> Maybe Bounds
-getPosKind = \case
-  Star -> Nothing
-  KFun ki ki' -> getPosKind ki <|> getPosKind ki'
-  KGen _ -> Nothing
-  KHole ir ->
-    case unsafePerformIO (readIORef ir) of
-      Empty   _ -> Nothing
-      Filled ki -> getPosKind ki
-  KLoc bo _ -> Just bo
-
-getPos :: Type a -> Maybe Bounds
-getPos = \case
-  TyBounded _ -> Nothing 
-  TyNamed _ -> Nothing
-  TyFun ty ty' -> getPos ty <|> getPos ty'
-  TyApp _ ty ty' -> getPos ty <|> getPos ty'
-  TyForall _ ty -> getPos ty
-  TyHole ir -> 
-    case unsafePerformIO (readIORef ir) of
-      Empty   _ -> Nothing
-      Filled ki -> getPos ki
-  TyLoc _ ty -> getPos ty
+instance HasPosition (Kind a) where 
+  getPos = \case
+    Star (Loc pos) -> pos
+    KFun (Loc a) ki ki' -> a
+    KGen (Loc p) _ -> p
+    KHole p ir ->
+      case unsafePerformIO (readIORef ir) of
+        Empty   _ -> p
+        Filled ki -> getPos ki
+    _ -> error "be" 

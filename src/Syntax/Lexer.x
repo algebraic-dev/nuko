@@ -6,7 +6,7 @@ import Data.Text            (Text, append, index)
 import Data.Text.Encoding   (decodeUtf8)
 import Data.Text.Read       (decimal, double)
 import Syntax.Lexer.Support
-import Syntax.Bounds
+import Syntax.Range
 import Syntax.Lexer.Tokens
 
 import qualified Control.Monad.State as ST
@@ -72,7 +72,7 @@ program :-
 <0> $symbol+   { emit TknSymbol  }
 <0> "--"       { \_ _   -> pushCode linecom *> scan }
 <0> \"         { \_ pos -> pushCode str *> scan >>= \res ->
-                           pure (WithBounds (info res) (Bounds pos (end $ position res)))}
+                           pure (Ranged (info res) (Range pos (end $ position res)))}
 
 -- Layout Parsing
 
@@ -98,10 +98,10 @@ program :-
 
 {
 
-ghostBounds :: t -> Lexer (WithBounds t) 
-ghostBounds t = do 
+ghostRange :: t -> Lexer (Ranged t) 
+ghostRange t = do 
     pos <- ST.gets (inputPos . lsInput)
-    pure $ WithBounds t (Bounds pos pos)
+    pure $ Ranged t (Range pos pos)
 
 fromRight :: Either e r -> r 
 fromRight (Right b) = b
@@ -113,7 +113,7 @@ addToBuffer c = ST.modify (\s -> s { lsBuffer = append (lsBuffer s) c })
 resetBuffer :: Lexer Text
 resetBuffer = ST.state (\s -> (lsBuffer s, s { lsBuffer = "" }))
 
-emptyLayout _ _ = replaceCode newline *> ghostBounds TknClose
+emptyLayout _ _ = replaceCode newline *> ghostRange TknClose
 
 nonLwToken tkn text pos = do 
     ST.modify (\s -> s { lsAfterNonLW = True })
@@ -121,8 +121,8 @@ nonLwToken tkn text pos = do
 
 
 handleEOF = lastLayout >>= \case 
-    Nothing -> popCode *> ghostBounds TknEOF
-    Just _  -> popLayout *> ghostBounds TknClose
+    Nothing -> popCode *> ghostRange TknEOF
+    Just _  -> popLayout *> ghostRange TknClose
 
 offsideRule _ _ = do 
     lay <- lastLayout
@@ -132,9 +132,9 @@ offsideRule _ _ = do
         Nothing   -> continue
         Just col' -> do 
             case col `compare` col' of
-                EQ -> popCode *> ghostBounds TknEnd
+                EQ -> popCode *> ghostRange TknEnd
                 GT -> continue 
-                LT -> popLayout *> ghostBounds TknClose
+                LT -> popLayout *> ghostRange TknClose
 
 startLayout _ _ = do  
     popCode 
@@ -143,7 +143,7 @@ startLayout _ _ = do
     if Just col <= ref 
         then pushCode empty_layout
         else pushLayout col
-    ghostBounds TknOpen
+    ghostRange TknOpen
 
 layoutKw t text pos = do
     isAfterNonLayoutKW <- ST.gets lsAfterNonLW
@@ -153,10 +153,10 @@ layoutKw t text pos = do
     token t text pos
 
 
-endBlock :: Token -> Text -> Pos -> Lexer (WithBounds Token)
+endBlock :: Token -> Text -> Pos -> Lexer (Ranged Token)
 endBlock tkn t p = popCode *> token tkn t p
 
-scan :: Lexer (WithBounds Token)
+scan :: Lexer (Ranged Token)
 scan = do 
     input <- ST.gets lsInput 
     code <- startCode 

@@ -25,14 +25,19 @@ library
       Error.Message
       Error.PrettyPrint
       Pretty.Tree
-      Syntax.Bounds
       Syntax.Expr
       Syntax.Lexer
       Syntax.Lexer.Support
       Syntax.Lexer.Tokens
       Syntax.Parser
       Syntax.Parser.Ast
+      Syntax.Range
+      Typer.Context
+      Typer.Errors
+      Typer.Infer
       Typer.Kinds
+      Typer.Tracer
+      Typer.Types
   other-modules:
       Paths_Nuko
   hs-source-dirs:
@@ -45,22 +50,16 @@ library
       LambdaCase
       StandaloneDeriving
       FlexibleContexts
-      UndecidableInstances
-      MultiParamTypeClasses
-      ConstraintKinds
       DataKinds
-      TypeOperators
-      PolyKinds
       GADTs
       PatternSynonyms
-      ViewPatterns
-  ghc-options: -Wall
+      ConstraintKinds
+  ghc-options: -Weverything -Wno-all-missed-specializations -Wno-implicit-prelude -Wno-missing-deriving-strategies -Wno-prepositive-qualified-module -Wno-missing-import-lists -Wno-missing-safe-haskell-mode -Wno-safe -Wno-unsafe -Wall
   build-depends:
       array
     , base >=4.7 && <5
     , bytestring
     , containers
-    , monad-chronicle
     , mtl
     , pretty-terminal
     , text
@@ -80,23 +79,17 @@ executable Nuko-exe
       LambdaCase
       StandaloneDeriving
       FlexibleContexts
-      UndecidableInstances
-      MultiParamTypeClasses
-      ConstraintKinds
       DataKinds
-      TypeOperators
-      PolyKinds
       GADTs
       PatternSynonyms
-      ViewPatterns
-  ghc-options: -Wall -threaded -rtsopts -with-rtsopts=-N
+      ConstraintKinds
+  ghc-options: -Weverything -Wno-all-missed-specializations -Wno-implicit-prelude -Wno-missing-deriving-strategies -Wno-prepositive-qualified-module -Wno-missing-import-lists -Wno-missing-safe-haskell-mode -Wno-safe -Wno-unsafe -Wall -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       Nuko
     , array
     , base >=4.7 && <5
     , bytestring
     , containers
-    , monad-chronicle
     , mtl
     , text
   default-language: Haskell2010
@@ -116,16 +109,11 @@ test-suite Nuko-test
       LambdaCase
       StandaloneDeriving
       FlexibleContexts
-      UndecidableInstances
-      MultiParamTypeClasses
-      ConstraintKinds
       DataKinds
-      TypeOperators
-      PolyKinds
       GADTs
       PatternSynonyms
-      ViewPatterns
-  ghc-options: -Wall -threaded -rtsopts -with-rtsopts=-N
+      ConstraintKinds
+  ghc-options: -Weverything -Wno-all-missed-specializations -Wno-implicit-prelude -Wno-missing-deriving-strategies -Wno-prepositive-qualified-module -Wno-missing-import-lists -Wno-missing-safe-haskell-mode -Wno-safe -Wno-unsafe -Wall -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       Nuko
     , array
@@ -133,7 +121,6 @@ test-suite Nuko-test
     , bytestring
     , containers
     , filepath
-    , monad-chronicle
     , mtl
     , tasty
     , tasty-golden

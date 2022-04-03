@@ -15,7 +15,6 @@ dependencies:
   - bytestring
   - containers
   - array
-  - monad-chronicle
 
 default-extensions:
   - GeneralizedNewtypeDeriving
@@ -25,15 +24,10 @@ default-extensions:
   - LambdaCase
   - StandaloneDeriving
   - FlexibleContexts
-  - UndecidableInstances
-  - MultiParamTypeClasses
-  - ConstraintKinds
   - DataKinds
-  - TypeOperators
-  - PolyKinds
   - GADTs
   - PatternSynonyms
-  - ViewPatterns
+  - ConstraintKinds 
 
 library:
   source-dirs: src
@@ -41,6 +35,17 @@ library:
     - -Wall
   dependencies:
     - pretty-terminal
+
+ghc-options:
+  - -Weverything
+  - -Wno-all-missed-specializations
+  - -Wno-implicit-prelude
+  - -Wno-missing-deriving-strategies
+  - -Wno-prepositive-qualified-module
+  - -Wno-missing-import-lists
+  - -Wno-missing-safe-haskell-mode
+  - -Wno-safe
+  - -Wno-unsafe
 
 executables:
   Nuko-exe:

@@ -1,1 +1,1 @@
-let b (a : Cons a b) = 3
+let b = \x -> x 3

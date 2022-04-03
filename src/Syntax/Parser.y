@@ -8,7 +8,7 @@ import Syntax.Lexer (scan)
 import Syntax.Expr
 import Syntax.Parser.Ast
 
-import Syntax.Bounds (WithBounds(WithBounds), position, Bounds)
+import Syntax.Range (Ranged(Ranged), position, Range)
 import Data.Text (Text)
 
 import Data.Function (on)
@@ -19,52 +19,54 @@ import Debug.Trace
 
 }
 
-%name parseExpr Expr
+%name parseProgram Program
+%name parseExpr    Expr
+%name parseType    Type
 
-%tokentype { WithBounds Token }
+%tokentype { Ranged Token }
 %monad { Lexer }
-%lexer { lexer } { WithBounds TknEOF _ }
+%lexer { lexer } { Ranged TknEOF _ }
 
 %error { parseError }
 
 %token
-    lower  { WithBounds (TknLowerId _) _ }
-    upper  { WithBounds (TknUpperId _) _ }
-    symbol { WithBounds (TknSymbol _) _ }
+    lower  { Ranged (TknLowerId _) _ }
+    upper  { Ranged (TknUpperId _) _ }
+    symbol { Ranged (TknSymbol _) _ }
     
-    number { WithBounds (TknNumber _) _ }
-    string { WithBounds (TknLStr _) _ }
-    char   { WithBounds (TknLChar _) _ }
-    double { WithBounds (TknLDouble _) _ }
+    number { Ranged (TknNumber _) _ }
+    string { Ranged (TknLStr _) _ }
+    char   { Ranged (TknLChar _) _ }
+    double { Ranged (TknLDouble _) _ }
 
-    open  { WithBounds TknOpen _ }
-    close { WithBounds TknClose _ }
-    semi  { WithBounds TknEnd _ }
+    open  { Ranged TknOpen _ }
+    close { Ranged TknClose _ }
+    semi  { Ranged TknEnd _ }
 
-    '_'   { WithBounds TknWild _ }
-    '('   { WithBounds TknLPar _ }
-    ')'   { WithBounds TknRPar _ }
-    '{'   { WithBounds TknLBrace _ }
-    '}'   { WithBounds TknRBrace _ }
-    '='   { WithBounds TknEq _ }
-    ':'   { WithBounds TknColon _ }
-    '|'   { WithBounds TknPipe _ }
-    '->'  { WithBounds TknRArrow _ }
-    '\\'  { WithBounds TknSlash _ }
-    ','   { WithBounds TknComma _ }
-    '.'   { WithBounds TknDot _ }
+    '_'   { Ranged TknWild _ }
+    '('   { Ranged TknLPar _ }
+    ')'   { Ranged TknRPar _ }
+    '{'   { Ranged TknLBrace _ }
+    '}'   { Ranged TknRBrace _ }
+    '='   { Ranged TknEq _ }
+    ':'   { Ranged TknColon _ }
+    '|'   { Ranged TknPipe _ }
+    '->'  { Ranged TknRArrow _ }
+    '\\'  { Ranged TknSlash _ }
+    ','   { Ranged TknComma _ }
+    '.'   { Ranged TknDot _ }
 
-    type     { WithBounds TknKwType _ }
-    let      { WithBounds TknKwLet _ }
-    import   { WithBounds TknKwImport _ }
-    as       { WithBounds TknKwAs _ }
-    external { WithBounds TknKwExternal _ }
-    if       { WithBounds TknKwIf _ }
-    then     { WithBounds TknKwThen _ }
-    else     { WithBounds TknKwElse _ }
-    match    { WithBounds TknKwMatch _ }
-    with     { WithBounds TknKwWith _ }
-    forall   { WithBounds TknKwForall _ }
+    type     { Ranged TknKwType _ }
+    let      { Ranged TknKwLet _ }
+    import   { Ranged TknKwImport _ }
+    as       { Ranged TknKwAs _ }
+    external { Ranged TknKwExternal _ }
+    if       { Ranged TknKwIf _ }
+    then     { Ranged TknKwThen _ }
+    else     { Ranged TknKwElse _ }
+    match    { Ranged TknKwMatch _ }
+    with     { Ranged TknKwWith _ }
+    forall   { Ranged TknKwForall _ }
 
 %right '->' 
 %left B
@@ -275,7 +277,7 @@ filterDecls program (TTypeDecl tyDecl) = program { progType = tyDecl : progType 
 filterDecls program (TLetDecl tyDecl) = program { progLet = tyDecl : progLet program} 
 filterDecls program (TExternalDecl tyDecl) = program { progExternal = tyDecl : progExternal program} 
 
-firstAndLast :: (HasPosition a, HasPosition b) => [(a, b)] -> Bounds
+firstAndLast :: (HasPosition a, HasPosition b) => [(a, b)] -> Range
 firstAndLast [(a,b)] = a `mix` b
 firstAndLast [] = error "zero clauses!"
 firstAndLast other =
@@ -286,19 +288,19 @@ headOr :: [a] -> (a -> b) -> b -> b
 headOr [] fn alt       = alt 
 headOr (x : xn) fn alt = fn x
 
-mix :: (HasPosition a, HasPosition b) => a -> b -> Bounds
+mix :: (HasPosition a, HasPosition b) => a -> b -> Range
 mix a b = getPos (a,b)
 
-getData :: WithBounds Token -> Text 
-getData (WithBounds (TknLowerId tx) _) = tx
-getData (WithBounds (TknUpperId tx) _) = tx
-getData (WithBounds (TknLStr tx) _)    = tx
-getData (WithBounds (TknSymbol tx) _)    = tx
-getData (WithBounds tkn _) = error ("error while trying to get data on parser: " ++ show tkn)
+getData :: Ranged Token -> Text 
+getData (Ranged (TknLowerId tx) _) = tx
+getData (Ranged (TknUpperId tx) _) = tx
+getData (Ranged (TknLStr tx) _)    = tx
+getData (Ranged (TknSymbol tx) _)    = tx
+getData (Ranged tkn _) = error ("error while trying to get data on parser: " ++ show tkn)
 
-getDecimal (WithBounds (TknNumber num) _) = num
-getDouble (WithBounds (TknLDouble num) _) = num
-getLitChar (WithBounds (TknLChar num) _) = num
+getDecimal (Ranged (TknNumber num) _) = num
+getDouble (Ranged (TknLDouble num) _) = num
+getLitChar (Ranged (TknLChar num) _) = num
 
 -- Happy primitives
 

@@ -1,53 +1,49 @@
-module Main where
+module Main (main) where
 
-import qualified Data.ByteString as SB
-import Data.Text (pack, unpack, Text)
+import Data.Text (pack, unpack)
 import Data.Text.Encoding (decodeUtf8)
 import GHC.IO.Encoding (setLocaleEncoding, utf8)
 import Pretty.Tree (drawTree)
 import System.Environment (getArgs)
+import GHC.IO (catch)
 
-import Error.Message (ErrReport (ErrReport))
 import Error.PrettyPrint (ppErrorReport)
+import Error.Message (ErrReport (ErrReport))
 
+import Syntax.Parser ( parseType ) 
 import Syntax.Lexer.Support (runLexer)
-import Syntax.Parser (parseProgram)
 
-import Typer.Kinds 
+import Typer.Context ( Ctx(Ctx) )
+import Typer.Types ( Kind(Star, KFun, KGen), KindScheme(KindScheme), Loc (Ghost) )
+import Typer.Kinds (infer)
+import Typer.Errors ( TypeError )
+import Typer.Tracer (emptyTracer)
 
+import qualified Data.ByteString as SB
+import qualified Syntax.Range as Range
 import qualified Data.Map as Map
-import Syntax.Bounds (Bounds (Bounds), Pos (Pos))
-import Syntax.Parser.Ast (Normal)
-import Syntax.Expr 
+import qualified Control.Monad.State as State
+
+star = Star Ghost
 
 ctx :: Ctx
 ctx = Ctx 0 0 Map.empty
-              (Map.fromList [("Int", Star)])
               Map.empty
+              (Map.fromList [ ("Int", KindScheme 0 star)
+                            , ("List", KindScheme 0 (KFun Ghost star star))
+                            , ("Either", KindScheme 2 (KFun Ghost (KGen Ghost 0) (KFun Ghost (KGen Ghost 1) star)))])
+              Range.empty
 
-bb :: Bounds
-bb = Bounds (Pos 0 0) (Pos 0 0)
 
-name :: Text -> Name Normal
-name = Name bb
-
-simple :: Text -> Typer Normal 
-simple = TSimple NoExt . name
-
-forall :: Text -> Typer Normal -> Typer Normal 
-forall t = TForall bb (name t)
-
-(~>) :: Typer Normal  -> Typer Normal  -> Typer Normal 
-(~>) = TArrow bb
-
-app :: Typer Normal -> Typer Normal -> Typer Normal  
-app = TApp bb
 
 main :: IO ()
 main = do
   setLocaleEncoding utf8
   [file] <- getArgs
   str <- SB.readFile file
-  case runLexer parseProgram str of
-    Right res -> putStrLn $ drawTree res
+  case runLexer parseType str of
+    Right res -> do 
+      putStrLn (drawTree res)
+      catch (State.evalStateT (infer ctx res) emptyTracer >>= print) 
+            ((\err -> putStrLn (unpack $ ppErrorReport $ ErrReport (pack file) (decodeUtf8 str) err)) :: TypeError -> IO ())
     Left err -> putStrLn (unpack $ ppErrorReport $ ErrReport (pack file) (decodeUtf8 str) err) 

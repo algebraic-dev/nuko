@@ -1,47 +1,47 @@
-module Syntax.Parser.Ast where 
+module Syntax.Parser.Ast (Normal, HasPosition(..)) where 
 
-import Syntax.Bounds (Bounds, empty)
+import Syntax.Range (Range, empty, HasPosition (getPos))
 import Data.Void     (Void)
 import Syntax.Expr 
 import qualified Data.Text as Text
 
 data Normal
 
-type instance XName Normal = Bounds
+type instance XName Normal = Range
 
 type instance XTSimple Normal = NoExt
 type instance XTPoly Normal = NoExt
-type instance XTArrow Normal = Bounds
-type instance XTApp Normal = Bounds
-type instance XTForall Normal = Bounds
+type instance XTArrow Normal = Range
+type instance XTApp Normal = Range
+type instance XTForall Normal = Range
 type instance XTExt Normal = Void
 
-type instance XPWild Normal = Bounds
-type instance XPCons Normal = Bounds
+type instance XPWild Normal = Range
+type instance XPCons Normal = Range
 type instance XPLit Normal = NoExt
 type instance XPId Normal = NoExt
 type instance XPExt Normal = Void
 
-type instance XLChar Normal = Bounds
-type instance XLString Normal = Bounds
-type instance XLInt Normal = Bounds
-type instance XLDouble Normal = Bounds
+type instance XLChar Normal = Range
+type instance XLString Normal = Range
+type instance XLInt Normal = Range
+type instance XLDouble Normal = Range
 type instance XLExt Normal = Void
 
-type instance XLam Normal = Bounds
-type instance XApp Normal = Bounds
+type instance XLam Normal = Range
+type instance XApp Normal = Range
 type instance XVar Normal = NoExt
-type instance XAnn Normal = Bounds
+type instance XAnn Normal = Range
 type instance XLit Normal = NoExt
-type instance XMatch Normal = Bounds
-type instance XAssign Normal =  Bounds
-type instance XBinary Normal =  Bounds
-type instance XBlock Normal = Bounds
-type instance XIf Normal = Bounds
+type instance XMatch Normal = Range
+type instance XAssign Normal =  Range
+type instance XBinary Normal =  Range
+type instance XBlock Normal = Range
+type instance XIf Normal = Range
 type instance XExt Normal = Void
 
-type instance XTcSum Normal = Bounds
-type instance XTcRecord Normal = Bounds
+type instance XTcSum Normal = Range
+type instance XTcRecord Normal = Range
 type instance XTcSyn Normal = NoExt
 type instance XTcExt Normal = Void
 
@@ -51,7 +51,7 @@ type instance XExternal Normal = NoExt
 type instance XType Normal = NoExt
 type instance XExternal Normal = NoExt
 
-type instance XBTyped Normal = Bounds
+type instance XBTyped Normal = Range
 type instance XBRaw Normal = NoExt
 
 -- Deriving
@@ -86,9 +86,6 @@ instance Ord (Name Normal) where
    compare (Name _ n) (Name _ m) = compare n m
 
 -- Position 
-
-class HasPosition a where 
-    getPos :: a -> Bounds
 
 instance (HasPosition a, HasPosition b) => HasPosition (a,b) where 
     getPos (a,b) = getPos a <> getPos b
@@ -125,6 +122,7 @@ instance HasPosition (Literal Normal) where
 
 instance HasPosition (Expr Normal) where 
     getPos (Lam pos _ _) = pos 
+    getPos (Ann pos _ _) = pos 
     getPos (App pos _ _) = pos 
     getPos (Var _ name) = getPos name 
     getPos (Lit _ lit) = getPos lit 
