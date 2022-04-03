@@ -5,8 +5,8 @@ import Syntax.Lexer.Support (Lexer, popLayout, ErrKind(..))
 import Syntax.Lexer.Tokens (Token(..))
 import Syntax.Lexer (scan)
 
-import Syntax.Expr
-import Syntax.Parser.Ast
+import Expr
+import Syntax.Tree
 
 import Syntax.Range (Ranged(Ranged), position, Range)
 import Data.Text (Text)

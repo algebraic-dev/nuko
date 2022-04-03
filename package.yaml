@@ -24,10 +24,26 @@ default-extensions:
   - LambdaCase
   - StandaloneDeriving
   - FlexibleContexts
+  - ImportQualifiedPost
   - DataKinds
   - GADTs
   - PatternSynonyms
   - ConstraintKinds 
+  - DuplicateRecordFields
+  - OverloadedRecordDot
+
+ghc-options:
+  - -Weverything
+  - -Wno-all-missed-specializations
+  - -Wno-implicit-prelude
+  - -Wno-missing-deriving-strategies
+  - -Wno-missing-kind-signatures
+  - -Wno-prepositive-qualified-module
+  - -Wno-missing-import-lists
+  - -Wno-missing-safe-haskell-mode
+  - -Wno-safe
+  - -Wno-unsafe
+  - -Wno-missed-specialisations
 
 library:
   source-dirs: src
@@ -36,16 +52,6 @@ library:
   dependencies:
     - pretty-terminal
 
-ghc-options:
-  - -Weverything
-  - -Wno-all-missed-specializations
-  - -Wno-implicit-prelude
-  - -Wno-missing-deriving-strategies
-  - -Wno-prepositive-qualified-module
-  - -Wno-missing-import-lists
-  - -Wno-missing-safe-haskell-mode
-  - -Wno-safe
-  - -Wno-unsafe
 
 executables:
   Nuko-exe:

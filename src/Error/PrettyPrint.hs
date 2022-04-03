@@ -1,17 +1,17 @@
--- | This module pretty prints the data structures
--- created in the Error.Message module. It does it by
--- working with a lot of texts and generating a text in the
--- end.
-module Error.PrettyPrint ( ppErrorReport ) where
+{- | This module pretty prints the data structures
+     created in the Error.Message module. It does it by
+     working with a lot of texts and generating a text in the
+-}
+module Error.PrettyPrint (ppErrorReport) where
 
 import Data.Text (Text)
-import qualified Data.Text as T
-import qualified Error.Message as M
-import Syntax.Range (Range, Pos)
-import qualified Syntax.Range as B
+import Data.Text qualified as T
+import Error.Message qualified as M
+import Syntax.Range (Point, Range)
+import Syntax.Range qualified as B
 import System.Console.Pretty (Pretty (bgColor, color, style), Style (Faint))
-import qualified System.Console.Pretty as SCP
-import qualified Text.Printf as P
+import System.Console.Pretty qualified as SCP
+import Text.Printf qualified as P
 
 toColor :: M.Color -> SCP.Color
 toColor = \case
@@ -57,23 +57,23 @@ ppNote _ _ _ Nothing = ""
 ppLines :: Maybe Text -> SCP.Color -> Text -> Range -> Text
 ppLines note clr source (B.Range start end)
   | B.line start == B.line end =
-    let line = T.lines source !! B.line start
-     in T.concat
-          [ ppLine' (B.line start) (B.column start) (B.column end) line,
-            ppNote clr (B.column start) (B.column end - B.column start) note
-          ]
+      let line = T.lines source !! B.line start
+       in T.concat
+            [ ppLine' (B.line start) (B.column start) (B.column end) line,
+              ppNote clr (B.column start) (B.column end - B.column start) note
+            ]
   | otherwise =
-    let lines' = T.lines source
-        line = lines' !! B.line start
-        line' = lines' !! B.line end
-        fstLine = ppLine' (B.line start) (B.column start) (T.length line) line
-        sndLine = ppLine' (B.line end) 0 (B.column end) line'
-     in T.unlines [fstLine, ppNote clr (B.column start) (T.length line - B.column start) note, sndLine]
+      let lines' = T.lines source
+          line = lines' !! B.line start
+          line' = lines' !! B.line end
+          fstLine = ppLine' (B.line start) (B.column start) (T.length line) line
+          sndLine = ppLine' (B.line end) 0 (B.column end) line'
+       in T.unlines [fstLine, ppNote clr (B.column start) (T.length line - B.column start) note, sndLine]
   where
     ppLine' line st en = ppLine line . colorizeLine clr st en
 
-ppFile :: Text -> Maybe Pos -> Text
-ppFile text (Just (B.Pos line col)) = T.pack $ P.printf "%s ──> %s:%d:%d\n\n" (space 7) text line col
+ppFile :: Text -> Maybe Point -> Text
+ppFile text (Just (B.Point line col)) = T.pack $ P.printf "%s ──> %s:%d:%d\n\n" (space 7) text line col
 ppFile text Nothing = T.pack $ P.printf "%s ──> %s\n\n" (space 4) text
 
 ppTitle :: Text -> Text
@@ -99,4 +99,4 @@ ppErrorMessage source subLine (M.ErrMessage _ title components) =
 ppErrorReport :: M.ErrorReport a => M.ErrReport a -> Text
 ppErrorReport (M.ErrReport file content kind) =
   let beKind = M.toErrMessage kind
-   in ppErrorMessage content (ppFile file (M.errRange beKind)) beKind
+   in ppErrorMessage content (ppFile file beKind.range) beKind

@@ -1,9 +1,12 @@
-module Syntax.Parser.Ast (Normal, HasPosition(..)) where 
-
-import Syntax.Range (Range, empty, HasPosition (getPos))
-import Data.Void     (Void)
-import Syntax.Expr 
-import qualified Data.Text as Text
+{-| Here we create a lot of type instances for 
+    a normal AST that stores Ranges inside of it.
+-}
+module Syntax.Tree (Normal, HasPosition(..)) where 
+    
+import Data.Void  (Void)
+import Data.Text qualified as Text
+import Syntax.Range (Range, HasPosition (getPos))
+import Expr 
 
 data Normal
 
@@ -86,13 +89,6 @@ instance Ord (Name Normal) where
    compare (Name _ n) (Name _ m) = compare n m
 
 -- Position 
-
-instance (HasPosition a, HasPosition b) => HasPosition (a,b) where 
-    getPos (a,b) = getPos a <> getPos b
-
-instance HasPosition a => HasPosition [a] where 
-    getPos [] = empty 
-    getPos x = getPos (head x) <> getPos (last x)
 
 instance HasPosition (Binder Normal) where 
     getPos (Raw _ ty) = getPos ty 

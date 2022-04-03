@@ -2,28 +2,25 @@ module Syntax.Lexer.Support where
 
 import Control.Monad.Except (MonadError)
 import Control.Monad.State (MonadState)
-
+import qualified Control.Monad.State as State
 import Data.ByteString (ByteString)
+import qualified Data.ByteString as ByteString
 import Data.ByteString.Internal (w2c)
 import Data.List (uncons)
 import Data.List.NonEmpty (NonEmpty ((:|)))
+import qualified Data.List.NonEmpty as NonEmpty
 import Data.Text (Text)
 import Data.Word (Word8)
-
-import Syntax.Lexer.Tokens (Token (TknEOF))
-
-import qualified Syntax.Range as B
 import qualified Error.Message as Err
-import qualified Control.Monad.State as State
-import qualified Data.ByteString as ByteString
-import qualified Data.List.NonEmpty as NonEmpty
+import Syntax.Lexer.Tokens (Token (TknEOF))
+import qualified Syntax.Range as B
 
 -- | Definition of errors of the lexer, it uses a type class
 -- to generate some error messages. This data type includes
 -- errors from parser because the parser uses the same monadT.
 data ErrKind
-  = UnfinishedString B.Pos
-  | UnrecognizableChar B.Pos
+  = UnfinishedString B.Point
+  | UnrecognizableChar B.Point
   | UnexpectedToken (B.Ranged Token)
   | UnexpectedAssign B.Range
 
@@ -39,7 +36,7 @@ instance Err.ErrorReport ErrKind where
 -- to track the position, input and last word/char inside the
 -- generated lexer.
 data AlexInput = AlexInput
-  { inputPos :: B.Pos,
+  { inputPos :: B.Point,
     inputLast :: Word8,
     inputStream :: ByteString
   }
@@ -78,7 +75,7 @@ newtype Lexer a = Lexer {getLexer :: State.StateT LexerState (Either ErrKind) a}
   deriving (Functor, Applicative, Monad, MonadState LexerState, MonadError ErrKind)
 
 initState :: ByteString -> LexerState
-initState bs = LexerState (AlexInput (B.Pos 0 1) 10 bs) (0 :| []) [] "" False
+initState bs = LexerState (AlexInput (B.Point 0 1) 10 bs) (0 :| []) [] "" False
 
 runLexer :: Lexer a -> ByteString -> Either ErrKind a
 runLexer lexer bs = fst <$> State.runStateT (getLexer lexer) (initState bs)
@@ -88,12 +85,12 @@ runLexer lexer bs = fst <$> State.runStateT (getLexer lexer) (initState bs)
 startCode :: Lexer Int
 startCode = State.gets (NonEmpty.head . lsCodes)
 
-emit :: (Text -> a) -> Text -> B.Pos -> Lexer (B.Ranged a)
+emit :: (Text -> a) -> Text -> B.Point -> Lexer (B.Ranged a)
 emit fn text pos = do
   lastPos <- State.gets (inputPos . lsInput)
   pure (B.Ranged (fn text) (B.Range pos lastPos))
 
-token :: a -> Text -> B.Pos -> Lexer (B.Ranged a)
+token :: a -> Text -> B.Point -> Lexer (B.Ranged a)
 token = emit . const
 
 pushCode :: Int -> Lexer ()

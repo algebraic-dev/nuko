@@ -1,40 +1,64 @@
-{-| This module is useful for tracking source code position inside
-    Data structures like Tokens or the Abstract syntax tree. After the 
-    Type checking and lowering it is unused
--}
-module Syntax.Range (
-  Pos(..),
-  Range(..),
-  Ranged(..),
-  advancePos,
-  empty,
-  HasPosition(..)
-  ) where
+-- | This module is useful for tracking source code position inside
+--     Data structures like Tokens or the Abstract syntax tree. After the
+--     Type checking and lowering it is unused
+module Syntax.Range
+  ( Point (..),
+    Range (..),
+    Ranged (..),
+    Loc (..),
+    HasPosition (..),
+    advancePos,
+  )
+where
 
 import Data.Function (on)
 
-data Pos = Pos {line :: !Int, column :: !Int} deriving Show
-data Range = Range {start :: !Pos, end :: !Pos}
-data Ranged a = Ranged {info :: a, position :: !Range}
+data Point = Point
+  { line :: !Int,
+    column :: !Int
+  }
+  deriving (Show)
+
+data Range = Range
+  { start :: !Point,
+    end :: !Point
+  }
+
+data Ranged a = Ranged
+  { info :: a,
+    position :: !Range
+  }
+
+data Loc a 
+  = Blank
+  | Loc (Ranged a)
 
 instance Semigroup Range where
   (Range s _) <> (Range _ e) = Range s e
 
-instance Eq a => Eq (Ranged a) where
-  (==) = (==) `on` info
+instance Monoid Range where
+  mempty = Range (Point 0 0) (Point 0 0)
 
-instance Show Range where 
+instance Eq a => Eq (Ranged a) where (==) = (==) `on` info
+
+instance Show Range where
   show _ = ""
 
-instance Show a => Show (Ranged a) where 
+instance Show a => Show (Ranged a) where
   show a = show $ info a
 
-advancePos :: Pos -> Char -> Pos
-advancePos pos '\n' = Pos {line = line pos + 1, column = 1}
+advancePos :: Point -> Char -> Point
+advancePos pos '\n' = Point {line = line pos + 1, column = 1}
 advancePos pos _ = pos {column = column pos + 1}
 
-empty :: Range
-empty = Range (Pos 0 0) (Pos 0 0)
+-- Has position interface
 
-class HasPosition a where 
-    getPos :: a -> Range
+class HasPosition a where
+  getPos :: a -> Range
+
+instance (HasPosition a, HasPosition b) => HasPosition (a, b) where
+  getPos (a, b) = getPos a <> getPos b
+
+instance HasPosition a => HasPosition [a] where
+  getPos [] = mempty
+  getPos x = getPos (head x) <> getPos (last x)

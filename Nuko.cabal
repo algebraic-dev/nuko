@@ -24,20 +24,14 @@ library
   exposed-modules:
       Error.Message
       Error.PrettyPrint
+      Expr
       Pretty.Tree
-      Syntax.Expr
       Syntax.Lexer
       Syntax.Lexer.Support
       Syntax.Lexer.Tokens
       Syntax.Parser
-      Syntax.Parser.Ast
       Syntax.Range
-      Typer.Context
-      Typer.Errors
-      Typer.Infer
-      Typer.Kinds
-      Typer.Tracer
-      Typer.Types
+      Syntax.Tree
   other-modules:
       Paths_Nuko
   hs-source-dirs:
@@ -50,11 +44,14 @@ library
       LambdaCase
       StandaloneDeriving
       FlexibleContexts
+      ImportQualifiedPost
       DataKinds
       GADTs
       PatternSynonyms
       ConstraintKinds
-  ghc-options: -Weverything -Wno-all-missed-specializations -Wno-implicit-prelude -Wno-missing-deriving-strategies -Wno-prepositive-qualified-module -Wno-missing-import-lists -Wno-missing-safe-haskell-mode -Wno-safe -Wno-unsafe -Wall
+      DuplicateRecordFields
+      OverloadedRecordDot
+  ghc-options: -Weverything -Wno-all-missed-specializations -Wno-implicit-prelude -Wno-missing-deriving-strategies -Wno-missing-kind-signatures -Wno-prepositive-qualified-module -Wno-missing-import-lists -Wno-missing-safe-haskell-mode -Wno-safe -Wno-unsafe -Wno-missed-specialisations -Wall
   build-depends:
       array
     , base >=4.7 && <5
@@ -79,11 +76,14 @@ executable Nuko-exe
       LambdaCase
       StandaloneDeriving
       FlexibleContexts
+      ImportQualifiedPost
       DataKinds
       GADTs
       PatternSynonyms
       ConstraintKinds
-  ghc-options: -Weverything -Wno-all-missed-specializations -Wno-implicit-prelude -Wno-missing-deriving-strategies -Wno-prepositive-qualified-module -Wno-missing-import-lists -Wno-missing-safe-haskell-mode -Wno-safe -Wno-unsafe -Wall -threaded -rtsopts -with-rtsopts=-N
+      DuplicateRecordFields
+      OverloadedRecordDot
+  ghc-options: -Weverything -Wno-all-missed-specializations -Wno-implicit-prelude -Wno-missing-deriving-strategies -Wno-missing-kind-signatures -Wno-prepositive-qualified-module -Wno-missing-import-lists -Wno-missing-safe-haskell-mode -Wno-safe -Wno-unsafe -Wno-missed-specialisations -Wall -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       Nuko
     , array
@@ -109,11 +109,14 @@ test-suite Nuko-test
       LambdaCase
       StandaloneDeriving
       FlexibleContexts
+      ImportQualifiedPost
       DataKinds
       GADTs
       PatternSynonyms
       ConstraintKinds
-  ghc-options: -Weverything -Wno-all-missed-specializations -Wno-implicit-prelude -Wno-missing-deriving-strategies -Wno-prepositive-qualified-module -Wno-missing-import-lists -Wno-missing-safe-haskell-mode -Wno-safe -Wno-unsafe -Wall -threaded -rtsopts -with-rtsopts=-N
+      DuplicateRecordFields
+      OverloadedRecordDot
+  ghc-options: -Weverything -Wno-all-missed-specializations -Wno-implicit-prelude -Wno-missing-deriving-strategies -Wno-missing-kind-signatures -Wno-prepositive-qualified-module -Wno-missing-import-lists -Wno-missing-safe-haskell-mode -Wno-safe -Wno-unsafe -Wno-missed-specialisations -Wall -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       Nuko
     , array

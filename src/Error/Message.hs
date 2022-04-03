@@ -16,7 +16,7 @@ module Error.Message
 where
 
 import Data.Text (Text)
-import Syntax.Range
+import Syntax.Range (Point (Point), Range (Range, start))
 
 -- Data Components
 
@@ -34,16 +34,16 @@ data ErrComponent
   | Desc Text
 
 data ErrMessage = ErrMessage
-  { errRange :: Maybe Pos,
-    errTitle :: [Style],
-    errComponents :: [ErrComponent]
+  { range :: Maybe Point,
+    title :: [Style],
+    components :: [ErrComponent]
   }
 
 data ErrReport a = ErrorReport a =>
   ErrReport
-  { reportFile :: Text,
-    reportContent :: Text,
-    reportKind :: a
+  { file :: Text,
+    content :: Text,
+    kind :: a
   }
 
 class ErrorReport a where
@@ -52,10 +52,10 @@ class ErrorReport a where
 normal :: Text -> [Style]
 normal t = [Normal t]
 
-onlyCol :: Pos -> Range
-onlyCol pos@(Pos line' col) = Range pos (Pos line' (col + 1))
+onlyCol :: Point -> Range
+onlyCol pos@(Point line' col) = Range pos (Point line' (col + 1))
 
-columnError :: Pos -> [Style] -> ErrMessage
+columnError :: Point -> [Style] -> ErrMessage
 columnError pos text = ErrMessage (Just pos) text [Code Red (onlyCol pos) (Just "Here!!")]
 
 boundsError :: Range -> [Style] -> ErrMessage
@@ -63,7 +63,7 @@ boundsError pos text = ErrMessage (Just $ start pos) text [Code Red pos (Just "H
 
 orZero :: Maybe Range -> Range
 orZero (Just b) = b
-orZero Nothing = Range (Pos 0 0) (Pos 0 0)
+orZero Nothing = Range (Point 0 0) (Point 0 0)
 
 coloredCode :: Color -> Range -> ErrComponent
 coloredCode color b = Code color b Nothing

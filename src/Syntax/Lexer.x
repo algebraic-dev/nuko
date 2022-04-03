@@ -152,8 +152,7 @@ layoutKw t text pos = do
         else pushCode layout
     token t text pos
 
-
-endBlock :: Token -> Text -> Pos -> Lexer (Ranged Token)
+endBlock :: Token -> Text -> Point -> Lexer (Ranged Token)
 endBlock tkn t p = popCode *> token tkn t p
 
 scan :: Lexer (Ranged Token)
