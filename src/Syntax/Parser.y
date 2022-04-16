@@ -86,42 +86,43 @@ Lowers : {- empty -} {[]}
 {- Pattern processing -}      
 
 PatternAtoms :: { [Pattern Normal] }
-          : PatternAtoms PatternAtom { $2 : $1 } 
-          | PatternAtom { [$1] }
+      : PatternAtoms PatternAtom { $2 : $1 } 
+      | PatternAtom { [$1] }
 
 PatternAtom :: { Pattern Normal }
-         : '_'             { PWild (position $1) }
-         | Literal         { PLit NoExt $1 }
-         | Lower           { PId NoExt $1 }
-         | Upper           { PCons (getPos $1) $1 [] }
-         | '(' Pattern ')' { $2 } 
+      : '_'             { PWild (position $1) }
+      | Literal         { PLit NoExt $1 }
+      | Lower           { PId NoExt $1 }
+      | Upper           { PCons (getPos $1) $1 [] }
+      | '(' Pattern ')' { $2 } 
 
 PatternCons :: { Pattern Normal }
-             : Upper PatternAtoms { PCons (getPos $1 <> headOr $2 getPos (getPos $1)) $1 (reverse $2)}
+      : Upper PatternAtoms { PCons (getPos $1 <> headOr $2 getPos (getPos $1)) $1 (reverse $2)}
 
 Pattern :: { Pattern Normal }
-         : PatternCons { $1 }
-         | PatternAtom { $1 }
+      : PatternCons { $1 }
+      | PatternAtom { $1 }
 
 {- Type processing -}
 
 TypeAtomsCons :: { [Typer Normal] }
-       : TypeAtoms TypeAtom { $2 : $1 }
-       | TypeAtom { [$1] } 
+      : TypeAtoms TypeAtom { $2 : $1 }
+      | TypeAtom { [$1] } 
 
 TypeAtoms :: { [Typer Normal] }
-       : TypeAtoms TypeAtom { $2 : $1 }
-       | TypeAtom { [$1] } 
+      : TypeAtoms TypeAtom { $2 : $1 }
+      | TypeAtom { [$1] } 
 
 TypeAtomsZ :: { [Typer Normal] }
-       : TypeAtomsZ TypeAtom { $2 : $1 }
-       | {- empty -} { [] } 
+      : TypeAtomsZ TypeAtom { $2 : $1 }
+      | {- empty -} { [] } 
 
 TypeConst :: { Typer Normal } 
-          : TypeAtoms { 
+      : TypeAtoms { 
             let rev = reverse $1 in
             let pos = (getPos (head rev) <> getPos (last rev)) in 
-            foldl (TApp pos) (head rev) (tail rev) }
+            foldl (TApp pos) (head rev) (tail rev) 
+        }
 
 TypeAtom :: { Typer Normal }
           : Lower { TPoly NoExt $1 }
@@ -166,8 +167,8 @@ Call :: { Expr Normal }
       | Atom { $1 }
 
 ExprAtom :: { Expr Normal }
-          : Call { $1 }
-          | ExprAtom Symbol Call { Binary ($1 `mix` $3) $2 $1 $3 }
+      : Call { $1 }
+      | ExprAtom Symbol Call { Binary ($1 `mix` $3) $2 $1 $3 }
 
 NanoExpr :: { Expr Normal }
       : '\\' Binder '->' NanoExpr { Lam ($2 `mix` $4) $2 $4}
@@ -181,7 +182,7 @@ Expr :: { Expr Normal }
             case $2 of 
                   Just r -> Ann (getPos $1 <> getPos r) $1 r
                   Nothing -> $1
-       } 
+        } 
 
 Exprs :: { [Expr Normal] }
       : Expr { [$1] } 

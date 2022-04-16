@@ -3,10 +3,11 @@
 -}
 module Syntax.Tree (Normal, HasPosition(..)) where 
     
-import Data.Void  (Void)
-import Data.Text qualified as Text
-import Syntax.Range (Range, HasPosition (getPos))
 import Expr 
+import Data.Void  (Void)
+import Syntax.Range (Range, HasPosition (getPos))
+
+import qualified Data.Text as Text
 
 data Normal
 

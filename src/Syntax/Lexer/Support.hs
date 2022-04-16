@@ -114,12 +114,13 @@ token = emit . const
 pushCode :: Int -> Lexer ()
 pushCode code = State.modify (\s -> s {lsCodes = NonEmpty.cons code (lsCodes s)})
 
-popCode :: Lexer ()
-popCode = State.modify $ \s ->
-  case snd $ NonEmpty.uncons (lsCodes s) of
-    Just r -> s {lsCodes = r}
-    Nothing -> s {lsCodes = 0 :| []}
-
+popCode :: Lexer Int
+popCode = State.state $ \s ->
+  let state = 
+        case snd $ NonEmpty.uncons (lsCodes s) of
+          Just r -> s {lsCodes = r}
+          Nothing -> s {lsCodes = 0 :| []}
+  in (NonEmpty.head (lsCodes s), state)
 replaceCode :: Int -> Lexer ()
 replaceCode code = popCode *> pushCode code
 

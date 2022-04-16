@@ -22,16 +22,17 @@ data Point = Point
 data Range = Range
   { start :: !Point,
     end :: !Point
-  } deriving Show
+  }
+  deriving (Show)
 
 data Ranged a = Ranged
   { info :: a,
     position :: !Range
   }
 
-data Loc a 
+data Loc
   = Blank
-  | Loc (Ranged a)
+  | Loc Range
 
 instance Semigroup Range where
   (Range s _) <> (Range _ e) = Range s e

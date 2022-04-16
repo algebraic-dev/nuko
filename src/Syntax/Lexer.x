@@ -5,6 +5,7 @@ module Syntax.Lexer where
 import Data.Text            (Text, append, index)
 import Data.Text.Encoding   (decodeUtf8)
 import Data.Text.Read       (decimal, double)
+import Control.Monad        (when)
 import Syntax.Lexer.Support
 import Syntax.Range
 import Syntax.Lexer.Tokens
@@ -29,8 +30,12 @@ $end = [\?\!]
 @id_char = $letter | $digit | _ 
 @lower_id = $lower @id_char* $end?
 @upper_id = $upper @id_char* $end?
-@wild     = _
-@number   = $digit+
+@wild = _
+@number = $digit+
+
+
+$graphic      = [\x21-\x7E]
+@stringraw = [$graphic$space]|$newline
 
 program :- 
     
@@ -90,11 +95,11 @@ program :-
 
 <linecom> [^\n] ;
 <linecom> \n    { \_ _ ->  popCode *> scan }
-
+<linecom> eof   { \_ _ ->  popCode *> scan }
 -- Strings 
 
-<str> \"   { \_ p -> popCode *> resetBuffer >>= \s -> emit TknLStr s p  }
-<str> [^\"] { \c _ -> addToBuffer c *> scan }
+<str> "          { \_ p -> popCode *> resetBuffer >>= \s -> emit TknLStr s p  }
+<str> .          { \c _ -> addToBuffer c *> scan }
 
 {
 
@@ -120,9 +125,15 @@ nonLwToken tkn text pos = do
     token tkn text pos
 
 
-handleEOF = lastLayout >>= \case 
-    Nothing -> popCode *> ghostRange TknEOF
-    Just _  -> popLayout *> ghostRange TknClose
+handleEOF = do
+    layout <- lastLayout
+    code <- popCode
+    when (code == str) $ do 
+        pos <- ST.gets (inputPos . lsInput)
+        ER.throwError $ UnfinishedString pos
+    case layout of 
+        Nothing -> popCode *> ghostRange TknEOF
+        Just _  -> popLayout *> ghostRange TknClose
 
 offsideRule _ _ = do 
     lay <- lastLayout
