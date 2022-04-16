@@ -5,13 +5,14 @@
 module Error.PrettyPrint (ppErrorReport) where
 
 import Data.Text (Text)
-import Data.Text qualified as T
-import Error.Message qualified as M
 import Syntax.Range (Point, Range)
-import Syntax.Range qualified as B
 import System.Console.Pretty (Pretty (bgColor, color, style), Style (Faint))
-import System.Console.Pretty qualified as SCP
-import Text.Printf qualified as P
+
+import qualified Data.Text             as T
+import qualified Error.Message         as M
+import qualified Syntax.Range          as B
+import qualified System.Console.Pretty as SCP
+import qualified Text.Printf           as P
 
 toColor :: M.Color -> SCP.Color
 toColor = \case

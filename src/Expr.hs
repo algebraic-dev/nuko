@@ -72,7 +72,7 @@ import Pretty.Tree (Node (..), SimpleTree (..))
 
 data NoExt = NoExt
 
-data Name x = Name (XName x) Text
+data Name x = Name { loc :: (XName x), ident :: Text }
 
 data Binder x
   = Typed (XBTyped x) (Pattern x) (Typer x)
