@@ -21,11 +21,10 @@ default-extensions:
   - LambdaCase
   - StandaloneDeriving
   - FlexibleContexts
-  - ImportQualifiedPost
   - DataKinds
   - GADTs
   - PatternSynonyms
-  - ConstraintKinds 
+  - ConstraintKinds
   - DuplicateRecordFields
   - OverloadedRecordDot
 
@@ -39,6 +38,7 @@ ghc-options:
   - -Wno-missing-import-lists
   - -Wno-missing-safe-haskell-mode
   - -Wno-safe
+  - -Wno-missing-exported-signatures
   - -Wno-unsafe
   - -Wno-missed-specialisations
 
@@ -47,11 +47,11 @@ library:
   ghc-options:
     - -Wall
   dependencies:
-  - mtl
-  - containers
-  - array
-  - pretty-terminal
-  
+    - mtl
+    - containers
+    - array
+    - pretty-terminal
+
 executables:
   Nuko-exe:
     main: Main.hs
