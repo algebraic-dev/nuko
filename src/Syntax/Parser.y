@@ -1,5 +1,5 @@
 {
-module Syntax.Parser where 
+module Syntax.Parser where
 
 import Syntax.Lexer.Support (Lexer, popLayout, ErrKind(..))
 import Syntax.Lexer.Tokens (Token(..))
@@ -15,7 +15,7 @@ import Data.Function (on)
 import Control.Monad.Except (throwError)
 
 import qualified Error.Message as ERR
-import Debug.Trace 
+import Debug.Trace
 
 }
 
@@ -32,8 +32,9 @@ import Debug.Trace
 %token
     lower  { Ranged (TknLowerId _) _ }
     upper  { Ranged (TknUpperId _) _ }
+    hole   { Ranged (TknHole _) _ }
     symbol { Ranged (TknSymbol _) _ }
-    
+
     number { Ranged (TknNumber _) _ }
     string { Ranged (TknLStr _) _ }
     char   { Ranged (TknLChar _) _ }
@@ -68,7 +69,7 @@ import Debug.Trace
     with     { Ranged TknKwWith _ }
     forall   { Ranged TknKwForall _ }
 
-%right '->' 
+%right '->'
 %left B
 %left A
 %left symbol
@@ -83,10 +84,10 @@ Symbol : symbol { Name (position $1) (getData $1) }
 Lowers : {- empty -} {[]}
        | Lowers Lower { $2 : $1 }
 
-{- Pattern processing -}      
+{- Pattern processing -}
 
 PatternAtoms :: { [Pattern Normal] }
-      : PatternAtoms PatternAtom { $2 : $1 } 
+      : PatternAtoms PatternAtom { $2 : $1 }
       | PatternAtom { [$1] }
 
 PatternAtom :: { Pattern Normal }
@@ -94,7 +95,7 @@ PatternAtom :: { Pattern Normal }
       | Literal         { PLit NoExt $1 }
       | Lower           { PId NoExt $1 }
       | Upper           { PCons (getPos $1) $1 [] }
-      | '(' Pattern ')' { $2 } 
+      | '(' Pattern ')' { $2 }
 
 PatternCons :: { Pattern Normal }
       : Upper PatternAtoms { PCons (getPos $1 <> headOr $2 getPos (getPos $1)) $1 (reverse $2)}
@@ -107,21 +108,21 @@ Pattern :: { Pattern Normal }
 
 TypeAtomsCons :: { [Typer Normal] }
       : TypeAtoms TypeAtom { $2 : $1 }
-      | TypeAtom { [$1] } 
+      | TypeAtom { [$1] }
 
 TypeAtoms :: { [Typer Normal] }
       : TypeAtoms TypeAtom { $2 : $1 }
-      | TypeAtom { [$1] } 
+      | TypeAtom { [$1] }
 
 TypeAtomsZ :: { [Typer Normal] }
       : TypeAtomsZ TypeAtom { $2 : $1 }
-      | {- empty -} { [] } 
+      | {- empty -} { [] }
 
-TypeConst :: { Typer Normal } 
-      : TypeAtoms { 
+TypeConst :: { Typer Normal }
+      : TypeAtoms {
             let rev = reverse $1 in
-            let pos = (getPos (head rev) <> getPos (last rev)) in 
-            foldl (TApp pos) (head rev) (tail rev) 
+            let pos = (getPos (head rev) <> getPos (last rev)) in
+            foldl (TApp pos) (head rev) (tail rev)
         }
 
 TypeAtom :: { Typer Normal }
@@ -144,10 +145,10 @@ Type :: { Typer Normal }
 
 Binder :: { Binder Normal }
         : PatternAtom { Raw NoExt $1 }
-        | '(' Pattern ':' Type ')' { Typed ($2 `mix` $4) $2 $4} 
+        | '(' Pattern ':' Type ')' { Typed ($2 `mix` $4) $2 $4}
 
 Binders :: { [Binder Normal] }
-         : Binders Binder { $2 : $1 } 
+         : Binders Binder { $2 : $1 }
          | {- empty -} { [] }
 
 Literal :: { Literal Normal }
@@ -158,6 +159,7 @@ Literal :: { Literal Normal }
 
 Atom :: { Expr Normal }
       : Literal      { Lit NoExt $1 }
+      | hole         { EHole (position $1) (getData $1)  }
       | Lower        { Var NoExt $1 }
       | Upper        { Var NoExt $1 }
       | '(' Expr ')' { $2 }
@@ -178,18 +180,18 @@ NanoExpr :: { Expr Normal }
       | ExprAtom { $1 }
 
 Expr :: { Expr Normal }
-      : NanoExpr OptRet { 
-            case $2 of 
+      : NanoExpr OptRet {
+            case $2 of
                   Just r -> Ann (getPos $1 <> getPos r) $1 r
                   Nothing -> $1
-        } 
+        }
 
 Exprs :: { [Expr Normal] }
-      : Expr { [$1] } 
+      : Expr { [$1] }
       | Exprs semi Expr { $3 : $1 }
 
 MatchClause :: { (Pattern Normal, Expr Normal) }
-             : Pattern '->' Expr { ($1, $3) } 
+             : Pattern '->' Expr { ($1, $3) }
 
 MatchClauses :: { [(Pattern Normal, Expr Normal)] }
               : MatchClause { [$1] }
@@ -200,7 +202,7 @@ Assign : let Binder '=' Expr { Assign (position $1 <> getPos $4) $2 $4}
 Sttms :: { Sttms Normal }
        : Expr { End $1 }
        | Assign {% throwError $ UnexpectedAssign $ assignPos $ $1   }
-       | Expr semi Sttms   { SExpr $1 $3 } 
+       | Expr semi Sttms   { SExpr $1 $3 }
        | Assign semi Sttms { SAssign $1 $3 }
 
 Close :: { () }
@@ -224,13 +226,13 @@ ProdClauses :: { [(Name Normal, Typer Normal)] }
              | ProdClauses ',' ProdClause { $3 : $1 }
 
 TypeCons :: { TypeCons Normal }
-          : '{' ProdClauses '}' { TcRecord (position $1 <> position $3) (reverse $2) } 
+          : '{' ProdClauses '}' { TcRecord (position $1 <> position $3) (reverse $2) }
           | CoprodClauses { TcSum (firstAndLast $1) (reverse $1)}
           | Type { TcSyn NoExt $1 }
 
 TypeDecl : type Upper Lowers '=' TypeCons { TypeDecl $2 $3 $5 NoExt }
 
-OptRet : ':' Type { Just $2 } 
+OptRet : ':' Type { Just $2 }
        | {- empty -} { Nothing }
 
 LetDecl : let Lower Binders OptRet '=' Expr { LetDecl $2 $3 $4 $6 NoExt }
@@ -244,8 +246,8 @@ ImportsThings : ImportsThings ',' Importable { $3 : $1 }
 ModuleName : Upper { [$1] }
            | ModuleName '.' Upper { $3 : $1 }
 
-{- 
-      Program level declarations 
+{-
+      Program level declarations
 -}
 
 ImportDecl : import ModuleName '(' ImportsThings ')' { ImportDecl (reverse $2) (Right $ reverse $4)  }
@@ -254,7 +256,7 @@ ImportDecl : import ModuleName '(' ImportsThings ')' { ImportDecl (reverse $2) (
 Imports : Imports ImportDecl { $2 : $1 }
         | {- empty -} { [] }
 
-ExternalDecl : external Lower ':' Type '=' string  
+ExternalDecl : external Lower ':' Type '=' string
                   { ExternalDecl $2 $4 (getData $6) NoExt }
 
 ProgramDecl : TypeDecl     { TTypeDecl $1 }
@@ -265,7 +267,7 @@ ProgramDecls : ProgramDecls ProgramDecl { $2 : $1 }
              | {- empty -} { [] }
 
 Program : Imports ProgramDecls { foldl filterDecls (Program [] [] [] $1) $2 }
-      
+
 {
 
 getLastSttm :: Sttms x -> Expr x
@@ -273,30 +275,31 @@ getLastSttm (End x) = x
 getLastSttm (SAssign _ l) = getLastSttm l
 getLastSttm (SExpr _ l) = getLastSttm l
 
-filterDecls :: Program x -> TLKind x -> Program x 
-filterDecls program (TTypeDecl tyDecl) = program { progType = tyDecl : progType program} 
-filterDecls program (TLetDecl tyDecl) = program { progLet = tyDecl : progLet program} 
-filterDecls program (TExternalDecl tyDecl) = program { progExternal = tyDecl : progExternal program} 
+filterDecls :: Program x -> TLKind x -> Program x
+filterDecls program (TTypeDecl tyDecl) = program { progType = tyDecl : progType program}
+filterDecls program (TLetDecl tyDecl) = program { progLet = tyDecl : progLet program}
+filterDecls program (TExternalDecl tyDecl) = program { progExternal = tyDecl : progExternal program}
 
 firstAndLast :: (HasPosition a, HasPosition b) => [(a, b)] -> Range
 firstAndLast [(a,b)] = a `mix` b
 firstAndLast [] = error "zero clauses!"
 firstAndLast other =
-      case (head other, last other) of 
+      case (head other, last other) of
             ((_, b), (a, _)) -> a `mix` b
 
-headOr :: [a] -> (a -> b) -> b -> b 
-headOr [] fn alt       = alt 
+headOr :: [a] -> (a -> b) -> b -> b
+headOr [] fn alt       = alt
 headOr (x : xn) fn alt = fn x
 
 mix :: (HasPosition a, HasPosition b) => a -> b -> Range
 mix a b = getPos (a,b)
 
-getData :: Ranged Token -> Text 
+getData :: Ranged Token -> Text
 getData (Ranged (TknLowerId tx) _) = tx
 getData (Ranged (TknUpperId tx) _) = tx
 getData (Ranged (TknLStr tx) _)    = tx
 getData (Ranged (TknSymbol tx) _)    = tx
+getData (Ranged (TknHole tx) _)    = tx
 getData (Ranged tkn _) = error ("error while trying to get data on parser: " ++ show tkn)
 
 getDecimal (Ranged (TknNumber num) _) = num

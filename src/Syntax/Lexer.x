@@ -27,7 +27,7 @@ $letter = [a-zA-Z]
 $symbol = [\+\-\*\/\<\>\=\^\?]
 $end = [\?\!]
 
-@id_char = $letter | $digit | _ 
+@id_char = $letter | $digit | _
 @lower_id = $lower @id_char* $end?
 @upper_id = $upper @id_char* $end?
 @wild = _
@@ -37,8 +37,8 @@ $end = [\?\!]
 $graphic      = [\x21-\x7E]
 @stringraw = [$graphic$space]|$newline
 
-program :- 
-    
+program :-
+
 <0> $space+    ;
 <0> $newline+  { \_ _ -> pushCode newline *> scan }
 
@@ -55,8 +55,9 @@ program :-
 
 <0> "with"     { layoutKw TknKwWith }
 
-<0> "'" [^\'] "'" { emit $ TknLChar . (`Data.Text.index` 1) }
 <0> @number "." @number { emit (TknLDouble . fst . fromRight . double)}
+<0> "?" @lower_id  { emit TknHole  }
+<0> "'" [^\'] "'"  { emit $ TknLChar . (`Data.Text.index` 1) }
 <0> @wild      { token TknWild }
 <0> @number    { emit (TknNumber . fst . fromRight . decimal) }
 <0> @lower_id  { emit TknLowerId  }
@@ -96,19 +97,19 @@ program :-
 <linecom> [^\n] ;
 <linecom> \n    { \_ _ ->  popCode *> scan }
 <linecom> eof   { \_ _ ->  popCode *> scan }
--- Strings 
+-- Strings
 
 <str> "          { \_ p -> popCode *> resetBuffer >>= \s -> emit TknLStr s p  }
 <str> .          { \c _ -> addToBuffer c *> scan }
 
 {
 
-ghostRange :: t -> Lexer (Ranged t) 
-ghostRange t = do 
+ghostRange :: t -> Lexer (Ranged t)
+ghostRange t = do
     pos <- ST.gets (inputPos . lsInput)
     pure $ Ranged t (Range pos pos)
 
-fromRight :: Either e r -> r 
+fromRight :: Either e r -> r
 fromRight (Right b) = b
 fromRight _ = error "Cannot unpack the data (error on lexer UwU)"
 
@@ -120,7 +121,7 @@ resetBuffer = ST.state (\s -> (lsBuffer s, s { lsBuffer = "" }))
 
 emptyLayout _ _ = replaceCode newline *> ghostRange TknClose
 
-nonLwToken tkn text pos = do 
+nonLwToken tkn text pos = do
     ST.modify (\s -> s { lsAfterNonLW = True })
     token tkn text pos
 
@@ -128,37 +129,37 @@ nonLwToken tkn text pos = do
 handleEOF = do
     layout <- lastLayout
     code <- popCode
-    when (code == str) $ do 
+    when (code == str) $ do
         pos <- ST.gets (inputPos . lsInput)
         ER.throwError $ UnfinishedString pos
-    case layout of 
+    case layout of
         Nothing -> popCode *> ghostRange TknEOF
         Just _  -> popLayout *> ghostRange TknClose
 
-offsideRule _ _ = do 
+offsideRule _ _ = do
     lay <- lastLayout
     col <- ST.gets (column . inputPos . lsInput)
-    let continue = popCode *> scan 
-    case lay of 
+    let continue = popCode *> scan
+    case lay of
         Nothing   -> continue
-        Just col' -> do 
+        Just col' -> do
             case col `compare` col' of
                 EQ -> popCode *> ghostRange TknEnd
-                GT -> continue 
+                GT -> continue
                 LT -> popLayout *> ghostRange TknClose
 
-startLayout _ _ = do  
-    popCode 
-    ref <- lastLayout 
+startLayout _ _ = do
+    popCode
+    ref <- lastLayout
     col <- ST.gets (column . inputPos . lsInput)
-    if Just col <= ref 
+    if Just col <= ref
         then pushCode empty_layout
         else pushLayout col
     ghostRange TknOpen
 
 layoutKw t text pos = do
     isAfterNonLayoutKW <- ST.gets lsAfterNonLW
-    if isAfterNonLayoutKW 
+    if isAfterNonLayoutKW
         then ST.modify (\s -> s { lsAfterNonLW = False })
         else pushCode layout
     token t text pos
@@ -167,14 +168,14 @@ endBlock :: Token -> Text -> Point -> Lexer (Ranged Token)
 endBlock tkn t p = popCode *> token tkn t p
 
 scan :: Lexer (Ranged Token)
-scan = do 
-    input <- ST.gets lsInput 
-    code <- startCode 
-    case alexScan input code of 
+scan = do
+    input <- ST.gets lsInput
+    code <- startCode
+    case alexScan input code of
         AlexEOF -> handleEOF
         AlexError inp -> ER.throwError $ UnrecognizableChar (inputPos inp)
-        AlexSkip input' _ -> ST.modify (\s -> s { lsInput = input' }) >> scan 
-        AlexToken input' tokl action -> do  
+        AlexSkip input' _ -> ST.modify (\s -> s { lsInput = input' }) >> scan
+        AlexToken input' tokl action -> do
             pos <- ST.gets (inputPos . lsInput)
             ST.modify (\s -> s { lsInput = input' })
             res <- action (decodeUtf8 $ BS.take tokl (inputStream input)) pos

@@ -1,18 +1,19 @@
-module Syntax.Lexer.Tokens (Token(..)) where 
+module Syntax.Lexer.Tokens (Token(..)) where
 
 import Data.Text (Text)
 
-data Token 
-    = TknLowerId Text 
+data Token
+    = TknLowerId Text
     | TknUpperId Text
     | TknSymbol Text
-    
+
     | TknNumber Integer
     | TknLStr Text
-    | TknLChar Char 
+    | TknHole Text
+    | TknLChar Char
     | TknLDouble Double
 
-    -- Layout 
+    -- Layout
     | TknOpen | TknClose | TknEnd | TknWild
 
      -- Ponctuations
@@ -21,8 +22,8 @@ data Token
     | TknComma | TknDot | TknDoubleRArrow
 
     -- Keywords
-    | TknKwType | TknKwLet | TknKwIf 
-    | TknKwThen | TknKwElse | TknKwWith | TknKwMatch 
+    | TknKwType | TknKwLet | TknKwIf
+    | TknKwThen | TknKwElse | TknKwWith | TknKwMatch
     | TknKwImport | TknKwAs | TknKwExternal | TknKwIn
     | TknKwForall
 
