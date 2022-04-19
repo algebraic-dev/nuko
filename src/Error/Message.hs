@@ -15,10 +15,11 @@ module Error.Message
     orZero,
     coloredCode,
     code,
+    format
   )
 where
 
-import Data.Text (Text)
+import Data.Text (Text, pack)
 import Syntax.Range (Point (Point), Range (Range, start))
 
 -- Data Components
@@ -73,3 +74,6 @@ coloredCode color b = Code color b Nothing
 
 code :: Color -> Text -> Range -> ErrComponent
 code color t b = Code color b (Just t)
+
+format :: Show a => a -> Text
+format = pack . show

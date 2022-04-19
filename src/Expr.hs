@@ -1,7 +1,7 @@
 {-| Base module for every Syntax tree in "Trees that grow" format that
     will be used in the project. Probably this project will have only
     a few types of abstract trees
-  
+
     - Normal: Only positions are stored inside the tree
     - Typed: Positions and types together
     - Lowered: No types or patterns are included here, it's an untyped ast
@@ -36,6 +36,7 @@ module Expr
     XPWild,
     XPCons,
     XPLit,
+    XHole,
     XPId,
     XPExt,
     XLChar,
@@ -113,6 +114,7 @@ data Sttms x
 
 data Expr x
   = Lam (XLam x) (Binder x) (Expr x)
+  | EHole (XHole x) Text
   | App (XApp x) (Expr x) (Expr x)
   | Var (XVar x) (Name x)
   | Lit (XLit x) (Literal x)
@@ -216,6 +218,8 @@ type family XLExt x
 
 type family XLam x
 
+type family XHole x
+
 type family XApp x
 
 type family XBinary x
@@ -304,6 +308,7 @@ instance SimpleTree (Expr x) where
   toTree (Match _ match expr) = Node "Expr" [toTree match, toTree expr]
   toTree (Binary _ name e e2) = Node "Binary" [toTree name, toTree e, toTree e2]
   toTree (Ann _ a b) = Node "Abb" [toTree a, toTree b]
+  toTree (EHole _ a) = Node "Hole" [toTree a]
   toTree (Ext _) = Node "Ext" []
 
 instance SimpleTree (TypeCons x) where

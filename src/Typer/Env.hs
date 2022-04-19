@@ -8,7 +8,6 @@ module Typer.Env
     TyperMonad,
     Tracker (..),
     track,
-    lookupVar,
     getTyPos,
     scopeVar,
     scopeVars,
@@ -18,66 +17,73 @@ module Typer.Env
     generalize,
     instantiate,
     scopeTy,
-    existentialize
+    existentialize,
+    runEnv,
+    named,
+    fillHole,
+    readHole,
+    setHole
   )
 where
 
-import Control.Exception (throwIO)
+import Typer.Types
+import Expr                   (Expr, Typer, Literal)
+import Data.Foldable          (traverse_)
+import Data.IORef             (newIORef, writeIORef)
+import Data.Map               (Map)
+import GHC.IORef              (readIORef)
+import Syntax.Range           (Range)
+import Data.Set               (Set)
+import Syntax.Tree            (Normal)
+import Control.Monad.State    (MonadState, StateT)
 import Control.Monad.IO.Class (MonadIO, liftIO)
-import Control.Monad.State (MonadState)
-import Data.Foldable (traverse_)
-import Data.IORef (newIORef, writeIORef)
-import Data.Map (Map)
-import GHC.IORef (readIORef)
-import Syntax.Range (Loc (..), Range)
-import Typer.Types 
+import Data.Sequence          (Seq ((:|>)))
 
 import qualified Control.Monad.State as State
-import qualified Data.Map as Map
-import qualified Typer.Error as Err
-import qualified Data.Text as Text
-import qualified Data.Set as Set
-import Data.Set (Set)
+import qualified Data.Map            as Map
+import qualified Data.Text           as Text
+import qualified Data.Set            as Set
+import qualified Data.Sequence       as Seq
 
-{- 
-    Things to help me :D
-    - https://okmij.org/ftp/ML/generalization.html#generalization
-    - https://www.microsoft.com/en-us/research/wp-content/uploads/2016/02/putting.pdf
-    - https://gist.github.com/mb64/87ac275c327ea923a8d587df7863d8c7
-    - https://arxiv.org/pdf/1306.6032.pdf
--}
-
--- Just some aliases to help me later
-
+-- | Useful to track what the type checker did to achieve an error.
+--   It helps a lot when writing error messages.
 data Tracker
-  = TrCheck Range Loc
-  | TrInfer Range 
-  | TrUnify Loc Loc
+  = InInferExpr (Expr Normal)
+  | InInferTy   (Typer Normal)
+  | InInferLit  (Literal Normal)
+  | InCheck     (Expr Normal) Ty
+  | InUnify     Ty Ty
+  | InApply     Ty (Expr Normal)
+  deriving Show
 
+-- | Stores all the info about the environment of typing, trackers
+--   (that helps a lot with error localization) and some cool numbers
+--   to generate new variable names.
 data Env = Env
   { scope     :: Lvl,
     nameGen   :: Int,
-    trackers  :: [Tracker],
+    trackers  :: Seq Tracker,
     variables :: Map Name Ty,
     types     :: Set Name
   }
 
 type TyperMonad m = (MonadState Env m, MonadIO m)
 
--- Things for tracking the last things to error reporting
-
-updateTracker :: TyperMonad m => ([Tracker] -> [Tracker]) -> m ()
+updateTracker :: TyperMonad m => (Seq Tracker -> Seq Tracker) -> m ()
 updateTracker f = State.modify (\ctx -> ctx {trackers = f ctx.trackers})
 
 track :: TyperMonad m => Tracker -> m a -> m a
-track tracker action = updateTracker (tracker :) *> action <* updateTracker tail
+track tracker action = do
+    updateTracker (:|> tracker)
+    res <- action
+    updateTracker (removeLeft)
+    pure res
+  where
+    removeLeft :: Seq a -> Seq a
+    removeLeft (a :|> _)   = a
+    removeLeft (Seq.Empty) = Seq.empty
 
 -- Scoping and variales
-
-lookupVar :: TyperMonad m => Name -> m Ty
-lookupVar name = do
-  res <- State.gets (Map.lookup name . variables)
-  maybe (liftIO $ throwIO (Err.CannotFind name)) pure res
 
 updateVars :: TyperMonad m => (Map Name Ty -> Map Name Ty) -> m ()
 updateVars f = State.modify (\ctx -> ctx {variables = f (ctx.variables)})
@@ -101,14 +107,13 @@ scopeVars vars action = do
   updateVars (const oldTy)
   pure act
 
-scopeTy :: TyperMonad m => Name -> m a -> m a 
-scopeTy name action = do 
+scopeTy :: TyperMonad m => Name -> m a -> m a
+scopeTy name action = do
   oldTy <- State.gets types
   updateTypes (Set.insert name)
   act <- action
   updateTypes (const oldTy)
   pure act
-
 
 scopeUp :: TyperMonad m => m a -> m a
 scopeUp action =
@@ -124,47 +129,65 @@ newHole = do
   res <- liftIO $ newIORef (Empty name scope')
   pure res
 
-newNamed :: TyperMonad m => m Name 
-newNamed = do 
-  name <- State.state (\env -> (Text.pack $ "'" ++ show env.nameGen, env))
+newNamed :: TyperMonad m => m Name
+newNamed = do
+  name <- State.state (\env -> (Text.pack $ "'" ++ show env.nameGen, env { nameGen = env.nameGen + 1}))
   pure name
 
 -- Generalization and instantiation
 
-generalize :: TyperMonad m => Ty -> m Ty 
-generalize ty = do  
+generalize :: TyperMonad m => Ty -> m Ty
+generalize ty = do
     let pos = getTyPos ty
     freeVars <- Set.toList <$> go ty
-    pure (foldl (flip $ TyForall pos) ty freeVars) 
-  where 
+    pure (foldl (flip $ TyForall pos) ty freeVars)
+  where
     go :: TyperMonad m => Ty -> m (Set Name)
-    go = \case 
+    go = \case
+      TyRef _ ty'   -> go ty'
       TyRigid _ _ _ -> pure Set.empty
       TyNamed _ _ -> pure Set.empty
       TyFun _ ty' ty'' -> Set.union <$> go ty' <*> go ty''
       TyForall _ _ ty' -> go ty'
-      TyHole loc hole -> do 
+      TyHole loc hole -> do
         resHole <- liftIO $ readIORef hole
-        case resHole of 
+        case resHole of
           Empty _ hScope -> do
-            lvl <- State.gets scope 
-            if (hScope > lvl) then do 
+            lvl <- State.gets scope
+            if (hScope > lvl) then do
               name <- newNamed
               liftIO $ writeIORef hole (Filled $ TyNamed loc name)
-              pure $ Set.singleton name 
+              pure $ Set.singleton name
             else pure Set.empty
           Filled ty' -> go ty'
 
-instantiate :: TyperMonad m => Ty -> m Ty 
-instantiate = \case 
-  (TyForall loc binder body) -> do 
+instantiate :: TyperMonad m => Ty -> m Ty
+instantiate = \case
+  (TyForall loc binder body) -> do
     hole <- TyHole loc <$> newHole
-    pure (substitute binder body hole)
+    pure (substitute binder hole body)
   other -> pure other
 
-existentialize :: TyperMonad m => Ty -> m Ty 
-existentialize = \case  
+-- Lol i dont want to use the word "skolomize"
+existentialize :: TyperMonad m => Ty -> m Ty
+existentialize = \case
   (TyForall loc binder body) -> do
     lvl <- State.gets scope
-    pure (substitute binder body $ TyRigid loc binder lvl)
+    pure (substitute binder (TyRigid loc binder lvl) body)
   other -> pure other
+
+
+fillHole :: TyperMonad m => TyHole -> Ty -> m ()
+fillHole hole ty = liftIO $ writeIORef hole (Filled ty)
+
+readHole :: TyperMonad m => TyHole -> m (Hole Ty)
+readHole = liftIO . readIORef
+
+setHole :: TyperMonad m => TyHole -> Hole Ty -> m ()
+setHole hole = liftIO . writeIORef hole
+
+named :: TyperMonad m => Range -> Name -> m Ty
+named range name = pure (TyNamed (Just range) name)
+
+runEnv :: StateT Env IO a -> Env -> IO a
+runEnv action env = State.evalStateT action env

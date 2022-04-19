@@ -128,6 +128,7 @@ instance HasPosition (Expr Normal) where
     getPos (Binary pos _ _ _) = pos
     getPos (Block pos _) = pos
     getPos (If pos _ _ _) = pos
+    getPos (EHole pos _) = pos
 
 instance HasPosition (TypeCons Normal) where
     getPos (TcSum pos _) = pos

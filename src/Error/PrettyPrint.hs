@@ -74,7 +74,7 @@ ppLines note clr source (B.Range start end)
     ppLine' line st en = ppLine line . colorizeLine clr st en
 
 ppFile :: Text -> Maybe Point -> Text
-ppFile text (Just (B.Point line col)) = T.pack $ P.printf "%s ──> %s:%d:%d\n\n" (space 7) text line col
+ppFile text (Just (B.Point line col)) = T.pack $ P.printf "%s ──> %s:%d:%d\n\n" (space 7) text (line + 1) col
 ppFile text Nothing = T.pack $ P.printf "%s ──> %s\n\n" (space 4) text
 
 ppTitle :: Text -> Text

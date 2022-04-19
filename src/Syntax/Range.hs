@@ -5,9 +5,9 @@ module Syntax.Range
   ( Point (..),
     Range (..),
     Ranged (..),
-    Loc (..),
     HasPosition (..),
     advancePos,
+    Loc
   )
 where
 
@@ -23,16 +23,13 @@ data Range = Range
   { start :: !Point,
     end :: !Point
   }
-  deriving (Show)
 
 data Ranged a = Ranged
   { info :: a,
     position :: !Range
   }
 
-data Loc
-  = Blank
-  | Loc Range
+type Loc = Maybe Range
 
 instance Semigroup Range where
   (Range s _) <> (Range _ e) = Range s e
@@ -44,6 +41,9 @@ instance Eq a => Eq (Ranged a) where (==) = (==) `on` info
 
 instance Show a => Show (Ranged a) where
   show a = show $ info a
+
+instance Show Range where
+  show _ = "."
 
 advancePos :: Point -> Char -> Point
 advancePos pos '\n' = Point {line = line pos + 1, column = 1}
