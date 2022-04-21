@@ -18,6 +18,7 @@ import GHC.IORef    (readIORef)
 import Data.Kind    (Type)
 
 import qualified Data.Text as Text
+import Control.Applicative ((<|>))
 
 type Lvl = Int
 type Name = Text
@@ -47,7 +48,7 @@ instance Show Ty where
     TyFun _ (ty@TyForall {}) ty' -> "(" ++ show ty ++ ") -> " ++ show ty'
     TyFun _ (ty@TyFun {}) ty' -> "(" ++ show ty ++ ") -> " ++ show ty'
     TyForall _ na ty  -> "∀" ++ Text.unpack na ++ ". " ++ show ty
-    TyRigid _ txt lvl -> "^" ++ Text.unpack txt ++ show lvl
+    TyRigid _ txt lvl -> "(rigid) ^" ++ Text.unpack txt ++ show lvl
     TyNamed _ name    -> Text.unpack name
     TyFun _ ty ty'    -> show ty ++ " -> " ++ show ty'
     TyRef _ ty        -> show ty
@@ -73,7 +74,7 @@ getTyPos = \case
   TyRigid loc _ _ -> loc
   TyHole loc _ -> loc
   TyNamed loc _ -> loc
-  TyRef loc _ -> loc
+  TyRef loc r -> getTyPos r <|> loc
 
 substitute :: Name -> Ty -> Ty -> Ty
 substitute from to = \case

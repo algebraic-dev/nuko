@@ -1,1 +1,6 @@
-(\x -> x : Lero -> Lero)
+type Ata =
+    | A
+    | B
+
+let ata : (forall b. b -> b) -> Int =
+    \f -> f A

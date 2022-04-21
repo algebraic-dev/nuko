@@ -10,7 +10,6 @@
 module Expr
   ( NoExt(..),
     Name (..),
-    Binder (..),
     TypeCons (..),
     TypeDecl (..),
     Assign (..),
@@ -32,9 +31,11 @@ module Expr
     XTPoly,
     XTArrow,
     XTApp,
+    XCons,
     XTExt,
     XPWild,
     XPCons,
+    XPAnn,
     XPLit,
     XHole,
     XPId,
@@ -54,6 +55,7 @@ module Expr
     XMatch,
     XAnn,
     XBlock,
+    XPostField,
     XExt,
     XTcSum,
     XTcRecord,
@@ -68,16 +70,13 @@ module Expr
 where
 
 import Data.Text (Text)
-import qualified Data.Text as Text
 import Pretty.Tree (Node (..), SimpleTree (..))
+
+import qualified Data.Text as Text
 
 data NoExt = NoExt
 
 data Name x = Name { loc :: (XName x), ident :: Text }
-
-data Binder x
-  = Typed (XBTyped x) (Pattern x) (Typer x)
-  | Raw (XBRaw x) (Pattern x)
 
 data Typer x
   = TSimple (XTSimple x) (Name x)
@@ -92,6 +91,7 @@ data Pattern x
   | PCons (XPCons x) (Name x) [Pattern x]
   | PId (XPId x) (Name x)
   | PLit (XPLit x) (Literal x)
+  | PAnn (XPAnn x) (Pattern x) (Typer x)
   | PExt !(XPExt x)
 
 data Literal x
@@ -102,9 +102,10 @@ data Literal x
   | LExt !(XLExt x)
 
 data Assign x = Assign
-  { assignPos :: XAssign x,
-    assignName :: Binder x,
-    assignVal :: Expr x
+  { assignPos  :: XAssign x,
+    assignName :: Pattern x,
+    assignRet  :: Maybe (Typer x),
+    assignVal  :: Expr x
   }
 
 data Sttms x
@@ -113,12 +114,14 @@ data Sttms x
   | SExpr (Expr x) (Sttms x)
 
 data Expr x
-  = Lam (XLam x) (Binder x) (Expr x)
+  = Lam (XLam x) (Pattern x) (Expr x)
   | EHole (XHole x) Text
   | App (XApp x) (Expr x) (Expr x)
   | Var (XVar x) (Name x)
+  | Cons (XCons x) (Name x)
   | Lit (XLit x) (Literal x)
   | Block (XBlock x) (Sttms x)
+  | PostField (XPostField x) (Expr x) (Name x)
   | If (XIf x) (Expr x) (Expr x) (Expr x)
   | Match (XMatch x) (Expr x) [(Pattern x, Expr x)]
   | Binary (XBinary x) (Name x) (Expr x) (Expr x)
@@ -135,15 +138,15 @@ data TypeDecl x = TypeDecl
   { typName :: Name x,
     typArgs :: [Name x],
     typCons :: TypeCons x,
-    typExt :: !(XType x)
+    typExt  :: !(XType x)
   }
 
 data LetDecl x = LetDecl
-  { letName :: Name x,
-    letArgs :: [Binder x],
-    letReturn :: Maybe (Typer x),
-    letBody :: Expr x,
-    letExt :: !(XLet x)
+  { letName   :: Name x,
+    letArgs   :: [(Pattern x, Typer x)],
+    letReturn :: Typer x,
+    letBody   :: Expr x,
+    letExt    :: !(XLet x)
   }
 
 data ExternalDecl x = ExternalDecl
@@ -200,6 +203,8 @@ type family XPWild x
 
 type family XPCons x
 
+type family XPAnn x
+
 type family XPLit x
 
 type family XPId x
@@ -226,6 +231,8 @@ type family XBinary x
 
 type family XVar x
 
+type family XCons x
+
 type family XLit x
 
 type family XAssign x
@@ -233,6 +240,8 @@ type family XAssign x
 type family XIf x
 
 type family XMatch x
+
+type family XPostField x
 
 type family XAnn x
 
@@ -267,14 +276,10 @@ stmtToList (SExpr assign sttms) = toTree assign : stmtToList sttms
 stmtToList (SAssign expr sttms) = toTree expr : stmtToList sttms
 
 instance SimpleTree (Assign x) where
-  toTree (Assign _ name val) = Node "Assign" [toTree name, toTree val]
+  toTree (Assign _ name opt val) = Node "Assign" [toTree name, toTree opt, toTree val]
 
 instance SimpleTree (Name x) where
   toTree (Name _ n) = Node ("Name: " ++ Text.unpack n) []
-
-instance SimpleTree (Binder x) where
-  toTree (Typed _ pat ty) = Node "Typed" [toTree pat, toTree ty]
-  toTree (Raw _ pat) = Node "Raw" [toTree pat]
 
 instance SimpleTree (Typer x) where
   toTree (TSimple _ name) = Node "TSimple" [toTree name]
@@ -290,6 +295,7 @@ instance SimpleTree (Pattern x) where
   toTree (PId _ name) = Node "PId" [toTree name]
   toTree (PLit _ lit) = Node "PLit" [toTree lit]
   toTree (PExt _) = Node "PExt" []
+  toTree (PAnn _ a b) = Node "PAnn" [toTree a, toTree b]
 
 instance SimpleTree (Literal x) where
   toTree (LChar _ _) = Node "LChar" []
@@ -309,6 +315,8 @@ instance SimpleTree (Expr x) where
   toTree (Binary _ name e e2) = Node "Binary" [toTree name, toTree e, toTree e2]
   toTree (Ann _ a b) = Node "Abb" [toTree a, toTree b]
   toTree (EHole _ a) = Node "Hole" [toTree a]
+  toTree (Cons _ a) = Node "Cons" [toTree a]
+  toTree (PostField _ a b) = Node "PostField" [toTree a, toTree b]
   toTree (Ext _) = Node "Ext" []
 
 instance SimpleTree (TypeCons x) where

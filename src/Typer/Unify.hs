@@ -3,6 +3,21 @@ module Typer.Unify (
 ) where
 
 import Typer.Env
+    ( Ty(..),
+      TyHole,
+      Hole(Empty, Filled),
+      Lvl,
+      getTyPos,
+      TyperMonad,
+      Tracker(InUnify),
+      track,
+      scopeTy,
+      scopeUp,
+      newHole,
+      instantiate,
+      fillHole,
+      readHole,
+      setHole )
 import Control.Monad (when)
 
 import qualified Typer.Error  as Err
@@ -39,12 +54,12 @@ unify ty ty' = track (InUnify ty ty') $ case (ty, ty') of
     case resHole of
       Empty _ _ -> instantiateRight a hole
       Filled t -> unify a t
-  (a, TyForall _ binder ty'') -> do
-    scopeUp $ scopeTy binder $ unify a ty''
+  (a, TyForall r binder ty'') -> do
+    scopeUp $ scopeTy binder (TyNamed r binder) $ unify a ty''
   (TyForall _ _ _, a) -> do
     instTy <- instantiate ty
     unify instTy a
-  (TyFun _ a b, TyFun _ a' b') -> unify a a' >> unify b b'
+  (TyFun _ a b, TyFun _ a' b') -> unify a' a >> unify b b'
   (TyRef _ a, b) -> unify a b
   (a, TyRef _ b) -> unify a b
   (TyNamed _ a, TyNamed _ a')
@@ -70,8 +85,8 @@ unifyHole hole ty = do
 instantiateLeft :: TyperMonad m => TyHole -> Ty -> m ()
 instantiateLeft hole = \case
   TyRef _ ty' -> instantiateLeft hole ty'
-  TyForall _ binder ty ->
-    scopeTy binder $ instantiateLeft hole ty
+  TyForall r binder ty ->
+    scopeTy binder (TyNamed r binder) $ instantiateLeft hole ty
   TyFun loc arg ret -> do
     argHole <- newHole
     retHole <- newHole

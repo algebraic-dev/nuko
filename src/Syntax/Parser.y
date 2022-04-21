@@ -95,6 +95,7 @@ PatternAtom :: { Pattern Normal }
       | Literal         { PLit NoExt $1 }
       | Lower           { PId NoExt $1 }
       | Upper           { PCons (getPos $1) $1 [] }
+      | '(' Pattern ':' Type ')' { PAnn (position $1 <> position $5) $2 $4 }
       | '(' Pattern ')' { $2 }
 
 PatternCons :: { Pattern Normal }
@@ -103,6 +104,14 @@ PatternCons :: { Pattern Normal }
 Pattern :: { Pattern Normal }
       : PatternCons { $1 }
       | PatternAtom { $1 }
+
+
+Binder :: { (Pattern Normal, Typer Normal) }
+       : '(' PatternAtom ':' Type ')' { ($2, $4) }
+
+Binders :: { [(Pattern Normal, Typer Normal)] }
+      : Binder Binders { $1 : $2 }
+      | {- empty lol -} { [] }
 
 {- Type processing -}
 
@@ -141,16 +150,6 @@ Type :: { Typer Normal }
       : TypeArrow { $1 }
       | forall Lower '.' Type { TForall (position $1 <> getPos $4) $2 $4 }
 
-{- Binders -}
-
-Binder :: { Binder Normal }
-        : PatternAtom { Raw NoExt $1 }
-        | '(' Pattern ':' Type ')' { Typed ($2 `mix` $4) $2 $4}
-
-Binders :: { [Binder Normal] }
-         : Binders Binder { $2 : $1 }
-         | {- empty -} { [] }
-
 Literal :: { Literal Normal }
          : string { LString (position $1) (getData $1) }
          | number { LInt (position $1) (getDecimal $1) }
@@ -161,8 +160,10 @@ Atom :: { Expr Normal }
       : Literal      { Lit NoExt $1 }
       | hole         { EHole (position $1) (getData $1)  }
       | Lower        { Var NoExt $1 }
-      | Upper        { Var NoExt $1 }
+      | Upper        { Cons NoExt $1 }
       | '(' Expr ')' { $2 }
+      | Atom '.' Lower { PostField (getPos $1 <> getPos $3) $1 $3 }
+      | Atom '.' Upper { PostField (getPos $1 <> getPos $3) $1 $3 } -- Fix it later.
 
 Call :: { Expr Normal }
       : Call Atom { App ($1 `mix` $2) $1 $2 }
@@ -173,7 +174,7 @@ ExprAtom :: { Expr Normal }
       | ExprAtom Symbol Call { Binary ($1 `mix` $3) $2 $1 $3 }
 
 NanoExpr :: { Expr Normal }
-      : '\\' Binder '->' NanoExpr { Lam ($2 `mix` $4) $2 $4}
+      : '\\' PatternAtom '->' NanoExpr { Lam ($2 `mix` $4) $2 $4}
       | open Sttms Close { Block (position $1 <> (getPos . getLastSttm $ $2)) $2 }
       | match NanoExpr with open MatchClauses Close { Match (firstAndLast $5) $2 (reverse $5) }
       | if NanoExpr then NanoExpr else NanoExpr { If (position $1 <> getPos $6) $2 $4 $6 }
@@ -191,13 +192,13 @@ Exprs :: { [Expr Normal] }
       | Exprs semi Expr { $3 : $1 }
 
 MatchClause :: { (Pattern Normal, Expr Normal) }
-             : Pattern '->' Expr { ($1, $3) }
+             : PatternAtom '->' Expr { ($1, $3) }
 
 MatchClauses :: { [(Pattern Normal, Expr Normal)] }
               : MatchClause { [$1] }
               | MatchClauses semi MatchClause { $3 : $1 }
 
-Assign : let Binder '=' Expr { Assign (position $1 <> getPos $4) $2 $4}
+Assign : let Pattern OptRet '=' Expr { Assign (position $1 <> getPos $5) $2 $3 $5}
 
 Sttms :: { Sttms Normal }
        : Expr { End $1 }
@@ -235,7 +236,7 @@ TypeDecl : type Upper Lowers '=' TypeCons { TypeDecl $2 $3 $5 NoExt }
 OptRet : ':' Type { Just $2 }
        | {- empty -} { Nothing }
 
-LetDecl : let Lower Binders OptRet '=' Expr { LetDecl $2 $3 $4 $6 NoExt }
+LetDecl : let Lower Binders ':' Type '=' Expr { LetDecl $2 $3 $5 $7 (position $1 <> getPos $7) }
 
 Importable : Lower { $1 }
            | Upper { $1 }
@@ -247,7 +248,7 @@ ModuleName : Upper { [$1] }
            | ModuleName '.' Upper { $3 : $1 }
 
 {-
-      Program level declarations
+  Program level declarations
 -}
 
 ImportDecl : import ModuleName '(' ImportsThings ')' { ImportDecl (reverse $2) (Right $ reverse $4)  }

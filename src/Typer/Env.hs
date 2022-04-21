@@ -22,12 +22,14 @@ module Typer.Env
     named,
     fillHole,
     readHole,
-    setHole
+    setHole,
+    addTy,
+    addCons
   )
 where
 
 import Typer.Types
-import Expr                   (Expr, Typer, Literal)
+import Expr                   (Expr, Typer, Literal, Pattern)
 import Data.Foldable          (traverse_)
 import Data.IORef             (newIORef, writeIORef)
 import Data.Map               (Map)
@@ -44,6 +46,7 @@ import qualified Data.Map            as Map
 import qualified Data.Text           as Text
 import qualified Data.Set            as Set
 import qualified Data.Sequence       as Seq
+import Control.Monad (when)
 
 -- | Useful to track what the type checker did to achieve an error.
 --   It helps a lot when writing error messages.
@@ -51,6 +54,9 @@ data Tracker
   = InInferExpr (Expr Normal)
   | InInferTy   (Typer Normal)
   | InInferLit  (Literal Normal)
+  | InInferPat  (Pattern Normal)
+  | InCheckPat  (Pattern Normal)
+  | InInferGen  Range
   | InCheck     (Expr Normal) Ty
   | InUnify     Ty Ty
   | InApply     Ty (Expr Normal)
@@ -59,12 +65,18 @@ data Tracker
 -- | Stores all the info about the environment of typing, trackers
 --   (that helps a lot with error localization) and some cool numbers
 --   to generate new variable names.
+
+debug :: Bool
+debug = False
+
 data Env = Env
   { scope     :: Lvl,
     nameGen   :: Int,
     trackers  :: Seq Tracker,
     variables :: Map Name Ty,
-    types     :: Set Name
+    types     :: Map Name Ty,
+    dataCons  :: Map Name Ty,
+    debugLvl  :: Int
   }
 
 type TyperMonad m = (MonadState Env m, MonadIO m)
@@ -75,8 +87,15 @@ updateTracker f = State.modify (\ctx -> ctx {trackers = f ctx.trackers})
 track :: TyperMonad m => Tracker -> m a -> m a
 track tracker action = do
     updateTracker (:|> tracker)
+    when debug $ do
+      lvl <- State.gets debugLvl
+      State.modify (\ctx -> ctx { debugLvl = lvl + 1 })
+      liftIO $ putStrLn $ replicate (lvl * 3) ' ' ++ show tracker
     res <- action
     updateTracker (removeLeft)
+    when debug $ do
+      lvl <- State.gets debugLvl
+      State.modify (\ctx -> ctx { debugLvl = lvl - 1 })
     pure res
   where
     removeLeft :: Seq a -> Seq a
@@ -88,8 +107,11 @@ track tracker action = do
 updateVars :: TyperMonad m => (Map Name Ty -> Map Name Ty) -> m ()
 updateVars f = State.modify (\ctx -> ctx {variables = f (ctx.variables)})
 
-updateTypes :: TyperMonad m => (Set Name -> Set Name) -> m ()
+updateTypes :: TyperMonad m => (Map Name Ty -> Map Name Ty) -> m ()
 updateTypes f = State.modify (\ctx -> ctx {types = f (ctx.types)})
+
+updateCons :: TyperMonad m => (Map Name Ty -> Map Name Ty) -> m ()
+updateCons f = State.modify (\ctx -> ctx {dataCons = f (ctx.dataCons)})
 
 scopeVar :: TyperMonad m => Name -> Ty -> m a -> m a
 scopeVar name ty action = do
@@ -107,10 +129,10 @@ scopeVars vars action = do
   updateVars (const oldTy)
   pure act
 
-scopeTy :: TyperMonad m => Name -> m a -> m a
-scopeTy name action = do
+scopeTy :: TyperMonad m => Name -> Ty -> m a -> m a
+scopeTy name ty action = do
   oldTy <- State.gets types
-  updateTypes (Set.insert name)
+  updateTypes (Map.insert name ty)
   act <- action
   updateTypes (const oldTy)
   pure act
@@ -133,6 +155,12 @@ newNamed :: TyperMonad m => m Name
 newNamed = do
   name <- State.state (\env -> (Text.pack $ "'" ++ show env.nameGen, env { nameGen = env.nameGen + 1}))
   pure name
+
+addTy :: TyperMonad m => Name -> Ty -> m ()
+addTy name ty = updateTypes $ Map.insert name ty
+
+addCons :: TyperMonad m => Name -> Ty -> m ()
+addCons name ty = updateCons $ Map.insert name ty
 
 -- Generalization and instantiation
 
@@ -189,5 +217,5 @@ setHole hole = liftIO . writeIORef hole
 named :: TyperMonad m => Range -> Name -> m Ty
 named range name = pure (TyNamed (Just range) name)
 
-runEnv :: StateT Env IO a -> Env -> IO a
-runEnv action env = State.evalStateT action env
+runEnv :: StateT Env IO a -> Env -> IO (a, Env)
+runEnv action env = State.runStateT action env

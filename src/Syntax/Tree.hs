@@ -24,6 +24,7 @@ type instance XPWild Normal = Range
 type instance XPCons Normal = Range
 type instance XPLit Normal = NoExt
 type instance XPId Normal = NoExt
+type instance XPAnn Normal = Range
 type instance XPExt Normal = Void
 
 type instance XLChar Normal = Range
@@ -37,9 +38,11 @@ type instance XApp Normal = Range
 type instance XVar Normal = NoExt
 type instance XAnn Normal = Range
 type instance XLit Normal = NoExt
+type instance XCons Normal = NoExt
 type instance XHole Normal = Range
 type instance XMatch Normal = Range
 type instance XAssign Normal =  Range
+type instance XPostField Normal = Range
 type instance XBinary Normal =  Range
 type instance XBlock Normal = Range
 type instance XIf Normal = Range
@@ -51,7 +54,7 @@ type instance XTcSyn Normal = NoExt
 type instance XTcExt Normal = Void
 
 type instance XProg Normal = NoExt
-type instance XLet Normal = NoExt
+type instance XLet Normal = Range
 type instance XExternal Normal = NoExt
 type instance XType Normal = NoExt
 type instance XExternal Normal = NoExt
@@ -77,7 +80,6 @@ deriving instance Show (Expr Normal)
 deriving instance Show (TypeCons Normal)
 deriving instance Show (Sttms Normal)
 deriving instance Show (Assign Normal)
-deriving instance Show (Binder Normal)
 deriving instance Show (TypeDecl Normal)
 deriving instance Show (Program Normal)
 deriving instance Show (ExternalDecl Normal)
@@ -91,10 +93,6 @@ instance Ord (Name Normal) where
    compare (Name _ n) (Name _ m) = compare n m
 
 -- Position
-
-instance HasPosition (Binder Normal) where
-    getPos (Raw _ ty) = getPos ty
-    getPos (Typed pos _ _) = pos
 
 instance HasPosition (Name Normal) where
     getPos (Name pos _) = pos
@@ -111,6 +109,7 @@ instance HasPosition (Pattern Normal) where
     getPos (PCons pos _ _) = pos
     getPos (PLit _ lit) = getPos lit
     getPos (PId _ n) = getPos n
+    getPos (PAnn r _ _) = r
 
 instance HasPosition (Literal Normal) where
     getPos (LChar pos _) = pos
@@ -129,6 +128,8 @@ instance HasPosition (Expr Normal) where
     getPos (Block pos _) = pos
     getPos (If pos _ _ _) = pos
     getPos (EHole pos _) = pos
+    getPos (Cons _ name) = getPos name
+    getPos (PostField pos _ _) = pos
 
 instance HasPosition (TypeCons Normal) where
     getPos (TcSum pos _) = pos

@@ -66,6 +66,9 @@ lastTerm =
             InInferExpr expr -> pure (getPos expr)
             InInferTy ty -> pure (getPos ty)
             InInferLit lit -> pure (getPos lit)
+            InInferPat pat -> pure (getPos pat)
+            InCheckPat pat -> pure (getPos pat)
+            InInferGen pos -> pure pos
             InCheck expr _ -> pure (getPos expr)
             InApply _ expr -> pure (getPos expr)
             _ -> go tail'
@@ -101,10 +104,10 @@ mismatch = do
 instance Err.ErrorReport TypeError where
   toErrMessage err = case err.cause of
     CannotUnify ->
-      maybe (error $ "Cannot produce an error message:" ++ (show err.cause)) id (runExtractor mismatch err)
+      maybe (error $ "1. Cannot produce an error message:" ++ (show err.cause)) id (runExtractor mismatch err)
 
     NotAFunction _ ->
-      maybe (error $ "Cannot produce an error message:" ++ (show err.cause)) id (runExtractor mismatch err)
+      maybe (error $ "2. Cannot produce an error message:" ++ (show err.cause)) id (runExtractor mismatch err)
 
     CannotFind range name ->
       ErrMessage (Just range.start)
