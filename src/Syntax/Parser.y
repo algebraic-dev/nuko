@@ -13,8 +13,9 @@ import Data.Text (Text)
 
 import Data.Function (on)
 import Control.Monad.Except (throwError)
-
+import Data.Bifunctor (bimap)
 import qualified Error.Message as ERR
+import qualified Data.List as List
 import Debug.Trace
 
 }
@@ -90,16 +91,23 @@ PatternAtoms :: { [Pattern Normal] }
       : PatternAtoms PatternAtom { $2 : $1 }
       | PatternAtom { [$1] }
 
+AccessNameUpperLs :: { [Name Normal] }
+      : Upper '.' AccessNameUpperLs { $1 : $3 }
+      | Upper { [$1] }
+
+AccessNameUpper :: { AccessName (Name Normal) Normal }
+      : AccessNameUpperLs { AccessName (getPos (head $1) <> getPos (last $1)) (init $1) (last $1) }
+
 PatternAtom :: { Pattern Normal }
       : '_'             { PWild (position $1) }
       | Literal         { PLit NoExt $1 }
       | Lower           { PId NoExt $1 }
-      | Upper           { PCons (getPos $1) $1 [] }
+      | AccessNameUpper { PCons (getPos $1) $1 [] }
       | '(' Pattern ':' Type ')' { PAnn (position $1 <> position $5) $2 $4 }
       | '(' Pattern ')' { $2 }
 
 PatternCons :: { Pattern Normal }
-      : Upper PatternAtoms { PCons (getPos $1 <> headOr $2 getPos (getPos $1)) $1 (reverse $2)}
+      : AccessNameUpper PatternAtoms { PCons (getPos $1 <> headOr $2 getPos (getPos $1)) $1 (reverse $2)}
 
 Pattern :: { Pattern Normal }
       : PatternCons { $1 }
@@ -156,14 +164,36 @@ Literal :: { Literal Normal }
          | double { LDouble (position $1) (getDouble $1) }
          | char   { LChar (position $1) (getLitChar $1) }
 
+
+PathNamesLS :: { ([Name Normal], Accessor Normal) }
+      : Upper '.' PathNamesLS {
+            let (expr, acessor) = $3 in
+            ($1 : expr, acessor)
+      }
+      | Lower '.' FieldAcessors { ([], Var (getPos $1 <> lastOr $3 getPos (getPos $1)) $1 $3) }
+      | Lower { ([], Var (getPos $1) $1 []) }
+      | Upper { ([], Cons NoExt $1) }
+
+FieldAcessors :: { [Name Normal] }
+      : Lower '.' FieldAcessors { $1 : $3 }
+      | Lower { [$1] }
+
+PathName :: { Expr Normal }
+      : PathNamesLS {
+            let (names, acessor) = $1 in
+            let range = headOr names getPos (getPos acessor) <> getPos acessor
+            in Acessor (AccessName range names acessor)
+       }
+
 Atom :: { Expr Normal }
       : Literal      { Lit NoExt $1 }
       | hole         { EHole (position $1) (getData $1)  }
-      | Lower        { Var NoExt $1 }
-      | Upper        { Cons NoExt $1 }
+      | PathName     { $1 }
       | '(' Expr ')' { $2 }
-      | Atom '.' Lower { PostField (getPos $1 <> getPos $3) $1 $3 }
-      | Atom '.' Upper { PostField (getPos $1 <> getPos $3) $1 $3 } -- Fix it later.
+
+Field :: { Expr Normal -> Expr Normal }
+      : '.' Lower { \x -> PostField (getPos x <> getPos $2) x $2 }
+      | {- empty -} { id }
 
 Call :: { Expr Normal }
       : Call Atom { App ($1 `mix` $2) $1 $2 }
@@ -291,6 +321,10 @@ firstAndLast other =
 headOr :: [a] -> (a -> b) -> b -> b
 headOr [] fn alt       = alt
 headOr (x : xn) fn alt = fn x
+
+lastOr :: [a] -> (a -> b) -> b -> b
+lastOr [] fn alt = alt
+lastOr ls fn alt = fn (last ls)
 
 mix :: (HasPosition a, HasPosition b) => a -> b -> Range
 mix a b = getPos (a,b)

@@ -21,13 +21,15 @@ import Typer.Env
 import Control.Monad (when)
 
 import qualified Typer.Error  as Err
+import qualified Debug.Trace as Trace
 
 -- Occours and scope checking :D
 unifyPreCheck :: TyperMonad m => Lvl -> TyHole -> Ty -> m ()
-unifyPreCheck scope hole ty = preCheck ty
+unifyPreCheck scope hole ty = do
+    preCheck ty
   where
     preCheck :: TyperMonad m => Ty -> m ()
-    preCheck ty' = case ty of
+    preCheck ty' = case ty' of
       TyRef _      t  -> preCheck t
       TyNamed _ _     -> pure ()
       TyFun _ l r     -> preCheck l >> preCheck r
@@ -102,6 +104,7 @@ instantiateRight ty hole = case ty of
     instTy <- instantiate ty'
     instantiateRight instTy hole
   TyFun loc arg ret -> do
+
     argHole <- newHole
     retHole <- newHole
     fillHole hole (TyFun loc (TyHole (getTyPos arg) argHole) (TyHole (getTyPos ret) retHole))

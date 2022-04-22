@@ -58,10 +58,10 @@ program :-
 <0> @number "." @number { emit (TknLDouble . fst . fromRight . double)}
 <0> "?" @lower_id  { emit TknHole  }
 <0> "'" [^\'] "'"  { emit $ TknLChar . (`Data.Text.index` 1) }
-<0> @wild      { token TknWild }
-<0> @number    { emit (TknNumber . fst . fromRight . decimal) }
-<0> @lower_id  { emit TknLowerId  }
-<0> @upper_id  { emit TknUpperId  }
+<0> @wild          { token TknWild }
+<0> @number        { emit (TknNumber . fst . fromRight . decimal) }
+<0> @lower_id      { emit TknLowerId  }
+<0> @upper_id      { emit TknUpperId  }
 
 <0> "("        { token TknLPar   }
 <0> ")"        { token TknRPar   }

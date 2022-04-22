@@ -15,9 +15,10 @@ import Syntax.Tree            (Normal)
 import Typer.Unify            (unify)
 import Typer.Types            (isFilled, getFilled)
 import Data.Set               (Set)
-import Typer.Error            (typeError, ErrCause (NotAFunction, CannotFindType))
+import Typer.Error            (typeError, ErrCause (NotAFunction, CannotFindType, CannotFindModule))
 import Control.Monad          (when)
-import Data.Foldable          (traverse_)
+import Data.Foldable          (traverse_, asum)
+import Data.Foldable          (toList)
 
 import qualified Expr                as Exp
 import qualified Data.Set            as Set
@@ -26,12 +27,55 @@ import qualified Typer.Error         as Err
 import qualified Typer.Types         as Typer
 import qualified Control.Monad.State as State
 
+local :: TyperMonad m => Env -> m a -> m a
+local env action = State.get >>= \old -> State.put env *> action <* State.put old
+
+traverseNamespaces :: TyperMonad m => AccessName r Normal -> m Env
+traverseNamespaces access = do
+    env <- State.get
+    go access.idents env
+  where
+    go :: TyperMonad m => [Exp.Name Normal] -> Env -> m Env
+    go []       env = pure env
+    go (x : xs) env = do
+      case Map.lookup x.ident env.namespaces of
+        Just env' -> go xs env'
+        Nothing  -> typeError (CannotFindModule x.loc x.ident)
+
+lookupNamespace :: TyperMonad m => Range -> AccessName (Exp.Name Normal) Normal -> (Range -> Typer.Env.Name -> m Ty) -> m Ty
+lookupNamespace _ access fn = do
+    env <- State.get
+    go access.idents env
+  where
+    go []       env = local env (fn access.name.loc access.name.ident)
+    go (x : xs) env = do
+      case Map.lookup x.ident env.namespaces of
+        Just env' -> go xs env'
+        Nothing  -> typeError (CannotFindModule x.loc x.ident)
+
 lookupVar :: TyperMonad m => Range -> Typer.Env.Name -> m Ty
 lookupVar loc' name = do
   res <- State.gets (Map.lookup name . variables)
   maybe (typeError (Err.CannotFind loc' name))
         (\ty -> pure $ maybe (TyRef (Just loc') ty) (const ty) $ getTyPos ty)
         res
+
+lookupField :: TyperMonad m => Range -> Typer.Env.Name -> m Ty
+lookupField loc' name = do
+    env <- State.get
+    res <- fmap asum $ sequenceA
+        [ localizedField [env]
+        , localizedField (toList env.namespaces)
+        ]
+    maybe (typeError (Err.CannotFind loc' name)) pure res
+  where
+    localizedField :: TyperMonad m => [Env] -> m (Maybe Ty)
+    localizedField [] = pure Nothing
+    localizedField (x : xs) = local x $ do
+      res <- State.gets (Map.lookup name . fields)
+      case res of
+        Just ty -> pure $ Just $ maybe (TyRef (Just loc') ty) (const ty) $ getTyPos ty
+        Nothing -> localizedField xs
 
 lookupCons :: TyperMonad m => Range -> Typer.Env.Name -> m Ty
 lookupCons loc' name = do
@@ -70,14 +114,14 @@ preprocessLetDecl :: TyperMonad m => LetDecl Normal -> m ()
 preprocessLetDecl (LetDecl name args ret _ range) = track (InInferGen range) $ do
   retTy       <- inferTy ret
   (argsTy, _) <- processSeq args Map.empty
-  generalized <- generalize (foldr (TyFun Nothing) retTy argsTy)
+  generalized <- generalize (foldr (TyFun (Just range)) retTy argsTy)
   addTy name.ident generalized
 
 processLetDecl :: TyperMonad m => LetDecl Normal -> m ()
 processLetDecl (LetDecl _ args ret body range) = track (InInferGen range) $ do
     retTy        <- inferTy ret
     (_, newVars) <- processSeq args Map.empty
-    scopeVars (Map.toList newVars) $ 
+    scopeVars (Map.toList newVars) $
       checkExpr body retTy
     pure ()
 
@@ -99,12 +143,16 @@ processDataCons (TypeDecl name _ cons _) =
       addCons consName.ident (foldr (TyFun Nothing) resTy processedArgs)
 
     processProdField :: TyperMonad m => (Exp.Name Normal, Typer Normal) -> m ()
-    processProdField (_, _) = pure $ error "Not implemented record types yet"
+    processProdField (fieldName, ty) = do
+      processedTy <- inferTy ty
+      tyTy <- getTy name.loc name.ident
+      addField fieldName.ident (TyFun Nothing tyTy processedTy)
 
     go :: TyperMonad m => TypeCons Normal -> m ()
     go = \case
       TcSum _ cons'     -> traverse_ processSumField cons'
-      TcRecord _ fields -> traverse_ processProdField fields
+      TcRecord _ fields -> do
+        traverse_ processProdField fields
       TcSyn _      ty'  -> inferTy ty' >>= addTy name.ident
 
 processTyDecls :: TyperMonad m => [TypeDecl Normal] -> m ()
@@ -126,9 +174,6 @@ seqPattern (x : xs) ids = do
 
 checkPattern :: TyperMonad m => Pattern Normal -> Ty -> (Map.Map Name Ty) -> m (Map.Map Name Ty)
 
-checkPattern pat@(PId _ name) ty ids = track (InCheckPat pat) $ do
-  pure (Map.insert name.ident ty ids)
-
 checkPattern pat ty ids = track (InCheckPat pat) $ do
   (inferredPat, ids') <- inferPattern pat ids
   unify inferredPat ty
@@ -140,7 +185,7 @@ inferPattern pat ids = track (InInferPat pat) $ case pat of
     hole <- TyHole (Just range) <$> newHole
     pure (hole, ids)
   PCons range name patterns -> do
-    consTy <- lookupCons name.loc name.ident
+    consTy <- lookupNamespace name.loc name lookupCons
     retTy <- TyHole (Just range) <$> newHole
     (patTys, ids') <- seqPattern patterns ids
     unify (foldr (TyFun Nothing) retTy patTys) consTy
@@ -235,10 +280,18 @@ inferExpr expr = track (InInferExpr expr) $ do
     App _ fun arg -> do
       funTy <- inferExpr fun
       applyExpr funTy arg
-    Var _ (Exp.Name loc' text) -> do
-      res <- lookupVar loc' text
-      pure res
-    Cons _ (Exp.Name loc' text) -> lookupCons loc' text
+    (Acessor acessor@(AccessName _ _ (Var _ name fields))) -> do
+      env   <- traverseNamespaces acessor
+      resTy <- local env (lookupVar name.loc name.ident)
+      let matchField ty fieldName = track (InInferExpr expr) $ do
+            fieldTy <- lookupField fieldName.loc fieldName.ident
+            (argTy, retTy) <- unifyFun fieldTy
+            unify argTy ty -- TODO: Fix if it's inverted
+            pure retTy
+      State.foldM matchField resTy fields
+    (Acessor acessor@(AccessName _ _ (Cons _ name))) -> do
+      env <- traverseNamespaces acessor
+      local env $ lookupCons name.loc name.ident
     Lit _ lit -> inferLit lit
     Ann _ expr' ty -> do
       iTy <- inferTy ty

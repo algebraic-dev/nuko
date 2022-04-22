@@ -35,7 +35,7 @@ type instance XLExt Normal = Void
 
 type instance XLam Normal = Range
 type instance XApp Normal = Range
-type instance XVar Normal = NoExt
+type instance XVar Normal = Range
 type instance XAnn Normal = Range
 type instance XLit Normal = NoExt
 type instance XCons Normal = NoExt
@@ -74,6 +74,8 @@ instance Show (Typer Normal) where
       TApp _ ty ty' -> "(" ++ show ty ++ " " ++ show ty' ++ ")"
       TForall _ (Name _ na) ty -> "(∀" ++ Text.unpack na ++ "." ++ show ty ++ ")"
 
+deriving instance Show (Accessor Normal)
+deriving instance Show e => Show (AccessName e Normal)
 deriving instance Show (Pattern Normal)
 deriving instance Show (Literal Normal)
 deriving instance Show (Expr Normal)
@@ -94,12 +96,15 @@ instance Ord (Name Normal) where
 
 -- Position
 
+instance HasPosition (AccessName e Normal) where
+    getPos (AccessName pos _ _) = pos
+
 instance HasPosition (Name Normal) where
     getPos (Name pos _) = pos
 
 instance HasPosition (Typer Normal) where
-    getPos (TSimple _ name) = getPos name
-    getPos (TPoly _ name) = getPos name
+    getPos (TSimple _ name') = getPos name'
+    getPos (TPoly _ name') = getPos name'
     getPos (TArrow pos _ _) = pos
     getPos (TApp pos _ _) = pos
     getPos (TForall pos _ _) = pos
@@ -117,18 +122,21 @@ instance HasPosition (Literal Normal) where
     getPos (LInt pos _) = pos
     getPos (LDouble pos _) = pos
 
+instance HasPosition (Accessor Normal) where
+    getPos (Var pos _ _) = pos
+    getPos (Cons _ name') = getPos name'
+
 instance HasPosition (Expr Normal) where
     getPos (Lam pos _ _) = pos
     getPos (Ann pos _ _) = pos
     getPos (App pos _ _) = pos
-    getPos (Var _ name) = getPos name
+    getPos (Acessor e) = getPos e
     getPos (Lit _ lit) = getPos lit
     getPos (Match pos _ _) = pos
     getPos (Binary pos _ _ _) = pos
     getPos (Block pos _) = pos
     getPos (If pos _ _ _) = pos
     getPos (EHole pos _) = pos
-    getPos (Cons _ name) = getPos name
     getPos (PostField pos _ _) = pos
 
 instance HasPosition (TypeCons Normal) where

@@ -24,7 +24,9 @@ module Typer.Env
     readHole,
     setHole,
     addTy,
-    addCons
+    addCons,
+    zonk,
+    addField
   )
 where
 
@@ -73,11 +75,17 @@ data Env = Env
   { scope     :: Lvl,
     nameGen   :: Int,
     trackers  :: Seq Tracker,
-    variables :: Map Name Ty,
-    types     :: Map Name Ty,
-    dataCons  :: Map Name Ty,
-    debugLvl  :: Int
+
+    variables  :: Map Name Ty,
+    dataCons   :: Map Name Ty,
+    types      :: Map Name Ty,
+    fields     :: Map Name Ty,
+    namespaces :: Map Name Env,
+
+    debugLvl   :: Int
   }
+
+
 
 type TyperMonad m = (MonadState Env m, MonadIO m)
 
@@ -112,6 +120,9 @@ updateTypes f = State.modify (\ctx -> ctx {types = f (ctx.types)})
 
 updateCons :: TyperMonad m => (Map Name Ty -> Map Name Ty) -> m ()
 updateCons f = State.modify (\ctx -> ctx {dataCons = f (ctx.dataCons)})
+
+updateFields :: TyperMonad m => (Map Name Ty -> Map Name Ty) -> m ()
+updateFields f = State.modify (\ctx -> ctx {fields = f (ctx.fields)})
 
 scopeVar :: TyperMonad m => Name -> Ty -> m a -> m a
 scopeVar name ty action = do
@@ -162,6 +173,9 @@ addTy name ty = updateTypes $ Map.insert name ty
 addCons :: TyperMonad m => Name -> Ty -> m ()
 addCons name ty = updateCons $ Map.insert name ty
 
+addField:: TyperMonad m => Name -> Ty -> m ()
+addField name ty = updateFields $ Map.insert name ty
+
 -- Generalization and instantiation
 
 generalize :: TyperMonad m => Ty -> m Ty
@@ -189,6 +203,19 @@ generalize ty = do
             else pure Set.empty
           Filled ty' -> go ty'
 
+zonk :: TyperMonad m => Ty -> m Ty
+zonk = \case
+  TyRef pos ty'   -> TyRef pos <$> zonk ty'
+  TyRigid pos name lvl -> pure $ TyRigid pos name lvl
+  TyNamed pos name -> pure $ TyNamed pos name
+  TyFun pos ty' ty'' -> TyFun pos <$> zonk ty' <*> zonk ty''
+  TyForall pos name ty' -> TyForall pos name <$> zonk ty'
+  TyHole loc hole -> do
+    resHole <- liftIO $ readIORef hole
+    case resHole of
+      Empty _ _ -> pure (TyHole loc hole)
+      Filled ty' -> zonk ty'
+
 instantiate :: TyperMonad m => Ty -> m Ty
 instantiate = \case
   (TyForall loc binder body) -> do
@@ -203,7 +230,6 @@ existentialize = \case
     lvl <- State.gets scope
     pure (substitute binder (TyRigid loc binder lvl) body)
   other -> pure other
-
 
 fillHole :: TyperMonad m => TyHole -> Ty -> m ()
 fillHole hole ty = liftIO $ writeIORef hole (Filled ty)

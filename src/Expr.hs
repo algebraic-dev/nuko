@@ -23,6 +23,8 @@ module Expr
     Expr (..),
     Sttms (..),
     Typer (..),
+    AccessName (..),
+    Accessor (..),
     XName,
     XBTyped,
     XBRaw,
@@ -78,6 +80,11 @@ data NoExt = NoExt
 
 data Name x = Name { loc :: (XName x), ident :: Text }
 
+data AccessName d x = AccessName
+  { loc :: (XName x)
+  , idents :: [Name x]
+  , name :: d }
+
 data Typer x
   = TSimple (XTSimple x) (Name x)
   | TPoly (XTPoly x) (Name x)
@@ -88,7 +95,7 @@ data Typer x
 
 data Pattern x
   = PWild (XPWild x)
-  | PCons (XPCons x) (Name x) [Pattern x]
+  | PCons (XPCons x) (AccessName (Name x) x) [Pattern x]
   | PId (XPId x) (Name x)
   | PLit (XPLit x) (Literal x)
   | PAnn (XPAnn x) (Pattern x) (Typer x)
@@ -113,12 +120,15 @@ data Sttms x
   | SAssign (Assign x) (Sttms x)
   | SExpr (Expr x) (Sttms x)
 
+data Accessor x
+  = Var (XVar x) (Name x) [Name x]
+  | Cons (XCons x) (Name x)
+
 data Expr x
   = Lam (XLam x) (Pattern x) (Expr x)
   | EHole (XHole x) Text
   | App (XApp x) (Expr x) (Expr x)
-  | Var (XVar x) (Name x)
-  | Cons (XCons x) (Name x)
+  | Acessor (AccessName (Accessor x) x)
   | Lit (XLit x) (Literal x)
   | Block (XBlock x) (Sttms x)
   | PostField (XPostField x) (Expr x) (Name x)
@@ -281,6 +291,9 @@ instance SimpleTree (Assign x) where
 instance SimpleTree (Name x) where
   toTree (Name _ n) = Node ("Name: " ++ Text.unpack n) []
 
+instance SimpleTree y => SimpleTree (AccessName y x) where
+  toTree (AccessName _ n m) = Node ("AccessName: ") (map toTree n ++ [toTree m])
+
 instance SimpleTree (Typer x) where
   toTree (TSimple _ name) = Node "TSimple" [toTree name]
   toTree (TPoly _ name) = Node "TPoly" [toTree name]
@@ -304,10 +317,13 @@ instance SimpleTree (Literal x) where
   toTree (LDouble _ d) = Node ("LDouble: " ++ show d) []
   toTree (LExt _) = Node "LExt" []
 
+instance SimpleTree (Accessor x) where
+  toTree (Var _ name _) = Node "Var" [toTree name]
+  toTree (Cons _ a) = Node "Cons" [toTree a]
+
 instance SimpleTree (Expr x) where
   toTree (Lam _ binder expr) = Node "Lam" [toTree binder, toTree expr]
   toTree (App _ e e2) = Node "App" [toTree e, toTree e2]
-  toTree (Var _ name) = Node "Var" [toTree name]
   toTree (Lit _ lit) = Node "Lit" [toTree lit]
   toTree (If _ a b c) = Node "If" [toTree a, toTree b, toTree c]
   toTree (Block _ sttms) = Node "block" $ stmtToList sttms
@@ -315,8 +331,8 @@ instance SimpleTree (Expr x) where
   toTree (Binary _ name e e2) = Node "Binary" [toTree name, toTree e, toTree e2]
   toTree (Ann _ a b) = Node "Abb" [toTree a, toTree b]
   toTree (EHole _ a) = Node "Hole" [toTree a]
-  toTree (Cons _ a) = Node "Cons" [toTree a]
   toTree (PostField _ a b) = Node "PostField" [toTree a, toTree b]
+  toTree (Acessor e) = toTree e
   toTree (Ext _) = Node "Ext" []
 
 instance SimpleTree (TypeCons x) where
