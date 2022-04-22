@@ -1,4 +1,4 @@
 let hof (fn : Int -> Int) : Int = hof 3
 let inc (a : Int) : Int = a + 1
 
-let main = print (hof inc)
+let main: IO Unit = print (hof inc)

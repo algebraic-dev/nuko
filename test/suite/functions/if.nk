@@ -1,1 +1,1 @@
-let main = if a + 2 + 3 then (if a + 3 then 4 else 6) else 4
+let main: IO Unit  = if a + 2 + 3 then (if a + 3 then 4 else 6) else 4

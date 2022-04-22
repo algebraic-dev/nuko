@@ -1,1 +1,1 @@
-let main = print "Hello, World"
+let main: IO Unit  = print "Hello, World"

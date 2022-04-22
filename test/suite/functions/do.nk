@@ -1,4 +1,4 @@
-let main (d : Int) =
+let main (d : Int): IO Unit =
     print b
     let a = f
     print d

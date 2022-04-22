@@ -1,4 +1,4 @@
 let add (a : Int) (b : Int) : Int = 
     a + b
 
-let main = print (add 2 3)
+let main : Int = print (add 2 3)

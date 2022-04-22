@@ -1,12 +1,12 @@
-let divide (a: Int) (b: Int) : Int = 
+let divide (a: Int) (b: Int) : Int =
     a / b
 
-let multiply (a: Int) (b: Int) : Int = 
+let multiply (a: Int) (b: Int) : Int =
     a * b * b
 
-let add (a: Int) (b: Int) : Int = 
+let add (a: Int) (b: Int) : Int =
     a + b
 
-let sub a b = a - b
+let sub (a: Int) (b: Int): IO Unit = a - b
 
-let main = print (divide 10 2 + multiply 10 2 + add 10 2 + sub 10 2)
+let main: IO Unit = print (divide 10 2 + multiply 10 2 + add 10 2 + sub 10 2)
