@@ -1,8 +1,0 @@
-let main (d : Int): IO Unit =
-    print b
-    let a = f
-    print d
-    print a
-    let b = 3 
-    main 
-    maine

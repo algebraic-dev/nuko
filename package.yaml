@@ -1,38 +1,23 @@
-name: Nuko
-version: 0.1.0.0
-github: "felipegchi/Nuko"
-license: BSD3
-author: "Felipe G"
-maintainer: "chiyokuoni@gmail.com"
-copyright: "2022 Felipe G"
+name:         Nuko
+version:      0.1.0.0
+github:       "felipegchi/Nuko"
+license:      BSD3
+author:       "Felipe G"
+maintainer:   "chiyokuoni@gmail.com"
+copyright:    "2022 Felipe G"
 
 description: <https://github.com/githubuser/Nuko#readme>
 
 dependencies:
-  - base >= 4.7 && < 5
-  - text
-  - bytestring
-  - mtl
-  - containers
-  - array
-  - pretty-terminal
-  - transformers
+  - base >= 4.7 && < 5 
 
 default-extensions:
-  - GeneralizedNewtypeDeriving
-  - OverloadedStrings
-  - TypeFamilies
-  - FlexibleInstances
-  - LambdaCase
-  - StandaloneDeriving
-  - FlexibleContexts
-  - DataKinds
-  - GADTs
-  - PatternSynonyms
-  - ConstraintKinds
   - DuplicateRecordFields
   - OverloadedRecordDot
-
+  - DataKinds
+  - GADTs
+  - KindSignatures
+  
 ghc-options:
   - -Weverything
   - -Wno-all-missed-specializations
@@ -67,7 +52,7 @@ executables:
 tests:
   Nuko-test:
     main: Spec.hs
-    source-dirs: test
+    source-dirs: tests
     ghc-options:
       - -Wall
       - -threaded

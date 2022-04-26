@@ -1,8 +1,0 @@
-type Nat =
-    | Z
-    | S Nat
-
-let add (a: Nat) (b: Nat) : Nat = 
-    match a with 
-        Z   -> b 
-        S n -> 3

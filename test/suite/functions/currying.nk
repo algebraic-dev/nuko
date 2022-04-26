@@ -1,4 +1,0 @@
-let sum (a: Int) (b: Int) : Int = a + b
-let hof (a : Int -> Int) : Int = a 3
-
-let main: IO Unit  = print (hof (sum 3))

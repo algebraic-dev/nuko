@@ -22,49 +22,20 @@ source-repository head
 
 library
   exposed-modules:
-      Error.Message
-      Error.PrettyPrint
-      Expr
-      Pretty.Tree
-      Syntax.Lexer
-      Syntax.Lexer.Support
-      Syntax.Lexer.Tokens
-      Syntax.Parser
-      Syntax.Range
-      Syntax.Tree
-      Typer.Env
-      Typer.Error
-      Typer.Infer
-      Typer.Types
-      Typer.Unify
+      Nuko.Driver
   other-modules:
       Paths_Nuko
   hs-source-dirs:
       src
   default-extensions:
-      GeneralizedNewtypeDeriving
-      OverloadedStrings
-      TypeFamilies
-      FlexibleInstances
-      LambdaCase
-      StandaloneDeriving
-      FlexibleContexts
-      DataKinds
-      GADTs
-      PatternSynonyms
-      ConstraintKinds
       DuplicateRecordFields
       OverloadedRecordDot
+      DataKinds
+      GADTs
+      KindSignatures
   ghc-options: -Weverything -Wno-all-missed-specializations -Wno-implicit-prelude -Wno-missing-deriving-strategies -Wno-missing-kind-signatures -Wno-prepositive-qualified-module -Wno-missing-import-lists -Wno-missing-safe-haskell-mode -Wno-safe -Wno-missing-exported-signatures -Wno-unsafe -Wno-missed-specialisations -Wall
   build-depends:
-      array
-    , base >=4.7 && <5
-    , bytestring
-    , containers
-    , mtl
-    , pretty-terminal
-    , text
-    , transformers
+      base >=4.7 && <5
   default-language: Haskell2010
 
 executable Nuko-exe
@@ -74,30 +45,15 @@ executable Nuko-exe
   hs-source-dirs:
       app
   default-extensions:
-      GeneralizedNewtypeDeriving
-      OverloadedStrings
-      TypeFamilies
-      FlexibleInstances
-      LambdaCase
-      StandaloneDeriving
-      FlexibleContexts
-      DataKinds
-      GADTs
-      PatternSynonyms
-      ConstraintKinds
       DuplicateRecordFields
       OverloadedRecordDot
+      DataKinds
+      GADTs
+      KindSignatures
   ghc-options: -Weverything -Wno-all-missed-specializations -Wno-implicit-prelude -Wno-missing-deriving-strategies -Wno-missing-kind-signatures -Wno-prepositive-qualified-module -Wno-missing-import-lists -Wno-missing-safe-haskell-mode -Wno-safe -Wno-missing-exported-signatures -Wno-unsafe -Wno-missed-specialisations -Wall -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       Nuko
-    , array
     , base >=4.7 && <5
-    , bytestring
-    , containers
-    , mtl
-    , pretty-terminal
-    , text
-    , transformers
   default-language: Haskell2010
 
 test-suite Nuko-test
@@ -106,34 +62,19 @@ test-suite Nuko-test
   other-modules:
       Paths_Nuko
   hs-source-dirs:
-      test
+      tests
   default-extensions:
-      GeneralizedNewtypeDeriving
-      OverloadedStrings
-      TypeFamilies
-      FlexibleInstances
-      LambdaCase
-      StandaloneDeriving
-      FlexibleContexts
-      DataKinds
-      GADTs
-      PatternSynonyms
-      ConstraintKinds
       DuplicateRecordFields
       OverloadedRecordDot
+      DataKinds
+      GADTs
+      KindSignatures
   ghc-options: -Weverything -Wno-all-missed-specializations -Wno-implicit-prelude -Wno-missing-deriving-strategies -Wno-missing-kind-signatures -Wno-prepositive-qualified-module -Wno-missing-import-lists -Wno-missing-safe-haskell-mode -Wno-safe -Wno-missing-exported-signatures -Wno-unsafe -Wno-missed-specialisations -Wall -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       Nuko
-    , array
     , base >=4.7 && <5
-    , bytestring
-    , containers
     , filepath
-    , mtl
-    , pretty-terminal
     , tasty
     , tasty-golden
     , tasty-hunit
-    , text
-    , transformers
   default-language: Haskell2010
