@@ -9,15 +9,14 @@ copyright:    "2022 Felipe G"
 description: <https://github.com/githubuser/Nuko#readme>
 
 dependencies:
-  - base >= 4.7 && < 5 
+  - base >= 4.7 && < 5
 
 default-extensions:
   - DuplicateRecordFields
   - OverloadedRecordDot
-  - DataKinds
-  - GADTs
-  - KindSignatures
-  
+  - GeneralizedNewtypeDeriving
+  - DerivingStrategies
+
 ghc-options:
   - -Weverything
   - -Wno-all-missed-specializations
@@ -36,6 +35,11 @@ library:
   source-dirs: src
   ghc-options:
     - -Wall
+  dependencies:
+  - bytestring
+  - text
+  - mtl
+  - transformers
 
 executables:
   Nuko-exe:
