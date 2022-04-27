@@ -1,0 +1,31 @@
+type Range = { line, column : Int }
+
+type Hole =
+  | Filled(Range)
+  | Empty
+
+-- Without lambda case
+let isEmpty? (hole: Hole): Bool =
+  case hole of
+    Filled(range) => False
+    Empty         => True
+
+-- Lambda Case version of isEmpty?
+let isEmpty? : Hole -> Bool = \case
+  Filled(range) => False
+  Empty         => True
+
+let isEmpty! (hole: Hole): Unit =
+  if isEmpty? hole
+    then print "It's empty!!"
+    else print "Is's not empty.'"
+
+let getLineOr (hole: Hole) (alt: Int): Int =
+  case hole of
+    Filled(range) => range.line
+    Empty         => alt
+
+let sequenced! : Unit =
+  print "a"
+  print "b"
+  prnit "c"
