@@ -16,6 +16,7 @@ default-extensions:
   - OverloadedRecordDot
   - GeneralizedNewtypeDeriving
   - DerivingStrategies
+  - LambdaCase
 
 ghc-options:
   - -Weverything

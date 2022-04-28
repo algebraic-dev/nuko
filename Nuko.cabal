@@ -23,8 +23,10 @@ source-repository head
 library
   exposed-modules:
       Nuko.Driver
+      Nuko.Expr
       Nuko.Syntax.Lexer.Support
       Nuko.Syntax.Range
+      Nuko.Syntax.Tokens
   other-modules:
       Paths_Nuko
   hs-source-dirs:
@@ -34,6 +36,7 @@ library
       OverloadedRecordDot
       GeneralizedNewtypeDeriving
       DerivingStrategies
+      LambdaCase
   ghc-options: -Weverything -Wno-all-missed-specializations -Wno-implicit-prelude -Wno-missing-deriving-strategies -Wno-missing-kind-signatures -Wno-prepositive-qualified-module -Wno-missing-import-lists -Wno-missing-safe-haskell-mode -Wno-safe -Wno-missing-exported-signatures -Wno-unsafe -Wno-missed-specialisations -Wall
   build-depends:
       base >=4.7 && <5
@@ -54,6 +57,7 @@ executable Nuko-exe
       OverloadedRecordDot
       GeneralizedNewtypeDeriving
       DerivingStrategies
+      LambdaCase
   ghc-options: -Weverything -Wno-all-missed-specializations -Wno-implicit-prelude -Wno-missing-deriving-strategies -Wno-missing-kind-signatures -Wno-prepositive-qualified-module -Wno-missing-import-lists -Wno-missing-safe-haskell-mode -Wno-safe -Wno-missing-exported-signatures -Wno-unsafe -Wno-missed-specialisations -Wall -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       Nuko
@@ -72,6 +76,7 @@ test-suite Nuko-test
       OverloadedRecordDot
       GeneralizedNewtypeDeriving
       DerivingStrategies
+      LambdaCase
   ghc-options: -Weverything -Wno-all-missed-specializations -Wno-implicit-prelude -Wno-missing-deriving-strategies -Wno-missing-kind-signatures -Wno-prepositive-qualified-module -Wno-missing-import-lists -Wno-missing-safe-haskell-mode -Wno-safe -Wno-missing-exported-signatures -Wno-unsafe -Wno-missed-specialisations -Wall -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       Nuko

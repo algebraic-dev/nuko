@@ -3,10 +3,13 @@ module Nuko.Syntax.Lexer.Support (
     LexerState(..),
     AlexInput(..),
     Lexer(..),
+    alexInputPrevChar,
     alexGetByte,
+    startCode,
     emit
-, alexInputPrevChar, startCode) where
+) where
 
+import Data.Text                (Text)
 import Data.Word                (Word8)
 import Data.List.NonEmpty       (NonEmpty)
 import Data.ByteString          (ByteString)
@@ -18,7 +21,6 @@ import Nuko.Syntax.Range        (Point, advancePos, Ranged(..), Range (..))
 import qualified Data.ByteString     as ByteString
 import qualified Control.Monad.State as State
 import qualified Data.List.NonEmpty  as NonEmpty
-import Data.Text (Text)
 
 -- | AlexInput is the Data Type used by the Alex inside the
 -- generated code to track the input data.
