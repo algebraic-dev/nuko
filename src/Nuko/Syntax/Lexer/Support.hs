@@ -5,21 +5,30 @@ module Nuko.Syntax.Lexer.Support (
     Lexer(..),
     alexInputPrevChar,
     alexGetByte,
+    emit,
+    initialState,
     startCode,
-    emit
+    token,
+    pushCode,
+    popCode,
+    pushLayout,
+    popLayout,
+    lastLayout
 ) where
 
-import Data.Text                (Text)
-import Data.Word                (Word8)
-import Data.List.NonEmpty       (NonEmpty)
-import Data.ByteString          (ByteString)
-import Data.ByteString.Internal (w2c)
 import Control.Monad.Except     (MonadError)
 import Control.Monad.State      (MonadState)
-import Nuko.Syntax.Range        (Point, advancePos, Ranged(..), Range (..))
+import Data.Text                (Text)
+import Data.Word                (Word8)
+import Data.Maybe               (fromMaybe)
+import Data.List                (uncons)
+import Data.List.NonEmpty       (NonEmpty ((:|)))
+import Data.ByteString          (ByteString)
+import Data.ByteString.Internal (w2c)
+import Nuko.Syntax.Range        (Point (Point), advancePos, Ranged(..), Range (..))
 
-import qualified Data.ByteString     as ByteString
 import qualified Control.Monad.State as State
+import qualified Data.ByteString     as ByteString
 import qualified Data.List.NonEmpty  as NonEmpty
 
 -- | AlexInput is the Data Type used by the Alex inside the
@@ -38,27 +47,65 @@ alexGetByte input = update <$> ByteString.uncons (inputStream input)
     newPos = advancePos (currentPos input) . w2c
     update (char, rest) = (char, (AlexInput (newPos char) char rest))
 
--- Lexer state to store the input, each code (the place like (<thing>)
+-- | Function required by the Alex to get the previous character.
+alexInputPrevChar :: AlexInput -> Word8
+alexInputPrevChar = lastInput
+
+-- | Lexer state to store the input, each code (the place like (<thing>)
 -- that it is in the lexer) and each "layout" place to work by indentation.
 data LexerState = LexerState
-    { input  :: AlexInput
-    , codes  :: NonEmpty Int
-    , layout :: [Int]
-    , buffer :: Word8
-    , nonLw  :: Bool
+    { input     :: AlexInput
+    , codes     :: NonEmpty Int
+    , layout    :: [Int]
+    , buffer    :: ByteString
+    -- It's useful to things like "=" that is a layout keyword only when
+    -- it's on a let binding
+    , nonLw     :: Bool
     }
+
+initialState :: ByteString -> LexerState
+initialState str = -- 10 is the ascii for \n
+  LexerState { input    = AlexInput (Point 0 0) 10 str
+             , codes    = 0 :| []
+             , buffer   = ByteString.empty
+             , layout   = []
+             , nonLw    = False
+             }
 
 newtype Lexer a = Lexer { getLexer :: State.StateT LexerState (Either String) a }
   deriving newtype (Functor, Applicative, Monad, MonadState LexerState, MonadError String)
 
--- Function required by the Alex to get the previous character.
-alexInputPrevChar :: AlexInput -> Word8
-alexInputPrevChar = lastInput
+-- Stack code manipulation things to jump to string, comments and these things.
 
 startCode :: Lexer Int
 startCode = State.gets (NonEmpty.head . codes)
+
+pushCode :: Int -> Lexer ()
+pushCode code = State.modify $ \s -> s {codes = NonEmpty.cons code s.codes}
+
+popCode :: Lexer Int
+popCode = State.state $ \s ->
+  let state = s { codes = fromMaybe (0 :| []) (snd $ NonEmpty.uncons s.codes) }
+  in (NonEmpty.head s.codes, state)
+
+-- Layout manipulation
+
+pushLayout :: Int -> Lexer ()
+pushLayout layout = State.modify $ \s -> s {layout = layout : s.layout}
+
+popLayout :: Lexer ()
+popLayout = State.modify $ \s -> s { layout = case s.layout of {_ : xs -> xs; [] -> []} }
+
+lastLayout :: Lexer (Maybe Int)
+lastLayout = State.gets (fmap fst . uncons . layout)
+
+-- Token emission things
 
 emit :: (Text -> a) -> Text -> Point -> Lexer (Ranged a)
 emit fn text pos = do
   lastPos <- State.gets (currentPos . input)
   pure (Ranged (fn text) (Range pos lastPos))
+
+token :: a -> Text -> Point -> Lexer (Ranged a)
+token = emit . const
+

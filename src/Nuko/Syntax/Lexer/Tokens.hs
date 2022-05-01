@@ -1,4 +1,4 @@
-module Nuko.Syntax.Tokens (
+module Nuko.Syntax.Lexer.Tokens (
     Token(..)
 ) where
 
@@ -44,6 +44,7 @@ data Token
     | TcBegin        -- The beginning of an identation block
     | TcSep          -- Separator between two expressions in an indentation block
     | TcEnd          -- The end of an indentation block
+    | TcEOF
 
 instance Show Token where
     show = \case
@@ -66,12 +67,13 @@ instance Show Token where
         TcDoubleArrow -> "=>"
         TcLowerId s -> Text.unpack s
         TcUpperId s -> Text.unpack s
-        TcLPar -> "("
-        TcRPar -> ")"
-        TcColon  -> ":"
+        TcLPar  -> "("
+        TcRPar  -> ")"
+        TcColon -> ":"
         TcEqual -> "="
         TcSlash -> "\\"
         TcDot   -> "."
-        TcBegin -> "begin"
-        TcSep -> "semi"
-        TcEnd -> "end"
+        TcBegin -> "$begin"
+        TcSep   -> "$semi"
+        TcEnd   -> "$end"
+        TcEOF   -> "$EOF"

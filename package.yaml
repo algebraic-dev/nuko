@@ -40,6 +40,7 @@ library:
   - bytestring
   - text
   - mtl
+  - array
   - transformers
 
 executables:
