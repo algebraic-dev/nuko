@@ -23,8 +23,10 @@ source-repository head
 library
   exposed-modules:
       Nuko.Driver
+      Nuko.Error.Data
       Nuko.Expr
       Nuko.Syntax.Lexer
+      Nuko.Syntax.Lexer.Error
       Nuko.Syntax.Lexer.Support
       Nuko.Syntax.Lexer.Tokens
       Nuko.Syntax.Range
