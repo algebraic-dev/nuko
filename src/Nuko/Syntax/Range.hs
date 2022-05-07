@@ -24,13 +24,13 @@ instance Semigroup Range where
   (Range s _) <> (Range _ e) = Range s e
 
 instance Show Point where
-  show (Point line col) = show line ++ ":" ++ show col
+  show (Point line col) = show (line + 1) ++ ":" ++ show col
 
 instance Show Range where
   show (Range start end) = show start ++ "-" ++ show end
 
 advancePos :: Point -> Char -> Point
-advancePos pos '\n' = Point { line = line pos + 1, column = 1}
+advancePos pos '\n' = Point { line = line pos + 1, column = 0}
 advancePos pos _    = pos   { column = column pos + 1}
 
 oneColRange :: Point -> Range

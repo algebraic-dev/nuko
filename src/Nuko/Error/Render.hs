@@ -126,7 +126,7 @@ groupLines markers code =
 renderLines :: Int -> [(Int, NonEmpty Text)] -> Text
 renderLines _ [] = ""
 renderLines offset ((l, text :| texts) : xs) =
-    let line' = dull (leftPad (offset + 2) (Text.pack $ show l) <> " │ ") <> text
+    let line' = dull (leftPad (offset + 2) (Text.pack $ show (l + 1)) <> " │ ") <> text
         marks = map (dullStart <>) texts
     in Text.unlines (line' : marks) <> (if null marks then "" else dullStart <> "\n") <> renderLines offset xs
   where

@@ -72,3 +72,5 @@ tests:
       - tasty
       - tasty-golden
       - tasty-hunit
+      - bytestring
+      - text

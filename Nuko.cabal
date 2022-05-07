@@ -90,8 +90,10 @@ test-suite Nuko-test
   build-depends:
       Nuko
     , base >=4.7 && <5
+    , bytestring
     , filepath
     , tasty
     , tasty-golden
     , tasty-hunit
+    , text
   default-language: Haskell2010
