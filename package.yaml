@@ -14,6 +14,7 @@ dependencies:
 default-extensions:
   - DuplicateRecordFields
   - OverloadedRecordDot
+  - OverloadedStrings
   - GeneralizedNewtypeDeriving
   - DerivingStrategies
   - LambdaCase
@@ -42,6 +43,7 @@ library:
   - mtl
   - array
   - transformers
+  - pretty-terminal
 
 executables:
   Nuko-exe:

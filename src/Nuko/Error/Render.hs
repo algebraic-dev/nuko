@@ -1,4 +1,4 @@
-module Nuko.Error.Render where
+module Nuko.Error.Render (prettyPrint) where
 
 import Nuko.Error.Data
 import Nuko.Syntax.Range        (Range(..), Point(..))
@@ -37,11 +37,10 @@ renderMarked = bold .: \case
   Sec -> Pretty.color Pretty.Blue
   Third -> Pretty.color Pretty.Green
 
-renderColored :: Int -> Colored -> Text
-renderColored size = \case
+renderColored :: Colored -> Text
+renderColored = \case
   Marked color text -> renderMarked color text
   Normal text       -> bold text
-  Break             -> "\n" <> pad size
 
 severityTag :: Severity -> Text
 severityTag = \case
@@ -56,14 +55,13 @@ severityColor = \case
 renderSeverity :: Severity -> Text
 renderSeverity tag = Pretty.bgColor (severityColor tag) (severityTag tag)
 
-renderTitle :: Int -> [Colored] -> Text
-renderTitle startPad title = Text.unwords (map (renderColored startPad) title)
+renderTitle :: [Colored] -> Text
+renderTitle title = Text.unwords (map renderColored title)
 
 renderHeader :: Int -> Severity -> [Colored] -> Text
 renderHeader padding severity title =
   let renderedTag   = renderSeverity severity
-      startPad      = Text.length (severityTag severity) + padding
-      renderedTitle = renderTitle startPad title
+      renderedTitle = renderTitle title
   in mconcat [ lined padding [renderedTag, renderedTitle] , "\n"]
 
 renderLocation :: Int -> Text -> Point -> Text
@@ -138,7 +136,7 @@ renderSubtitles :: Int -> [(Marker, [Colored])] -> Text
 renderSubtitles padding sub =
     Text.unlines $ map renderSub sub
   where
-    renderSub (marker, title) = mconcat [pad (padding + 2), renderMarked marker " • ", renderTitle padding title]
+    renderSub (marker, title) = mconcat [pad (padding + 2), renderMarked marker " • ", renderTitle title]
 
 renderHint :: Int -> [Text] -> Text
 renderHint _ []       = ""

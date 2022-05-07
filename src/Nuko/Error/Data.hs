@@ -4,19 +4,26 @@ module Nuko.Error.Data (
   Report(..),
   Marker(..),
   Colored(..),
-  Annotation(..)
+  Annotation(..),
+  rangeErr,
+  onePointErr
 ) where
 
-import Nuko.Syntax.Range (Point, Range)
+import Nuko.Syntax.Range (Point, Range (start), oneColRange)
 import Data.Text         (Text)
 
 data Severity = Warn | Error
 
-data Marker = Main | Sec | Third deriving Show
+data Marker
+  = Main
+  | Sec
+  | Third
 
-data Colored = Marked Marker Text | Normal Text | Break
+data Colored
+  = Marked Marker Text
+  | Normal Text
 
-data Annotation = Ann { range :: Range, marker :: Marker, hint :: (Maybe Text) } deriving Show
+data Annotation = Ann { range :: Range, marker :: Marker, hint :: (Maybe Text) }
 
 data Report = Report
   { severity     :: Severity
@@ -33,5 +40,23 @@ data Report = Report
   , debugDetails :: [Text] -- Details that will not be
   }
 
+onePointErr :: Report -> Point -> [Colored] -> Report
+onePointErr report point title =
+  report
+    { severity  = Error
+    , title     = title
+    , position  = point
+    , markers   = [Ann (oneColRange point) Main (Just "Here!")]
+    }
+
+rangeErr :: Report -> Range -> [Colored] -> Report
+rangeErr report range title =
+  report
+    { severity  = Error
+    , title     = title
+    , position  = range.start
+    , markers   = [Ann range Main (Just "Here!")]
+    }
+
 class CompilerError err where
-  getReport   :: err -> Report
+  getReport   :: Report -> err -> Report

@@ -13,7 +13,13 @@ module Nuko.Syntax.Lexer.Support (
     popCode,
     pushLayout,
     popLayout,
-    lastLayout
+    lastLayout,
+    setNonLW,
+    resetBuffer,
+    addToBuffer,
+    runLexer,
+    ghostRange,
+    nonLWToken
 ) where
 
 import Control.Monad.Except     (MonadError)
@@ -25,7 +31,9 @@ import Data.List                (uncons)
 import Data.List.NonEmpty       (NonEmpty ((:|)))
 import Data.ByteString          (ByteString)
 import Data.ByteString.Internal (w2c)
+
 import Nuko.Syntax.Range        (Point (Point), advancePos, Ranged(..), Range (..))
+import Nuko.Syntax.Error        (LexingError)
 
 import qualified Control.Monad.State as State
 import qualified Data.ByteString     as ByteString
@@ -57,7 +65,7 @@ data LexerState = LexerState
     { input     :: AlexInput
     , codes     :: NonEmpty Int
     , layout    :: [Int]
-    , buffer    :: ByteString
+    , buffer    :: Text
     -- It's useful to things like "=" that is a layout keyword only when
     -- it's on a let binding
     , nonLw     :: Bool
@@ -67,13 +75,13 @@ initialState :: ByteString -> LexerState
 initialState str = -- 10 is the ascii for \n
   LexerState { input    = AlexInput (Point 0 0) 10 str
              , codes    = 0 :| []
-             , buffer   = ByteString.empty
+             , buffer   = ""
              , layout   = []
              , nonLw    = False
              }
 
-newtype Lexer a = Lexer { getLexer :: State.StateT LexerState (Either String) a }
-  deriving newtype (Functor, Applicative, Monad, MonadState LexerState, MonadError String)
+newtype Lexer a = Lexer { getLexer :: State.StateT LexerState (Either LexingError) a }
+  deriving newtype (Functor, Applicative, Monad, MonadState LexerState, MonadError LexingError)
 
 -- Stack code manipulation things to jump to string, comments and these things.
 
@@ -108,4 +116,26 @@ emit fn text pos = do
 
 token :: a -> Text -> Point -> Lexer (Ranged a)
 token = emit . const
+
+setNonLW :: Lexer ()
+setNonLW = State.modify (\s -> s { nonLw = True })
+
+nonLWToken :: a -> Text -> Point -> Lexer (Ranged a)
+nonLWToken a t p = setNonLW >> emit (const a) t p
+
+-- Buffer manipulation
+
+resetBuffer :: Lexer Text
+resetBuffer = State.state (\s -> (s.buffer, s { buffer = "" }))
+
+addToBuffer :: Text -> Lexer ()
+addToBuffer text = State.modify (\s -> s { buffer = s.buffer <> text })
+
+ghostRange :: t -> Lexer (Ranged t)
+ghostRange t = do
+    pos <- State.gets (currentPos . input)
+    pure $ Ranged t (Range pos pos)
+
+runLexer :: Lexer a -> ByteString -> Either LexingError a
+runLexer lex' input = State.evalStateT lex'.getLexer (initialState input)
 

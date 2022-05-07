@@ -5,7 +5,8 @@ module Nuko.Syntax.Range (
     Point(..),
     Range(..),
     Ranged(..),
-    advancePos
+    advancePos,
+    oneColRange
 ) where
 
 import qualified Data.List.NonEmpty as NE
@@ -15,6 +16,9 @@ data Point = Point {line, column :: Int}
 data Range = Range {start, end :: Point}
 
 data Ranged a = Ranged {info :: a, position :: Range}
+
+instance Show a => Show (Ranged a) where
+  show (Ranged info pos) = show (info, pos)
 
 instance Semigroup Range where
   (Range s _) <> (Range _ e) = Range s e
@@ -28,6 +32,12 @@ instance Show Range where
 advancePos :: Point -> Char -> Point
 advancePos pos '\n' = Point { line = line pos + 1, column = 1}
 advancePos pos _    = pos   { column = column pos + 1}
+
+oneColRange :: Point -> Range
+oneColRange point =
+  Range
+    point
+    (point { column = point.column + 1})
 
 -- Useful type class :D
 

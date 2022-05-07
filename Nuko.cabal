@@ -24,9 +24,10 @@ library
   exposed-modules:
       Nuko.Driver
       Nuko.Error.Data
+      Nuko.Error.Render
       Nuko.Expr
+      Nuko.Syntax.Error
       Nuko.Syntax.Lexer
-      Nuko.Syntax.Lexer.Error
       Nuko.Syntax.Lexer.Support
       Nuko.Syntax.Lexer.Tokens
       Nuko.Syntax.Range
@@ -37,6 +38,7 @@ library
   default-extensions:
       DuplicateRecordFields
       OverloadedRecordDot
+      OverloadedStrings
       GeneralizedNewtypeDeriving
       DerivingStrategies
       LambdaCase
@@ -46,6 +48,7 @@ library
     , base >=4.7 && <5
     , bytestring
     , mtl
+    , pretty-terminal
     , text
     , transformers
   default-language: Haskell2010
@@ -59,6 +62,7 @@ executable Nuko-exe
   default-extensions:
       DuplicateRecordFields
       OverloadedRecordDot
+      OverloadedStrings
       GeneralizedNewtypeDeriving
       DerivingStrategies
       LambdaCase
@@ -78,6 +82,7 @@ test-suite Nuko-test
   default-extensions:
       DuplicateRecordFields
       OverloadedRecordDot
+      OverloadedStrings
       GeneralizedNewtypeDeriving
       DerivingStrategies
       LambdaCase
