@@ -22,13 +22,12 @@ data Token
     | TcPub          -- | The "public" keyword
 
     | TcStr Text     -- | String literal
-    | TcInt Int64    -- | Integer literal
+    | TcInt Int      -- | Integer literal
 
     | TcLBracket     -- | {
     | TcRBracket     -- | }
     | TcLBrace       -- | [
     | TcRBrace       -- | ]
-
     | TcArrow        -- | ->
     | TcDoubleArrow  -- | \=>
     | TcLowerId Text -- | lowerId
@@ -39,8 +38,9 @@ data Token
     | TcEqual        -- | =
     | TcPipe         -- | |
     | TcComma        -- | ,
-    | TcSlash        -- | /
+    | TcSlash        -- | \\
     | TcDot          -- | .
+    | TcWild         -- | _
 
     -- Virtual tokens
     | TcBegin        -- The beginning of an identation block
@@ -63,6 +63,7 @@ instance Show Token where
         TcInt i    -> "$int(" ++ show i ++ ")"
         TcLBracket -> "'{'"
         TcRBracket -> "'}'"
+        TcWild     -> "_"
         TcLBrace   -> "'['"
         TcRBrace   -> "']'"
         TcArrow    -> "->"

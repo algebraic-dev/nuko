@@ -5,8 +5,10 @@ module Nuko.Syntax.Range (
     Point(..),
     Range(..),
     Ranged(..),
+    HasPosition(..),
     advancePos,
-    oneColRange
+    oneColRange,
+    mixRange,
 ) where
 
 import qualified Data.List.NonEmpty as NE
@@ -39,6 +41,9 @@ oneColRange point =
     point
     (point { column = point.column + 1})
 
+mixRange :: Range -> Range -> Range
+mixRange (Range a _) (Range _ b') = Range a b'
+
 -- Useful type class :D
 
 class HasPosition a where
@@ -49,3 +54,7 @@ instance (HasPosition a, HasPosition b) => HasPosition (a, b) where
 
 instance HasPosition a => HasPosition (NE.NonEmpty a) where
   getPos x  = getPos (NE.head x) <> getPos (NE.last x)
+
+instance HasPosition a => HasPosition [a] where
+  getPos x = getPos (head x) <> getPos (last x)
+

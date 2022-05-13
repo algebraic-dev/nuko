@@ -72,6 +72,7 @@ lexer :-
 <0> @number     { emit $ TcInt . fst . fromRight . decimal }
 
 <0> "="         { layoutKw TcEqual }
+<0> "_"         { token TcWild   }
 <0> "("         { token TcLPar   }
 <0> ")"         { token TcRPar   }
 <0> "{"         { token TcLBrace }
@@ -79,7 +80,7 @@ lexer :-
 <0> ":"         { token TcColon  }
 <0> "|"         { token TcPipe   }
 <0> "."         { token TcDot    }
-<0> ","         { token TcComma   }
+<0> ","         { token TcComma  }
 <0> "\\"        { token TcSlash  }
 <0> "->"        { token TcArrow  }
 <0> "=>"        { token TcDoubleArrow  }

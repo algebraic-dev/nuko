@@ -25,12 +25,15 @@ library
       Nuko.Driver
       Nuko.Error.Data
       Nuko.Error.Render
-      Nuko.Expr
+      Nuko.Syntax.Ast
       Nuko.Syntax.Error
       Nuko.Syntax.Lexer
       Nuko.Syntax.Lexer.Support
       Nuko.Syntax.Lexer.Tokens
+      Nuko.Syntax.Parser
       Nuko.Syntax.Range
+      Nuko.Tree
+      Nuko.Tree.Expr
   other-modules:
       Paths_Nuko
   hs-source-dirs:
@@ -41,7 +44,10 @@ library
       OverloadedStrings
       GeneralizedNewtypeDeriving
       DerivingStrategies
+      FlexibleInstances
+      RankNTypes
       LambdaCase
+      TypeFamilies
   ghc-options: -Weverything -Wno-all-missed-specializations -Wno-implicit-prelude -Wno-missing-deriving-strategies -Wno-missing-kind-signatures -Wno-prepositive-qualified-module -Wno-missing-import-lists -Wno-missing-safe-haskell-mode -Wno-safe -Wno-missing-exported-signatures -Wno-unsafe -Wno-missed-specialisations -Wall
   build-depends:
       array
@@ -65,7 +71,10 @@ executable Nuko-exe
       OverloadedStrings
       GeneralizedNewtypeDeriving
       DerivingStrategies
+      FlexibleInstances
+      RankNTypes
       LambdaCase
+      TypeFamilies
   ghc-options: -Weverything -Wno-all-missed-specializations -Wno-implicit-prelude -Wno-missing-deriving-strategies -Wno-missing-kind-signatures -Wno-prepositive-qualified-module -Wno-missing-import-lists -Wno-missing-safe-haskell-mode -Wno-safe -Wno-missing-exported-signatures -Wno-unsafe -Wno-missed-specialisations -Wall -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       Nuko
@@ -85,7 +94,10 @@ test-suite Nuko-test
       OverloadedStrings
       GeneralizedNewtypeDeriving
       DerivingStrategies
+      FlexibleInstances
+      RankNTypes
       LambdaCase
+      TypeFamilies
   ghc-options: -Weverything -Wno-all-missed-specializations -Wno-implicit-prelude -Wno-missing-deriving-strategies -Wno-missing-kind-signatures -Wno-prepositive-qualified-module -Wno-missing-import-lists -Wno-missing-safe-haskell-mode -Wno-safe -Wno-missing-exported-signatures -Wno-unsafe -Wno-missed-specialisations -Wall -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       Nuko

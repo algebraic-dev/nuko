@@ -12,9 +12,13 @@ import Nuko.Syntax.Range         (Ranged (info))
 import Nuko.Error.Data           (CompilerError(..), Report (Report), emptyReport)
 import Nuko.Error.Render         (prettyPrint)
 
-
 import qualified Data.ByteString as ByteString
 import qualified Data.Text       as Text
+
+goldenStr :: String -> String -> String -> TestTree
+goldenStr file golden str = goldenVsString file golden (pure (packChars str))
+
+-- Lexer tests
 
 scanUntilEnd :: Lexer [Ranged Token]
 scanUntilEnd = do
@@ -28,9 +32,9 @@ runFile file = do
   content <- ByteString.readFile $ addExtension file ".nk"
   let golden = addExtension file ".golden"
   pure $ either
-          (error . prettyPrint 4 . getReport (emptyReport (decodeUtf8 content) (Text.pack file)))
-          (\res -> goldenVsString file golden (pure (packChars $ (unlines $ map show res))))
-          (runLexer scanUntilEnd content)
+    (goldenStr file golden . show)
+    (goldenStr file golden . (unlines . map show))
+    (runLexer scanUntilEnd content)
 
 runTestPath :: TestName -> FilePath -> (FilePath -> IO TestTree) -> IO TestTree
 runTestPath name path run = do
@@ -40,8 +44,7 @@ runTestPath name path run = do
 
 main :: IO ()
 main = do
-  let tests =
-        [ runTestPath "Lexing" "tests/lexer" runFile
-        ]
-  testTree <- sequence tests
+  testTree <- sequence 
+    [ runTestPath "Lexing" "tests/lexer" runFile
+    ]
   defaultMain $ Test.Tasty.testGroup "Tests" testTree
