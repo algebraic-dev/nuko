@@ -5,10 +5,13 @@ module Nuko.Tree.Expr (
   Expr(..),
   NoExt(..),
   Name(..),
+  Block(..),
+  Var(..),
   XLInt,
   XLStr,
   XPWild,
   XPId,
+  XPCons,
   XPExt,
   XLit,
   XLam,
@@ -19,7 +22,9 @@ module Nuko.Tree.Expr (
   XIf,
   XCase,
   XName,
+  XBlock,
   XExt,
+  XVar
 ) where
 
 import Data.Text          (Text)
@@ -40,8 +45,17 @@ data Literal x
 data Pat x
   = PWild (XPWild x)
   | PId (Name x) (XPId x)
-  | PCons (Path (Name x) x) [Pat x] (XPId x)
+  | PCons (Path (Name x) x) [Pat x] (XPCons x)
+  | PLit (Literal x) (XPLit x)
   | PExt (XPExt x)
+
+data Var x
+  = Var (Pat x) (Expr x) (XVar x)
+
+data Block x
+  = BlBind (Expr x) (Block x)
+  | BlVar (Var x) (Block x)
+  | BlEnd (Expr x)
 
 data Expr x
   = Lit (Literal x) (XLit x) -- Literal
@@ -50,9 +64,12 @@ data Expr x
   | Lower (Path (Name x) x) (XLower x) -- Lower cased ids
   | Upper (Path (Name x) x) (XUpper x) -- Upper cased ids
   | Accessor (Expr x) (Name x) (XAccessor x) -- Record fields like A.b.c where c is the Name
-  | If (Expr x) (Expr x) (Expr x) (XIf x) -- If then else statement
+  | If (Expr x) (Expr x) (Maybe (Expr x)) (XIf x) -- If then else statement
   | Case (Expr x) [((Pat x), (Expr x))] (XCase x) -- Case of statement
+  | Block (Block x) (XBlock x)
   | Ext !(XExt x)
+
+type family XVar x
 
 type family XName x
 
@@ -61,7 +78,9 @@ type family XLStr x
 
 type family XPWild x
 type family XPId x
+type family XPCons x
 type family XPExt x
+type family XPLit x
 
 type family XLit x
 type family XLam x
@@ -71,4 +90,5 @@ type family XUpper x
 type family XAccessor x
 type family XIf x
 type family XCase x
+type family XBlock x
 type family XExt x

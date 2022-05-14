@@ -11,7 +11,8 @@ type instance XLInt Normal = Range
 type instance XLStr Normal = Range
 
 type instance XPWild Normal = Range
-type instance XPId Normal = Range
+type instance XPId Normal = NoExt
+type instance XPCons Normal = Range
 type instance XPExt Normal = Range
 
 type instance XLit Normal = NoExt
@@ -22,27 +23,36 @@ type instance XUpper Normal = Range
 type instance XAccessor Normal = Range
 type instance XIf Normal = Range
 type instance XCase Normal = Range
+type instance XBlock Normal = Range
+type instance XVar Normal = Range
 type instance XExt Normal = Void
 
 instance HasPosition (Name Normal) where
-    getPos (Name _ r) = r
+  getPos (Name _ r) = r
 
 instance HasPosition x => HasPosition (Path x Normal) where
-    getPos (Path [] f) = getPos f
-    getPos (Path (x : _) f) = getPos x <> getPos f
+  getPos (Path [] f) = getPos f
+  getPos (Path (x : _) f) = getPos x <> getPos f
 
 instance HasPosition (Literal Normal) where
-    getPos = \case
-        LStr _ r -> r
-        LInt _ r -> r
+  getPos = \case
+    LStr _ r -> r
+    LInt _ r -> r
 
 instance HasPosition (Expr Normal) where
-    getPos = \case
-        Lit t _ -> getPos t
-        Lam _ r -> r
-        Call _ _ r -> r
-        Lower _ r -> r
-        Upper _ r -> r
-        Accessor _ _ r -> r
-        If _ _ _ r -> r
-        Case _ _ r -> r
+  getPos = \case
+    Lit t _ -> getPos t
+    Lam _ r -> r
+    Call _ _ r -> r
+    Lower _ r -> r
+    Upper _ r -> r
+    Accessor _ _ r -> r
+    If _ _ _ r -> r
+    Case _ _ r -> r
+    Block _  r -> r
+
+instance HasPosition (Block Normal) where
+  getPos = \case
+    BlBind x r           -> getPos x <> getPos r
+    BlVar (Var _ _ r1) r -> r1 <> getPos r
+    BlEnd x              -> getPos x

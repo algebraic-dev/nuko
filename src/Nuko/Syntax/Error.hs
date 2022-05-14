@@ -3,7 +3,7 @@ module Nuko.Syntax.Error (
 ) where
 
 import Nuko.Error.Data (CompilerError(..), Colored(Normal), onePointErr, rangeErr)
-import Nuko.Syntax.Range (Point, Range (Range), Ranged (..))
+import Nuko.Syntax.Range (Point, Ranged (..))
 import Nuko.Syntax.Lexer.Tokens (Token)
 
 data LexingError
@@ -22,4 +22,4 @@ instance CompilerError LexingError where
         [Normal "You have not finished the string."]
     (UnexpectedToken tkn) ->
       rangeErr report tkn.position
-        [Normal "You have not finished the string."]
+        [Normal "Unexpected token!"]

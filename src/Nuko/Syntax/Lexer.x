@@ -53,9 +53,9 @@ lexer :-
 <0> "with"      { layoutKw TcWith    }
 <0> "let"       { token TcLet        }
 <0> "match"     { token TcMatch      }
-<0> "if"        { token TcIf         }
-<0> "then"      { token TcThen       }
-<0> "else"      { token TcElse       }
+<0> "if"        { layoutKw TcIf      }
+<0> "then"      { layoutKw TcThen    }
+<0> "else"      { layoutKw TcElse    }
 <0> "forall"    { token TcForall     }
 <0> "pub"       { token TcPub        }
 <0> \"          { \_ pos -> do

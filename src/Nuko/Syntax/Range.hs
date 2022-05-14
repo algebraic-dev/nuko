@@ -58,3 +58,5 @@ instance HasPosition a => HasPosition (NE.NonEmpty a) where
 instance HasPosition a => HasPosition [a] where
   getPos x = getPos (head x) <> getPos (last x)
 
+instance HasPosition (Ranged a) where
+    getPos (Ranged _ a) = a
