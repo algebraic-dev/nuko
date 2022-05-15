@@ -83,7 +83,7 @@ lexer :-
 <0> ","         { token TcComma  }
 <0> "\\"        { token TcSlash  }
 <0> "->"        { token TcArrow  }
-<0> "=>"        { token TcDoubleArrow  }
+<0> "=>"        { layoutKw TcDoubleArrow  }
 
 -- Rule for parsing layout
 

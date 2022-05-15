@@ -8,6 +8,7 @@ import Nuko.Syntax.Range
 import Nuko.Syntax.Error
 import Nuko.Syntax.Range
 import Nuko.Syntax.Ast
+import Nuko.Tree.TopLevel
 import Nuko.Tree.Expr
 import Data.Text            (Text)
 import Control.Monad.Except (throwError)
@@ -17,6 +18,7 @@ import qualified Data.List.NonEmpty as NE
 }
 
 %name parseExpr Expr
+%name parseProgram Program
 
 %tokentype { Ranged Token }
 %monad { Lexer }
@@ -61,20 +63,30 @@ import qualified Data.List.NonEmpty as NE
     sep      { Ranged TcSep _ }
     end      { Ranged TcEnd _ }
 
+%right '->'
+
 %%
 
 -- Helpful predicates
 
-SepList(Sep, Expr)
-    : Expr Sep SepList(Sep, Expr) { $1 : $3 }
-    | Expr                        { [$1] }
+SepList(Sep, Pred)
+    : Pred Sep SepList(Sep, Pred) { $1 : $3 }
+    | {- UwU Empty -}             { [] }
 
-List(Expr)
-    : Expr List(Expr) { $1 : $2 }
-    | Expr { [$1] }
+SepList1(Sep, Pred)
+    : Pred Sep SepList1(Sep, Pred) { $1 : $3 }
+    | Pred                        { [$1] }
 
-Optional(Expr)
-    : Expr            { Just $1 }
+List1(Pred)
+    : Pred List1(Pred) { $1 NE.<| $2 }
+    | Pred             { NE.singleton $1 }
+
+List(Pred)
+    : Pred List(Pred) { $1 : $2 }
+    | {- UwU Empty -} { [] }
+
+Optional(Pred)
+    : Pred            { Just $1 }
     | {- Empty UwU -} { Nothing }
 
 -- Help
@@ -97,6 +109,22 @@ PathExpr : PathHelper(PathEnd) { let (p , f) = $1 in f p }
 
 Path(Pred) : PathHelper(Pred) { let (p , f) = $1 in Path p f }
 
+-- Types
+
+TypeAtom :: { Type Normal }
+    : Lower        { TPoly $1 NoExt }
+    | Path(Upper)  { TId $1 NoExt }
+    | '(' Type ')' { $2 }
+
+TypeCon :: { Type Normal }
+    : Path(Upper) List1(TypeAtom) { withPos $1 $2 $ TCons $1 $2 }
+    | TypeCon '->' TypeCon        { withPos $1 $3 $ TArrow $1 $3 }
+    | TypeAtom                    { $1 }
+
+Type
+    : forall Lower '.' Type      { withPos $1 $4 $ TForall $2 $4 }
+    | TypeCon                    { $1 }
+
 -- Patterns
 
 AtomPat :: { Pat Normal }
@@ -106,7 +134,9 @@ AtomPat :: { Pat Normal }
     | '(' Pat ')'                 { $2 }
 
 Pat :: { Pat Normal }
-    : Path(Upper) List(AtomPat) { undefined }
+    : Path(Upper) List(AtomPat) { withPosList $1 $2 $ PCons $1 $2 }
+    | Pat ':' Type              { withPos $1 $3     $ PAnn $1 $3 }
+    | AtomPat                   { $1 }
 
 -- Exprs
 
@@ -123,25 +153,62 @@ Call :: { NE.NonEmpty (Expr Normal) }
     : Atom Call { $1 NE.<| $2 }
     | Atom      { $1 NE.:| [] }
 
+VarExpr :: { Var Normal }
+    : let Pat '=' Expr               { withPos $1 $4 $ Var $2 $4 }
+
 BlockExpr :: { Block Normal }
-    : ClosedExpr       sep BlockExpr { BlBind $1 $3 }
-    | let Pat '=' Expr sep BlockExpr { BlVar (withPos $1 $4 $ Var $2 $4) $6 }
-    | ClosedExpr                     { BlEnd $1 }
+    : ClosedExpr sep BlockExpr { BlBind $1 $3 }
+    | VarExpr    sep BlockExpr { BlVar $1 $3 }
+    | ClosedExpr               { BlEnd $1 }
 
 End : end   { ()         }
     | error {% popLayout }
 
+CaseClause :: { ((Pat Normal, Expr Normal)) }
+    : Pat '=>' Expr { ($1, $3) }
+
 ClosedExpr :: { Expr Normal }
-    : if ClosedExpr then ClosedExpr else ClosedExpr { withPos $1 $6 $ If $2 $4 (Just $6) }
-    | Atom Call                                     { withPos $1 $2 $ Call $1 $2 }
-    | Atom                                          { $1 }
-    | begin BlockExpr End                           { withPos $1 $2 $ Block $2 }
+    : if ClosedExpr then ClosedExpr else ClosedExpr      { withPos $1 $6 $ If $2 $4 (Just $6) }
+    | Atom Call                                          { withPos $1 $2 $ Call $1 $2 }
+    | '\\' Pat '=>' ClosedExpr                           { withPos $1 $4 $ Lam $2 $4 }
+    | begin BlockExpr End                                { withPos $1 $2 $ Block $2 }
+    | match Expr with begin SepList(sep, CaseClause) End { withPos $1 $5 $ Case $2 $5 }
 
 Expr :: { Expr Normal }
-    : ClosedExpr                    { $1 }
-    | if ClosedExpr then ClosedExpr { withPos $1 $4 $ If $2 $4 Nothing }
+    : ClosedExpr                                         { $1 }
+    | ClosedExpr ':' Type                                { withPos $1 $3 $ Ann $1 $3 }
+    | Atom                                               { $1 }
+    | if ClosedExpr then ClosedExpr                      { withPos $1 $4 $ If $2 $4 Nothing }
+
+-- Top Level
+
+ProdClause :: { (Name Normal, Type Normal) }
+    : Lower ':' Type { ($1, $3) }
+
+SumClause :: { (Name Normal, [Type Normal]) }
+    : '|' Upper List(TypeAtom) { ($2, $3) }
+
+TypeTy :: { TypeDeclArg Normal }
+    : '{' SepList(',', ProdClause) '}' { TypeProd $2 }
+    | List1(SumClause)                 { TypeSum $1 }
+    | Type                             { TypeSym $1 }
+
+TypeDecl : type Upper List(Lower) '=' TypeTy { TypeDecl $2 $3 $5 }
+
+Ret : ':' Type { $2 }
+
+LetDecl : let Lower List(AtomPat) Optional(Ret) '=' Expr { LetDecl $2 $3 $6 NoExt }
+
+Program :: { Program Normal }
+    : LetDecl Program  { $2 { letDecls = $1 : $2.letDecls } }
+    | TypeDecl Program { $2 { tyDecls = $1  : $2.tyDecls } }
+    | {- Empty UwU -}  { Program [] [] NoExt }
 
 {
+
+withPosList :: (HasPosition a, HasPosition b) => a -> [b] -> (Range -> c) -> c
+withPosList p [] fn = fn (getPos p)
+withPosList p xs fn = fn (getPos p <> getPos xs)
 
 withPos :: (HasPosition a, HasPosition b) => a -> b -> (Range -> c) -> c
 withPos p p1 fn = fn (mixRange (getPos p) (getPos p1))

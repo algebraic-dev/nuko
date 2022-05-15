@@ -1,13 +1,12 @@
-```haskell
 type Range = { line, column : Int }
 
 type Hole =
   | Filled Range
   | Empty
 
--- Without lambda case
+-- Without lambda match
 let pub isEmpty? (hole: Hole): Bool =
-  case hole of
+  match hole with
     Filled range => False
     Empty        => True
 
@@ -22,12 +21,11 @@ let isEmpty! (hole: Hole): Unit =
     else print "Is's not empty.'"
 
 let getLineOr (hole: Hole) (alt: Int): Int =
-  case hole of
+  match hole with
     Filled range => range.line
     Empty        => alt
 
 let sequenced!: Unit =
   print "a"
   print "b"
-  prnit "c"
-```
+  print "c"

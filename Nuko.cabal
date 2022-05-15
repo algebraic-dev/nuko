@@ -34,6 +34,7 @@ library
       Nuko.Syntax.Range
       Nuko.Tree
       Nuko.Tree.Expr
+      Nuko.Tree.TopLevel
   other-modules:
       Paths_Nuko
   hs-source-dirs:
