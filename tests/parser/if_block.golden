@@ -1,0 +1,35 @@
+Program
+    { tyDecls = []
+    , letDecls =
+        [ LetDecl
+            { declName = Name "a" 1:4-1:5
+            , declArgs = []
+            , declBody = If
+                ( Upper
+                    ( Path
+                        { path = []
+                        , final = Name "a" 2:7-2:8
+                        }
+                    ) 2:7-2:8
+                )
+                ( Upper
+                    ( Path
+                        { path = []
+                        , final = Name "b" 3:9-3:10
+                        }
+                    ) 3:9-3:10
+                )
+                ( Just
+                    ( Upper
+                        ( Path
+                            { path = []
+                            , final = Name "c" 4:9-4:10
+                            }
+                        ) 4:9-4:10
+                    )
+                ) 2:4-4:10
+            , declExt = ( . )
+            }
+        ]
+    , programExt = ( . )
+    }
