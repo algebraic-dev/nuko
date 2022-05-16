@@ -41,6 +41,9 @@ import Data.List.NonEmpty (NonEmpty)
 
 data NoExt = NoExt
 
+instance Show NoExt where
+  show _ = "(.)"
+
 data Name x = Name Text (XName x)
 
 data Path a x = Path { path :: [Name x], final :: a }

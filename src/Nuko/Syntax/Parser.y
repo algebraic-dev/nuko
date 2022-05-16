@@ -70,7 +70,7 @@ import qualified Data.List.NonEmpty as NE
 -- Helpful predicates
 
 SepList(Sep, Pred)
-    : Pred Sep SepList(Sep, Pred) { $1 : $3 }
+    : SepList1(Sep, Pred)          { $1 }
     | {- UwU Empty -}             { [] }
 
 SepList1(Sep, Pred)
@@ -101,9 +101,9 @@ PathHelper(Pred)
     | Pred { ([], $1) }
 
 PathEnd
-    : Upper           { \p -> withPos p $1 (Lower (Path p $1)) }
-    | Lower           { \p -> withPos p $1 (Upper (Path p $1)) }
-    | Lower '.' Lower { \p -> withPos p $3 (Accessor (withPos p $1 $ Lower (Path p $1)) $3) }
+    : Upper           { \p -> withPosListR p $1 (Lower (Path p $1)) }
+    | Lower           { \p -> withPosListR p $1 (Upper (Path p $1)) }
+    | Lower '.' Lower { \p -> withPosListR p $3 (Accessor (withPosListR p $1 $ Lower (Path p $1)) $3) }
 
 PathExpr : PathHelper(PathEnd) { let (p , f) = $1 in f p }
 
@@ -140,6 +140,8 @@ Pat :: { Pat Normal }
 
 -- Exprs
 
+OptSep : Optional(sep) { () }
+
 Literal :: { Literal Normal }
     : int  { LInt (getInt $1) $1.position }
     | str  { LStr (getData $1) $1.position }
@@ -157,9 +159,9 @@ VarExpr :: { Var Normal }
     : let Pat '=' Expr               { withPos $1 $4 $ Var $2 $4 }
 
 BlockExpr :: { Block Normal }
-    : ClosedExpr sep BlockExpr { BlBind $1 $3 }
+    : Expr       sep BlockExpr { BlBind $1 $3 }
     | VarExpr    sep BlockExpr { BlVar $1 $3 }
-    | ClosedExpr               { BlEnd $1 }
+    | Expr                     { BlEnd $1 }
 
 End : end   { ()         }
     | error {% popLayout }
@@ -167,18 +169,18 @@ End : end   { ()         }
 CaseClause :: { ((Pat Normal, Expr Normal)) }
     : Pat '=>' Expr { ($1, $3) }
 
+-- Match can be sucessed of a End so.. sometimes it will give an layout error
 ClosedExpr :: { Expr Normal }
-    : if ClosedExpr then ClosedExpr else ClosedExpr      { withPos $1 $6 $ If $2 $4 (Just $6) }
+    : if ClosedExpr OptSep then ClosedExpr OptSep else ClosedExpr { withPos $1 $8 $ If $2 $5 (Just $8) }
     | Atom Call                                          { withPos $1 $2 $ Call $1 $2 }
     | '\\' Pat '=>' ClosedExpr                           { withPos $1 $4 $ Lam $2 $4 }
-    | begin BlockExpr End                                { withPos $1 $2 $ Block $2 }
-    | match Expr with begin SepList(sep, CaseClause) End { withPos $1 $5 $ Case $2 $5 }
+    | begin BlockExpr End                                { case $2 of { BlEnd x -> x; _ -> withPos $1 $2 $ Block $2} }
+    | match ClosedExpr with begin SepList(sep, CaseClause) End { withPos $1 $5 $ Case $2 $5 }
+    | Atom                                               { $1 }
 
 Expr :: { Expr Normal }
     : ClosedExpr                                         { $1 }
     | ClosedExpr ':' Type                                { withPos $1 $3 $ Ann $1 $3 }
-    | Atom                                               { $1 }
-    | if ClosedExpr then ClosedExpr                      { withPos $1 $4 $ If $2 $4 Nothing }
 
 -- Top Level
 
@@ -209,6 +211,11 @@ Program :: { Program Normal }
 withPosList :: (HasPosition a, HasPosition b) => a -> [b] -> (Range -> c) -> c
 withPosList p [] fn = fn (getPos p)
 withPosList p xs fn = fn (getPos p <> getPos xs)
+
+withPosListR :: (HasPosition a, HasPosition b) => [b] -> a -> (Range -> c) -> c
+withPosListR []     p fn = fn (getPos p)
+withPosListR (x: _) p fn = fn (getPos x <> getPos p)
+
 
 withPos :: (HasPosition a, HasPosition b) => a -> b -> (Range -> c) -> c
 withPos p p1 fn = fn (mixRange (getPos p) (getPos p1))

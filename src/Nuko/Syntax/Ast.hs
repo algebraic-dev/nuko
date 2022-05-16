@@ -45,6 +45,19 @@ type instance XTypeSym Normal = NoExt
 type instance XTypeProd Normal = NoExt
 type instance XTypeSum Normal = NoExt
 
+deriving instance Show (Name Normal)
+deriving instance Show (Expr Normal)
+deriving instance Show (Block Normal)
+deriving instance Show (Var Normal)
+deriving instance Show (Literal Normal)
+deriving instance Show (Pat Normal)
+deriving instance Show (Type Normal)
+deriving instance Show (Path (Name Normal) Normal)
+deriving instance Show (Program Normal)
+deriving instance Show (TypeDeclArg Normal)
+deriving instance Show (TypeDecl Normal)
+deriving instance Show (LetDecl Normal)
+
 instance HasPosition (Name Normal) where
   getPos (Name _ r) = r
 
