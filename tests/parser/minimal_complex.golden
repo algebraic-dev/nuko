@@ -94,6 +94,14 @@ Program
                         ) 11:20-11:24
                     )
                 ] 9:2-11:24
+            , declRet = Just
+                ( TId
+                    ( Path
+                        { path = []
+                        , final = Name "Bool" 8:27-8:31
+                        }
+                    ) ( . )
+                )
             , declExt = ( . )
             }
         , LetDecl
@@ -139,6 +147,23 @@ Program
                         ) 17:20-17:24
                     )
                 ] 15:2-17:24
+            , declRet = Just
+                ( TArrow
+                    ( TId
+                        ( Path
+                            { path = []
+                            , final = Name "Hole" 14:15-14:19
+                            }
+                        ) ( . )
+                    )
+                    ( TId
+                        ( Path
+                            { path = []
+                            , final = Name "Bool" 14:23-14:27
+                            }
+                        ) ( . )
+                    ) 14:15-14:27
+                )
             , declExt = ( . )
             }
         , LetDecl
@@ -199,6 +224,14 @@ Program
                         ) 22:9-22:33
                     )
                 ) 20:2-22:33
+            , declRet = Just
+                ( TId
+                    ( Path
+                        { path = []
+                        , final = Name "Unit" 19:27-19:31
+                        }
+                    ) ( . )
+                )
             , declExt = ( . )
             }
         , LetDecl
@@ -270,6 +303,14 @@ Program
                         ) 27:20-27:23
                     )
                 ] 25:2-27:23
+            , declRet = Just
+                ( TId
+                    ( Path
+                        { path = []
+                        , final = Name "Int" 24:39-24:42
+                        }
+                    ) ( . )
+                )
             , declExt = ( . )
             }
         , LetDecl
@@ -318,6 +359,14 @@ Program
                         )
                     )
                 ) 30:2-32:11
+            , declRet = Just
+                ( TId
+                    ( Path
+                        { path = []
+                        , final = Name "Unit" 29:16-29:20
+                        }
+                    ) ( . )
+                )
             , declExt = ( . )
             }
         ]

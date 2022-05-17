@@ -18,6 +18,7 @@ data LetDecl x = LetDecl
   { declName :: Name x
   , declArgs :: [Pat x]
   , declBody :: Expr x
+  , declRet  :: Maybe (Type x)
   , declExt  :: XLetDecl x
   }
 

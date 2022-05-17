@@ -69,6 +69,7 @@ Program
                         )
                     )
                 ) 2:4-6:11
+            , declRet = Nothing
             , declExt = ( . )
             }
         ]

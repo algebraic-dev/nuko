@@ -199,7 +199,7 @@ TypeDecl : type Upper List(Lower) '=' TypeTy { TypeDecl $2 $3 $5 }
 
 Ret : ':' Type { $2 }
 
-LetDecl : let Lower List(AtomPat) Optional(Ret) '=' Expr { LetDecl $2 $3 $6 NoExt }
+LetDecl : let Lower List(AtomPat) Optional(Ret) '=' Expr { LetDecl $2 $3 $6 $4 NoExt }
 
 Program :: { Program Normal }
     : LetDecl Program  { $2 { letDecls = $1 : $2.letDecls } }
