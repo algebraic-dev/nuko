@@ -49,11 +49,16 @@ data Name x = Name Text (XName x)
 data Path a x = Path { path :: [Name x], final :: a }
 
 data Type x
-  = TId (Path (Name x) x) (XTId x) -- Type identifier
-  | TPoly (Name x) (XTPoly x) -- Type variable
-  | TCons (Path (Name x) x) (NonEmpty (Type x)) (XTCons x) -- Type constructor application
-  | TArrow  (Type x) (Type x) (XTArrow x) -- Arrow type (Restrition of a PI type)
-  | TForall (Name x) (Type x) (XTForall x) -- Forall binding
+  -- | Type identifier
+  = TId (Path (Name x) x) (XTId x)
+  -- | Polymorphic type identifier (everything that is lower case)
+  | TPoly (Name x) (XTPoly x)
+  -- | Type constructor
+  | TCons (Path (Name x) x) (NonEmpty (Type x)) (XTCons x)
+  -- | Arrow type
+  | TArrow  (Type x) (Type x) (XTArrow x)
+  -- | Forall binding for predicative higher rank polymorphism
+  | TForall (Name x) (Type x) (XTForall x)
 
 data Literal x
   = LStr Text (XLInt x)

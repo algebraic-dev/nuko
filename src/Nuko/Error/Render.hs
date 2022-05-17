@@ -1,7 +1,7 @@
 module Nuko.Error.Render (prettyPrint) where
 
 import Nuko.Error.Data
-import Nuko.Syntax.Range        (Range(..), Point(..))
+import Nuko.Syntax.Range        (Range(..), Pos(..))
 import Data.Text                (Text)
 import Data.Maybe               (isJust)
 import Data.List.NonEmpty       (NonEmpty ((:|)))
@@ -56,41 +56,41 @@ renderSeverity :: Severity -> Text
 renderSeverity tag = Pretty.bgColor (severityColor tag) (severityTag tag)
 
 renderTitle :: [Colored] -> Text
-renderTitle title = Text.unwords (map renderColored title)
+renderTitle title' = Text.unwords (map renderColored title')
 
 renderHeader :: Int -> Severity -> [Colored] -> Text
-renderHeader padding severity title =
-  let renderedTag   = renderSeverity severity
-      renderedTitle = renderTitle title
+renderHeader padding severity' title' =
+  let renderedTag   = renderSeverity severity'
+      renderedTitle = renderTitle title'
   in mconcat [ lined padding [renderedTag, renderedTitle] , "\n"]
 
-renderLocation :: Int -> Text -> Point -> Text
-renderLocation padding fileName position =
+renderLocation :: Int -> Text -> Pos -> Text
+renderLocation padding fileName' position' =
   mconcat
-    [ lined (padding + 2) [(dull " ┌ " <> dull (cyan ("at " <> fileName <> ":" <> (Text.pack $ show position))))]
+    [ lined (padding + 2) [(dull " ┌ " <> dull (cyan ("at " <> fileName' <> ":" <> (Text.pack $ show position'))))]
     , lined (padding + 2) [dull " │"]
     ]
 
 modifySection :: (Text -> Text) -> Range -> Text -> Text
-modifySection fn (Range start end) text =
-  let (tStart, stretch) = Text.splitAt start.column text
-      (tMiddle, tEnd)   = Text.splitAt (end.column - start.column) stretch
+modifySection fn (Range start' end') text =
+  let (tStart, stretch) = Text.splitAt start'.column text
+      (tMiddle, tEnd)   = Text.splitAt (end'.column - start'.column) stretch
   in tStart <> fn tMiddle <> tEnd
 
 splitAnnotation :: [Text] -> Annotation -> [Annotation]
-splitAnnotation code (Ann range marker text)
-    | sL == eL  = [ Ann range marker text ]
-    | otherwise = [ Ann (Range range.start (Point sL (Text.length (code !! sL)))) marker text
-                  , Ann (Range (Point eL 0) range.end) marker Nothing ]
+splitAnnotation code (Ann range' marker' text)
+    | sL == eL  = [ Ann range' marker' text ]
+    | otherwise = [ Ann (Range range'.start (Pos sL (Text.length (code !! sL)))) marker' text
+                  , Ann (Range (Pos eL 0) range'.end) marker' Nothing ]
   where
-    sL = range.start.line
-    eL = range.end.line
+    sL = range'.start.line
+    eL = range'.end.line
 
 groupLine :: [Text] -> [Annotation] -> (Int, NonEmpty Text)
 groupLine codeLines group =
-      let line     = getGroupLine group
-          mainLine = foldl (flip sectionMod) (codeLines !! line) (reverseOrder group)
-      in (line, mainLine :| renderMarks)
+      let line'    = getGroupLine group
+          mainLine = foldl (flip sectionMod) (codeLines !! line') (reverseOrder group)
+      in (line', mainLine :| renderMarks)
   where
     renderMarks = foldr (\ann l -> makeLine 0 ann : l) []
       $ List.filter (not . null)
@@ -101,13 +101,13 @@ groupLine codeLines group =
 
     makeLine _ [] = ""
 
-    makeLine offset [Ann range marker (Just hint)] =
-      pad (range.start.column - offset)
-      <> renderMarked marker ("└── " <> hint)
+    makeLine offset [Ann range' marker' (Just hint')] =
+      pad (range'.start.column - offset)
+      <> renderMarked marker' ("└── " <> hint')
 
-    makeLine offset (Ann range marker _ : xs) =
-      pad (range.start.column - offset)
-      <> renderMarked marker ("│" <> makeLine (range.start.column + 1) xs)
+    makeLine offset (Ann range' marker' _ : xs) =
+      pad (range'.start.column - offset)
+      <> renderMarked marker' ("│" <> makeLine (range'.start.column + 1) xs)
 
     sectionMod (Ann r m _) = modifySection (renderMarked m) r
     getGroupLine ls = line $ start $ range $ head ls
@@ -115,9 +115,9 @@ groupLine codeLines group =
     compareColumn (Ann r1 _ _) (Ann r2 _ _) = compare r1.start.column r2.start.column
 
 groupLines :: [Annotation] -> Text -> [(Int, NonEmpty Text)]
-groupLines markers code =
+groupLines markers' code =
     let codeLines = Text.lines code
-        sortedMarkers = List.groupBy sameLine $ List.sortBy compareLine $ concatMap (splitAnnotation codeLines) markers
+        sortedMarkers = List.groupBy sameLine $ List.sortBy compareLine $ concatMap (splitAnnotation codeLines) markers'
     in map (groupLine codeLines) sortedMarkers
   where
     compareLine   (Ann r1 _ _) (Ann r2 _ _) = compare r1.start.line r2.start.line
@@ -136,7 +136,7 @@ renderSubtitles :: Int -> [(Marker, [Colored])] -> Text
 renderSubtitles padding sub =
     Text.unlines $ map renderSub sub
   where
-    renderSub (marker, title) = mconcat [pad (padding + 2), renderMarked marker " • ", renderTitle title]
+    renderSub (marker', title') = mconcat [pad (padding + 2), renderMarked marker' " • ", renderTitle title']
 
 renderHint :: Int -> [Text] -> Text
 renderHint _ []       = ""

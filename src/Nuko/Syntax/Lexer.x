@@ -81,7 +81,7 @@ lexer :-
 <0> "|"         { token TcPipe   }
 <0> "."         { token TcDot    }
 <0> ","         { token TcComma  }
-<0> "\\"        { token TcSlash  }
+<0> "\"         { token TcSlash  }
 <0> "->"        { token TcArrow  }
 <0> "=>"        { layoutKw TcDoubleArrow  }
 

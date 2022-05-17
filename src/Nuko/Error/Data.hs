@@ -6,11 +6,11 @@ module Nuko.Error.Data (
   Colored(..),
   Annotation(..),
   rangeErr,
-  onePointErr,
+  posErr,
   emptyReport
 ) where
 
-import Nuko.Syntax.Range (Point (Point), Range (start), oneColRange)
+import Nuko.Syntax.Range (Pos (Pos), Range (start), oneColRange)
 import Data.Text         (Text)
 
 data Severity = Warn | Error
@@ -30,7 +30,7 @@ data Report = Report
   { severity     :: Severity
   , title        :: [Colored]
   , subtitles    :: [(Marker, [Colored])]
-  , position     :: Point
+  , position     :: Pos
   , markers      :: [Annotation]
 
   -- The entire source code
@@ -42,10 +42,10 @@ data Report = Report
   }
 
 emptyReport :: Text -> Text -> Report
-emptyReport code file = Report Error [] [] (Point 0 0) [] code file [] []
+emptyReport code file = Report Error [] [] (Pos 0 0) [] code file [] []
 
-onePointErr :: Report -> Point -> [Colored] -> Report
-onePointErr report point title =
+posErr :: Report -> Pos -> [Colored] -> Report
+posErr report point title =
   report
     { severity  = Error
     , title     = title

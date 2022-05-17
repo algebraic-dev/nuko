@@ -32,7 +32,7 @@ import Data.List.NonEmpty       (NonEmpty ((:|)))
 import Data.ByteString          (ByteString)
 import Data.ByteString.Internal (w2c)
 
-import Nuko.Syntax.Range        (Point (Point), advancePos, Ranged(..), Range (..))
+import Nuko.Syntax.Range        (Pos (Pos), advancePos, Ranged(..), Range (..))
 import Nuko.Syntax.Error        (LexingError)
 
 import qualified Control.Monad.State as State
@@ -42,7 +42,7 @@ import qualified Data.List.NonEmpty  as NonEmpty
 -- | AlexInput is the Data Type used by the Alex inside the
 -- generated code to track the input data.
 data AlexInput = AlexInput
-    { currentPos  :: Point
+    { currentPos  :: Pos
     , lastInput   :: Word8
     , inputStream :: ByteString
     }
@@ -73,7 +73,7 @@ data LexerState = LexerState
 
 initialState :: ByteString -> LexerState
 initialState str = -- 10 is the ascii for \n
-  LexerState { input    = AlexInput (Point 0 0) 10 str
+  LexerState { input    = AlexInput (Pos 0 0) 10 str
              , codes    = 0 :| []
              , buffer   = ""
              , layout   = []
@@ -109,18 +109,18 @@ lastLayout = State.gets (fmap fst . uncons . layout)
 
 -- Token emission things
 
-emit :: (Text -> a) -> Text -> Point -> Lexer (Ranged a)
+emit :: (Text -> a) -> Text -> Pos -> Lexer (Ranged a)
 emit fn text pos = do
   lastPos <- State.gets (currentPos . input)
   pure (Ranged (fn text) (Range pos lastPos))
 
-token :: a -> Text -> Point -> Lexer (Ranged a)
+token :: a -> Text -> Pos -> Lexer (Ranged a)
 token = emit . const
 
 setNonLW :: Lexer ()
 setNonLW = State.modify (\s -> s { nonLw = True })
 
-nonLWToken :: a -> Text -> Point -> Lexer (Ranged a)
+nonLWToken :: a -> Text -> Pos -> Lexer (Ranged a)
 nonLWToken a t p = setNonLW >> emit (const a) t p
 
 -- Buffer manipulation

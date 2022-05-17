@@ -216,9 +216,8 @@ withPosListR :: (HasPosition a, HasPosition b) => [b] -> a -> (Range -> c) -> c
 withPosListR []     p fn = fn (getPos p)
 withPosListR (x: _) p fn = fn (getPos x <> getPos p)
 
-
 withPos :: (HasPosition a, HasPosition b) => a -> b -> (Range -> c) -> c
-withPos p p1 fn = fn (mixRange (getPos p) (getPos p1))
+withPos p p1 fn = fn (getPos p <> getPos p1)
 
 getData :: Ranged Token -> Text
 getData = \case
