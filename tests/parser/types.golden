@@ -5,31 +5,28 @@ Program
             { declName = Name "a" 1:4-1:5
             , declArgs = []
             , declBody = Lit
-                ( LInt 2 1:39-1:40 ) ( . )
+                ( LInt 2 1:29-1:30 ) ( . )
             , declRet = Just
-                ( TForall
-                    ( Name "a" 1:15-1:16 )
+                ( TArrow
+                    ( TId
+                        ( Path
+                            { path = []
+                            , final = Name "Int" 1:8-1:11
+                            }
+                        ) ( . )
+                    )
                     ( TArrow
+                        ( TPoly
+                            ( Name "a" 1:15-1:16 ) ( . )
+                        )
                         ( TId
                             ( Path
                                 { path = []
-                                , final = Name "Int" 1:18-1:21
+                                , final = Name "String" 1:20-1:26
                                 }
                             ) ( . )
-                        )
-                        ( TArrow
-                            ( TPoly
-                                ( Name "a" 1:25-1:26 ) ( . )
-                            )
-                            ( TId
-                                ( Path
-                                    { path = []
-                                    , final = Name "String" 1:30-1:36
-                                    }
-                                ) ( . )
-                            ) 1:25-1:36
-                        ) 1:18-1:36
-                    ) 1:8-1:36
+                        ) 1:15-1:26
+                    ) 1:8-1:26
                 )
             , declExt = ( . )
             }

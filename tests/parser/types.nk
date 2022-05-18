@@ -1,1 +1,1 @@
-let a : forall a. Int -> a -> String = 2
+let a : Int -> a -> String = 2

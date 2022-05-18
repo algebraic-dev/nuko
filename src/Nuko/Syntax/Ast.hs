@@ -61,6 +61,9 @@ deriving instance Show (LetDecl Normal)
 instance HasPosition (Name Normal) where
   getPos (Name _ r) = r
 
+instance HasPosition (Var Normal) where
+  getPos (Var _ _ r) = r
+
 instance HasPosition x => HasPosition (Path x Normal) where
   getPos (Path [] f) = getPos f
   getPos (Path (x : _) f) = getPos x <> getPos f
@@ -104,4 +107,3 @@ instance HasPosition (Type Normal) where
     TPoly n _     -> getPos n
     TCons _ _ r   -> r
     TArrow _ _ r  -> r
-    TForall _ _ r -> r

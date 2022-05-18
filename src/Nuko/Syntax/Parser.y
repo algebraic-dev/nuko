@@ -122,8 +122,7 @@ TypeCon :: { Type Normal }
     | TypeAtom                    { $1 }
 
 Type
-    : forall Lower '.' Type      { withPos $1 $4 $ TForall $2 $4 }
-    | TypeCon                    { $1 }
+    : TypeCon                    { $1 }
 
 -- Patterns
 
@@ -161,6 +160,7 @@ VarExpr :: { Var Normal }
 BlockExpr :: { Block Normal }
     : Expr       sep BlockExpr { BlBind $1 $3 }
     | VarExpr    sep BlockExpr { BlVar $1 $3 }
+    | VarExpr                  {% throwError (CannotAssign $ getPos $1) }
     | Expr                     { BlEnd $1 }
 
 End : end   { ()         }
@@ -172,10 +172,10 @@ CaseClause :: { ((Pat Normal, Expr Normal)) }
 -- Match can be sucessed of a End so.. sometimes it will give an layout error
 ClosedExpr :: { Expr Normal }
     : if ClosedExpr OptSep then ClosedExpr OptSep else ClosedExpr { withPos $1 $8 $ If $2 $5 (Just $8) }
+    | match ClosedExpr with begin SepList(sep, CaseClause) End    { withPos $1 $5 $ Case $2 $5 }
     | Atom Call                                          { withPos $1 $2 $ Call $1 $2 }
     | '\\' Pat '=>' ClosedExpr                           { withPos $1 $4 $ Lam $2 $4 }
     | begin BlockExpr End                                { case $2 of { BlEnd x -> x; _ -> withPos $1 $2 $ Block $2} }
-    | match ClosedExpr with begin SepList(sep, CaseClause) End { withPos $1 $5 $ Case $2 $5 }
     | Atom                                               { $1 }
 
 Expr :: { Expr Normal }

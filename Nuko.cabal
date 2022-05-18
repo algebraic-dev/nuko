@@ -32,9 +32,10 @@ library
       Nuko.Syntax.Lexer.Tokens
       Nuko.Syntax.Parser
       Nuko.Syntax.Range
-      Nuko.Tree
       Nuko.Tree.Expr
       Nuko.Tree.TopLevel
+      Nuko.Typer.Env
+      Nuko.Typer.Types
   other-modules:
       Paths_Nuko
   hs-source-dirs:

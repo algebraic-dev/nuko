@@ -41,9 +41,6 @@ import Data.List.NonEmpty (NonEmpty)
 
 data NoExt = NoExt
 
-instance Show NoExt where
-  show _ = "(.)"
-
 data Name x = Name Text (XName x)
 
 data Path a x = Path { path :: [Name x], final :: a }
@@ -57,8 +54,6 @@ data Type x
   | TCons (Path (Name x) x) (NonEmpty (Type x)) (XTCons x)
   -- | Arrow type
   | TArrow  (Type x) (Type x) (XTArrow x)
-  -- | Forall binding for predicative higher rank polymorphism
-  | TForall (Name x) (Type x) (XTForall x)
 
 data Literal x
   = LStr Text (XLInt x)
@@ -126,3 +121,6 @@ type family XIf x
 type family XCase x
 type family XBlock x
 type family XExt x
+
+instance Show NoExt where
+  show _ = "(.)"
