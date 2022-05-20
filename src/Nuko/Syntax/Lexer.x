@@ -81,8 +81,8 @@ lexer :-
 <0> "|"         { token TcPipe   }
 <0> "."         { token TcDot    }
 <0> ","         { token TcComma  }
-<0> "\"         { token TcSlash  }
 <0> "->"        { token TcArrow  }
+<0> "\"         { token TcSlash  }
 <0> "=>"        { layoutKw TcDoubleArrow  }
 
 -- Rule for parsing layout
@@ -105,32 +105,32 @@ lexer :-
 emptyLayout _ _ = popCode *> pushCode newline *> ghostRange TcEnd
 
 layoutKw t text pos = do
-	isAfterNonLayoutKW <- State.gets nonLw
-	if isAfterNonLayoutKW
-		then State.modify (\s -> s { nonLw = False })
-		else pushCode layout_
-	token t text pos
+    isAfterNonLayoutKW <- State.gets nonLw
+    if isAfterNonLayoutKW
+        then State.modify (\s -> s { nonLw = False })
+        else pushCode layout_
+    token t text pos
 
 startLayout _ _ = do
-	popCode
-	ref <- lastLayout
-	col <- State.gets (column . currentPos . input)
-	if Just col <= ref
-		then pushCode empty_layout
-		else pushLayout col
-	ghostRange TcBegin
+    popCode
+    ref <- lastLayout
+    col <- State.gets (column . currentPos . input)
+    if Just col <= ref
+        then pushCode empty_layout
+        else pushLayout col
+    ghostRange TcBegin
 
 offsideRule _ _ = do
-	lay <- lastLayout
-	col <- State.gets (column . currentPos . input)
-	let continue = popCode *> scan
-	case lay of
-		Nothing   -> continue
-		Just col' -> do
-			case col `compare` col' of
-				EQ -> popCode *> ghostRange TcSep
-				GT -> continue
-				LT -> popLayout *> ghostRange TcEnd
+    lay <- lastLayout
+    col <- State.gets (column . currentPos . input)
+    let continue = popCode *> scan
+    case lay of
+        Nothing   -> continue
+        Just col' -> do
+            case col `compare` col' of
+                EQ -> popCode *> ghostRange TcSep
+                GT -> continue
+                LT -> popLayout *> ghostRange TcEnd
 
 -- Probably will not throw errors because all the data is determined
 -- by the lexer
@@ -141,29 +141,29 @@ fromRight _ = error "Cannot unpack the data (error on lexer UwU)"
 
 handleEOF :: Lexer (Ranged Token)
 handleEOF = do
-	layout <- lastLayout
-	code <- popCode
-	when (code == str) $ do
-		pos <- State.gets (currentPos . input)
-		Error.throwError $ UnfinishedStr pos
-	case layout of
-		Nothing -> popCode *> ghostRange TcEOF
-		Just _  -> popLayout *> ghostRange TcEnd
+    layout <- lastLayout
+    code <- popCode
+    when (code == str) $ do
+        pos <- State.gets (currentPos . input)
+        Error.throwError $ UnfinishedStr pos
+    case layout of
+        Nothing -> popCode *> ghostRange TcEOF
+        Just _  -> popLayout *> ghostRange TcEnd
 
 scan :: Lexer (Ranged Token)
 scan = do
-		inputCode <- State.gets input
-		code <- startCode
-		case alexScan inputCode code of
-			AlexEOF              -> handleEOF
-			AlexError inp        -> Error.throwError $ UnexpectedChar (currentPos inp)
-			AlexSkip restInput _ -> setInput restInput >> scan
-			AlexToken input' tokl action -> do
-				pos <- State.gets (currentPos . input)
-				setInput input'
-				action (decodeUtf8 $ ByteString.take tokl inputCode.inputStream) pos
-	where
-		setInput :: AlexInput -> Lexer ()
-		setInput input' = State.modify $ \s -> s { input = input' }
+        inputCode <- State.gets input
+        code <- startCode
+        case alexScan inputCode code of
+            AlexEOF              -> handleEOF
+            AlexError inp        -> Error.throwError $ UnexpectedChar (currentPos inp)
+            AlexSkip restInput _ -> setInput restInput >> scan
+            AlexToken input' tokl action -> do
+                pos <- State.gets (currentPos . input)
+                setInput input'
+                action (decodeUtf8 $ ByteString.take tokl inputCode.inputStream) pos
+    where
+        setInput :: AlexInput -> Lexer ()
+        setInput input' = State.modify $ \s -> s { input = input' }
 
 }

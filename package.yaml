@@ -23,7 +23,10 @@ default-extensions:
   - RankNTypes
   - LambdaCase
   - TypeFamilies
-
+  - GADTs
+  - ConstraintKinds
+  - FlexibleContexts
+  
 ghc-options:
   - -Weverything
   - -Wno-all-missed-specializations
@@ -49,6 +52,8 @@ library:
   - array
   - transformers
   - pretty-terminal
+  - containers
+  - unordered-containers
 
 executables:
   Nuko-exe:

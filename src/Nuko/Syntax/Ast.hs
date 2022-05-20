@@ -27,7 +27,7 @@ type instance XPExt Normal = Void
 type instance XLit Normal = NoExt
 type instance XLam Normal = Range
 type instance XAnn Normal = Range
-type instance XCall Normal = Range
+type instance XApp Normal = Range
 type instance XLower Normal = Range
 type instance XUpper Normal = Range
 type instance XAccessor Normal = Range
@@ -86,7 +86,7 @@ instance HasPosition (Expr Normal) where
   getPos = \case
     Lit t _ -> getPos t
     Lam _ _ r -> r
-    Call _ _ r -> r
+    App _ _ r -> r
     Lower _ r -> r
     Upper _ r -> r
     Accessor _ _ r -> r
@@ -107,3 +107,4 @@ instance HasPosition (Type Normal) where
     TPoly n _     -> getPos n
     TCons _ _ r   -> r
     TArrow _ _ r  -> r
+    TForall _ _ r -> r

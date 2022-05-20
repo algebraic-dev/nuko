@@ -182,7 +182,7 @@ Program
                     ) 19:14-19:24
                 ]
             , declBody = If
-                ( Call
+                ( App
                     ( Upper
                         ( Path
                             { path = []
@@ -198,7 +198,7 @@ Program
                         ) 20:14-20:18 :| []
                     ) 20:5-20:18
                 )
-                ( Call
+                ( App
                     ( Upper
                         ( Path
                             { path = []
@@ -211,7 +211,7 @@ Program
                     ) 21:9-21:29
                 )
                 ( Just
-                    ( Call
+                    ( App
                         ( Upper
                             ( Path
                                 { path = []
@@ -318,7 +318,7 @@ Program
             , declArgs = []
             , declBody = Block
                 ( BlBind
-                    ( Call
+                    ( App
                         ( Upper
                             ( Path
                                 { path = []
@@ -331,7 +331,7 @@ Program
                         ) 30:2-30:11
                     )
                     ( BlBind
-                        ( Call
+                        ( App
                             ( Upper
                                 ( Path
                                     { path = []
@@ -344,7 +344,7 @@ Program
                             ) 31:2-31:11
                         )
                         ( BlEnd
-                            ( Call
+                            ( App
                                 ( Upper
                                     ( Path
                                         { path = []

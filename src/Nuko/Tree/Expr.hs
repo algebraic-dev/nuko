@@ -17,7 +17,7 @@ module Nuko.Tree.Expr (
   XPExt,
   XLit,
   XLam,
-  XCall,
+  XApp,
   XLower,
   XUpper,
   XAccessor,
@@ -41,7 +41,7 @@ import Data.List.NonEmpty (NonEmpty)
 
 data NoExt = NoExt
 
-data Name x = Name Text (XName x)
+data Name x = Name { ident :: Text, loc :: (XName x) }
 
 data Path a x = Path { path :: [Name x], final :: a }
 
@@ -54,6 +54,7 @@ data Type x
   | TCons (Path (Name x) x) (NonEmpty (Type x)) (XTCons x)
   -- | Arrow type
   | TArrow  (Type x) (Type x) (XTArrow x)
+  | TForall (Name x) (Type x) (XTForall x)
 
 data Literal x
   = LStr Text (XLInt x)
@@ -80,7 +81,7 @@ data Block x
 data Expr x
   = Lit (Literal x) (XLit x) -- Literal
   | Lam (Pat x) (Expr x) (XLam x) -- Lambdas / Anonymous function
-  | Call (Expr x) (NonEmpty (Expr x)) (XCall x) -- Function call
+  | App (Expr x) (NonEmpty (Expr x)) (XApp x) -- Function call
   | Lower (Path (Name x) x) (XLower x) -- Lower cased ids
   | Upper (Path (Name x) x) (XUpper x) -- Upper cased ids
   | Accessor (Expr x) (Name x) (XAccessor x) -- Record fields like A.b.c where c is the Name
@@ -113,7 +114,7 @@ type family XPLit x
 type family XLit x
 type family XLam x
 type family XAnn x
-type family XCall x
+type family XApp x
 type family XLower x
 type family XUpper x
 type family XAccessor x

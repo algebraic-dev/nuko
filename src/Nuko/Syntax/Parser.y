@@ -123,7 +123,7 @@ TypeCon :: { Type Normal }
 
 Type
     : TypeCon                    { $1 }
-
+    | forall Lower '.' Type      { withPos $1 $4 $ TForall $2 $4 }
 -- Patterns
 
 AtomPat :: { Pat Normal }
@@ -150,8 +150,8 @@ Atom :: { Expr Normal }
     | Literal      { Lit $1 NoExt }
     | '(' Expr ')' { $2 }
 
-Call :: { NE.NonEmpty (Expr Normal) }
-    : Atom Call { $1 NE.<| $2 }
+App :: { NE.NonEmpty (Expr Normal) }
+    : Atom App { $1 NE.<| $2 }
     | Atom      { $1 NE.:| [] }
 
 VarExpr :: { Var Normal }
@@ -173,7 +173,7 @@ CaseClause :: { ((Pat Normal, Expr Normal)) }
 ClosedExpr :: { Expr Normal }
     : if ClosedExpr OptSep then ClosedExpr OptSep else ClosedExpr { withPos $1 $8 $ If $2 $5 (Just $8) }
     | match ClosedExpr with begin SepList(sep, CaseClause) End    { withPos $1 $5 $ Case $2 $5 }
-    | Atom Call                                          { withPos $1 $2 $ Call $1 $2 }
+    | Atom App                                          { withPos $1 $2 $ App $1 $2 }
     | '\\' Pat '=>' ClosedExpr                           { withPos $1 $4 $ Lam $2 $4 }
     | begin BlockExpr End                                { case $2 of { BlEnd x -> x; _ -> withPos $1 $2 $ Block $2} }
     | Atom                                               { $1 }
