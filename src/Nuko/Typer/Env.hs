@@ -1,8 +1,10 @@
 module Nuko.Typer.Env (
     Env(..),
     Tracker(..),
+    Namespace(..),
+    Visibility(..),
     Name,
-    TyperMonad,
+    MonadTyper,
     updateTracker,
     track,
     updateVars,
@@ -29,7 +31,6 @@ import Nuko.Syntax.Range      (Range, HasPosition (getPos))
 import Nuko.Syntax.Ast        (Normal)
 import Data.Foldable          (traverse_)
 import Data.IORef             (newIORef, writeIORef)
-import Data.Map               (Map)
 import GHC.IORef              (readIORef)
 import Data.Set               (Set)
 import Control.Monad.State    (MonadState, StateT)
@@ -39,7 +40,6 @@ import Control.Monad          (when)
 import Data.HashMap.Strict    (HashMap)
 
 import qualified Control.Monad.State as State
-import qualified Data.Map            as Map
 import qualified Data.Text           as Text
 import qualified Data.Set            as Set
 import qualified Data.Sequence       as Seq
@@ -59,32 +59,43 @@ data Tracker
   | InApply     Ty (Expr Normal)
   deriving Show
 
--- | Stores all the info about the environment of typing, trackers
---   (that helps a lot with error localization) and some cool numbers
---   to generate new variable names.
 
 debug :: Bool
 debug = False
 
-data Module = Module
-  { types :: HashMap Name Ty
+data Visibility = Public | Private
+
+-- | This is like a namespace instance. Or a module.. so it holds a lot
+--   of info about the types, functions and constants defined inside of them.
+--   all the types usually create namespaces to avoid conflicts.
+
+data Namespace = Namespace
+  { types :: HashMap Name (Visibility, Ty),
+    name  :: Name
   }
+
+-- | This is the typing environment so the info here is volatile in the sense
+--   that it not constitutes a module or namespace, it's just the typing context
+--   at a moment in the code. Also it stores all the info about the trackers
+--   (that helps a lot with error localization)
 
 data Env = Env
-  { scope      :: Lvl,
-    nameGen    :: Int,
-    trackers   :: Seq Tracker,
-    variables  :: HashMap Name Ty,
-    localTypes :: HashMap Name Ty,
-    debugLvl   :: Int
+  { scope        :: Lvl,
+    nameGen      :: Int,
+    trackers     :: Seq Tracker,
+    variables    :: HashMap Name Ty,
+    localTypes   :: HashMap Name Ty,
+    curNamespace :: Namespace,
+    namespaces   :: HashMap Name Namespace,
+    debugLvl     :: Int
   }
 
-type TyperMonad m = (MonadState Env m, MonadIO m)
+type MonadTyper m = (MonadState Env m, MonadIO m)
 
-updateTracker :: TyperMonad m => (Seq Tracker -> Seq Tracker) -> m ()
+updateTracker :: MonadTyper m => (Seq Tracker -> Seq Tracker) -> m ()
 updateTracker f = State.modify (\ctx -> ctx {trackers = f ctx.trackers})
 
-track :: TyperMonad m => Tracker -> m a -> m a
+track :: MonadTyper m => Tracker -> m a -> m a
 track tracker action = do
     updateTracker (:|> tracker)
     when debug $ do
@@ -104,13 +115,13 @@ track tracker action = do
 
 -- Scoping and variales
 
-updateVars :: TyperMonad m => (HashMap Name Ty -> HashMap Name Ty) -> m ()
+updateVars :: MonadTyper m => (HashMap Name Ty -> HashMap Name Ty) -> m ()
 updateVars f = State.modify (\ctx -> ctx {variables = f (ctx.variables)})
 
-updateTypes :: TyperMonad m => (HashMap Name Ty -> HashMap Name Ty) -> m ()
+updateTypes :: MonadTyper m => (HashMap Name Ty -> HashMap Name Ty) -> m ()
 updateTypes f = State.modify (\ctx -> ctx {localTypes = f (ctx.localTypes)})
 
-scopeVar :: TyperMonad m => Name -> Ty -> m a -> m a
+scopeVar :: MonadTyper m => Name -> Ty -> m a -> m a
 scopeVar name ty action = do
   oldTy <- State.gets variables
   updateVars (HashMap.insert name ty)
@@ -118,7 +129,7 @@ scopeVar name ty action = do
   updateVars (const oldTy)
   pure act
 
-scopeVars :: TyperMonad m => [(Name, Ty)] -> m a -> m a
+scopeVars :: MonadTyper m => [(Name, Ty)] -> m a -> m a
 scopeVars vars action = do
   oldTy <- State.gets variables
   traverse_ (updateVars . uncurry HashMap.insert) vars
@@ -126,7 +137,7 @@ scopeVars vars action = do
   updateVars (const oldTy)
   pure act
 
-scopeTy :: TyperMonad m => Name -> Ty -> m a -> m a
+scopeTy :: MonadTyper m => Name -> Ty -> m a -> m a
 scopeTy name ty action = do
   oldTy <- State.gets localTypes
   updateTypes (HashMap.insert name ty)
@@ -134,37 +145,37 @@ scopeTy name ty action = do
   updateTypes (const oldTy)
   pure act
 
-scopeUp :: TyperMonad m => m a -> m a
+scopeUp :: MonadTyper m => m a -> m a
 scopeUp action =
   modScope (+ 1) *> action <* modScope (subtract 1)
   where
-    modScope :: TyperMonad m => (Int -> Int) -> m ()
+    modScope :: MonadTyper m => (Int -> Int) -> m ()
     modScope f = State.modify (\s -> s {scope = f s.scope})
 
-newHole :: TyperMonad m => m TyHole
+newHole :: MonadTyper m => m TyHole
 newHole = do
   scope' <- State.gets scope
   name <- newNamed
   res <- liftIO $ newIORef (Empty name scope')
   pure res
 
-newNamed :: TyperMonad m => m Name
+newNamed :: MonadTyper m => m Name
 newNamed = do
   name <- State.state (\env -> (Text.pack $ "'" ++ show env.nameGen, env { nameGen = env.nameGen + 1}))
   pure name
 
-addTy :: TyperMonad m => Name -> Ty -> m ()
+addTy :: MonadTyper m => Name -> Ty -> m ()
 addTy name ty = updateTypes $ HashMap.insert name ty
 
 -- Generalization and instantiation
 
-generalize :: TyperMonad m => Ty -> m Ty
+generalize :: MonadTyper m => Ty -> m Ty
 generalize ty = do
     let pos = getPos ty
     freeVars <- Set.toList <$> go ty
     pure (foldl (flip $ TyForall pos) ty freeVars)
   where
-    go :: TyperMonad m => Ty -> m (Set Name)
+    go :: MonadTyper m => Ty -> m (Set Name)
     go = \case
       TyRef _ ty'   -> go ty'
       TyRigid _ _ _ -> pure Set.empty
@@ -183,7 +194,7 @@ generalize ty = do
             else pure Set.empty
           Filled ty' -> go ty'
 
-zonk :: TyperMonad m => Ty -> m Ty
+zonk :: MonadTyper m => Ty -> m Ty
 zonk = \case
   TyRef pos ty'   -> TyRef pos <$> zonk ty'
   TyRigid pos name lvl -> pure $ TyRigid pos name lvl
@@ -196,7 +207,7 @@ zonk = \case
       Empty _ _ -> pure (TyHole loc hole)
       Filled ty' -> zonk ty'
 
-instantiate :: TyperMonad m => Ty -> m Ty
+instantiate :: MonadTyper m => Ty -> m Ty
 instantiate = \case
   (TyForall loc binder body) -> do
     hole <- TyHole loc <$> newHole
@@ -204,23 +215,23 @@ instantiate = \case
   other -> pure other
 
 -- Lol i dont want to use the word "skolomize"
-existentialize :: TyperMonad m => Ty -> m Ty
+existentialize :: MonadTyper m => Ty -> m Ty
 existentialize = \case
   (TyForall loc binder body) -> do
     lvl <- State.gets scope
     pure (substitute binder (TyRigid loc binder lvl) body)
   other -> pure other
 
-fillHole :: TyperMonad m => TyHole -> Ty -> m ()
+fillHole :: MonadTyper m => TyHole -> Ty -> m ()
 fillHole hole ty = liftIO $ writeIORef hole (Filled ty)
 
-readHole :: TyperMonad m => TyHole -> m (Hole Ty)
+readHole :: MonadTyper m => TyHole -> m (Hole Ty)
 readHole = liftIO . readIORef
 
-setHole :: TyperMonad m => TyHole -> Hole Ty -> m ()
+setHole :: MonadTyper m => TyHole -> Hole Ty -> m ()
 setHole hole = liftIO . writeIORef hole
 
-named :: TyperMonad m => Range -> Name -> m Ty
+named :: MonadTyper m => Range -> Name -> m Ty
 named range name = pure (TyNamed range name)
 
 runEnv :: StateT Env IO a -> Env -> IO (a, Env)

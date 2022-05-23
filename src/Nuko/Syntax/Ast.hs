@@ -37,6 +37,10 @@ type instance XBlock Normal = Range
 type instance XVar Normal = Range
 type instance XExt Normal = Void
 
+type instance XPath Normal = NoExt
+type instance XNaExt Normal = Void
+type instance XPaExt Normal = Void
+
 type instance XLetDecl Normal = NoExt
 type instance XProgram Normal = NoExt
 type instance XTypeDecl Normal = NoExt
@@ -44,6 +48,7 @@ type instance XTypeDecl Normal = NoExt
 type instance XTypeSym Normal = NoExt
 type instance XTypeProd Normal = NoExt
 type instance XTypeSum Normal = NoExt
+type instance XImport Normal = NoExt
 
 deriving instance Show (Name Normal)
 deriving instance Show (Expr Normal)
@@ -52,7 +57,8 @@ deriving instance Show (Var Normal)
 deriving instance Show (Literal Normal)
 deriving instance Show (Pat Normal)
 deriving instance Show (Type Normal)
-deriving instance Show (Path (Name Normal) Normal)
+deriving instance Show (Path Normal)
+deriving instance Show (Import Normal)
 deriving instance Show (Program Normal)
 deriving instance Show (TypeDeclArg Normal)
 deriving instance Show (TypeDecl Normal)
@@ -60,13 +66,15 @@ deriving instance Show (LetDecl Normal)
 
 instance HasPosition (Name Normal) where
   getPos (Name _ r) = r
+  getPos (NaExt r)  = absurd r
 
 instance HasPosition (Var Normal) where
   getPos (Var _ _ r) = r
 
-instance HasPosition x => HasPosition (Path x Normal) where
-  getPos (Path [] f) = getPos f
-  getPos (Path (x : _) f) = getPos x <> getPos f
+instance HasPosition (Path Normal) where
+  getPos (Path [] f _ ) = getPos f
+  getPos (Path (x : _) f _) = getPos x <> getPos f
+  getPos (PaExt r) = absurd r
 
 instance HasPosition (Literal Normal) where
   getPos = \case

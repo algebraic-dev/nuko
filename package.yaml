@@ -26,6 +26,8 @@ default-extensions:
   - GADTs
   - ConstraintKinds
   - FlexibleContexts
+  - FunctionalDependencies
+  - UndecidableInstances
   
 ghc-options:
   - -Weverything

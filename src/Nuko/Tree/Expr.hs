@@ -33,7 +33,10 @@ module Nuko.Tree.Expr (
   XTPoly,
   XTCons,
   XTArrow,
-  XTForall
+  XTForall,
+  XPaExt,
+  XNaExt,
+  XPath,
 ) where
 
 import Data.Text          (Text)
@@ -41,17 +44,21 @@ import Data.List.NonEmpty (NonEmpty)
 
 data NoExt = NoExt
 
-data Name x = Name { ident :: Text, loc :: (XName x) }
+data Name x
+  = Name Text (XName x)
+  | NaExt (XNaExt x)
 
-data Path a x = Path { path :: [Name x], final :: a }
+data Path x
+  = Path [Name x] (Name x) (XPath x)
+  | PaExt (XPaExt x)
 
 data Type x
   -- | Type identifier
-  = TId (Path (Name x) x) (XTId x)
+  = TId (Path x) (XTId x)
   -- | Polymorphic type identifier (everything that is lower case)
   | TPoly (Name x) (XTPoly x)
   -- | Type constructor
-  | TCons (Path (Name x) x) (NonEmpty (Type x)) (XTCons x)
+  | TCons (Path x) (NonEmpty (Type x)) (XTCons x)
   -- | Arrow type
   | TArrow  (Type x) (Type x) (XTArrow x)
   | TForall (Name x) (Type x) (XTForall x)
@@ -65,7 +72,7 @@ data Literal x
 data Pat x
   = PWild (XPWild x)
   | PId (Name x) (XPId x)
-  | PCons (Path (Name x) x) [Pat x] (XPCons x)
+  | PCons (Path x) [Pat x] (XPCons x)
   | PLit (Literal x) (XPLit x)
   | PAnn (Pat x) (Type x) (XPAnn x)
   | PExt (XPExt x)
@@ -82,9 +89,9 @@ data Expr x
   = Lit (Literal x) (XLit x) -- Literal
   | Lam (Pat x) (Expr x) (XLam x) -- Lambdas / Anonymous function
   | App (Expr x) (NonEmpty (Expr x)) (XApp x) -- Function call
-  | Lower (Path (Name x) x) (XLower x) -- Lower cased ids
-  | Upper (Path (Name x) x) (XUpper x) -- Upper cased ids
-  | Accessor (Expr x) (Name x) (XAccessor x) -- Record fields like A.b.c where c is the Name
+  | Lower (Path x) (XLower x) -- Lower cased ids
+  | Upper (Path x) (XUpper x) -- Upper cased ids
+  | Accessor (Expr x) (Name x) (XAccessor x)      -- Record fields like A.b.c where c is the Name
   | If (Expr x) (Expr x) (Maybe (Expr x)) (XIf x) -- If then else statement
   | Case (Expr x) [((Pat x), (Expr x))] (XCase x) -- Case of statement
   | Ann (Expr x) (Type x) (XAnn x)
@@ -122,6 +129,10 @@ type family XIf x
 type family XCase x
 type family XBlock x
 type family XExt x
+
+type family XPath x
+type family XPaExt x
+type family XNaExt x
 
 instance Show NoExt where
   show _ = "(.)"

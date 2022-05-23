@@ -10,11 +10,11 @@ import qualified Nuko.Typer.Error as Err
 import Nuko.Syntax.Range (HasPosition(..))
 
 -- Occours and scope checking :D
-unifyPreCheck :: TyperMonad m => Lvl -> TyHole -> Ty -> m ()
+unifyPreCheck :: MonadTyper m => Lvl -> TyHole -> Ty -> m ()
 unifyPreCheck scope hole ty = do
     preCheck ty
   where
-    preCheck :: TyperMonad m => Ty -> m ()
+    preCheck :: MonadTyper m => Ty -> m ()
     preCheck ty' = case ty' of
       TyRef _      t  -> preCheck t
       TyNamed _ _     -> pure ()
@@ -30,7 +30,7 @@ unifyPreCheck scope hole ty = do
             when (scope' > scope) (setHole hol' (Empty loc' scope))
           Filled t -> preCheck t
 
-unify :: TyperMonad m => Ty -> Ty -> m ()
+unify :: MonadTyper m => Ty -> Ty -> m ()
 unify ty ty' = track (InUnify ty ty') $ case (ty, ty') of
   (TyHole _ hole, b) -> do
     resHole <- readHole hole
@@ -58,7 +58,7 @@ unify ty ty' = track (InUnify ty ty') $ case (ty, ty') of
     | otherwise -> Err.typeError Err.CannotUnify
   _ -> Err.typeError Err.CannotUnify
 
-unifyHole :: TyperMonad m => TyHole -> Ty -> m ()
+unifyHole :: MonadTyper m => TyHole -> Ty -> m ()
 unifyHole hole ty = do
   resHole <- readHole hole
   case resHole of
@@ -70,7 +70,7 @@ unifyHole hole ty = do
           unifyPreCheck scope hole ty
           fillHole hole ty
 
-instantiateLeft :: TyperMonad m => TyHole -> Ty -> m ()
+instantiateLeft :: MonadTyper m => TyHole -> Ty -> m ()
 instantiateLeft hole = \case
   TyRef _ ty' -> instantiateLeft hole ty'
   TyForall r binder ty ->
@@ -83,7 +83,7 @@ instantiateLeft hole = \case
     instantiateLeft retHole ret
   ty -> unifyHole hole ty
 
-instantiateRight :: TyperMonad m => Ty -> TyHole -> m ()
+instantiateRight :: MonadTyper m => Ty -> TyHole -> m ()
 instantiateRight ty hole = case ty of
   TyRef _ ty' -> instantiateRight ty' hole
   ty'@(TyForall {}) -> do

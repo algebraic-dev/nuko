@@ -3,15 +3,17 @@ module Nuko.Tree.TopLevel (
   TypeDecl(..),
   Program(..),
   TypeDeclArg(..),
+  Import(..),
   XLetDecl,
   XTypeDecl,
   XTypeProd,
   XTypeSym,
   XTypeSum,
   XProgram,
+  XImport
 ) where
 
-import Nuko.Tree.Expr ( Expr, Pat, Name, Type )
+import Nuko.Tree.Expr ( Expr, Pat, Name, Type, Path )
 import Data.List.NonEmpty (NonEmpty)
 
 data LetDecl x = LetDecl
@@ -33,15 +35,23 @@ data TypeDecl x = TypeDecl
   , tyDecl :: TypeDeclArg x
   }
 
+data Import x  = Import
+  { modName :: Path x
+  , asName  :: Maybe (Name x)
+  , impExt  :: XImport x
+  }
+
 data Program x = Program
   { tyDecls    :: [TypeDecl x]
   , letDecls   :: [LetDecl x]
+  , impDecl    :: [Import x]
   , programExt :: XProgram x
   }
 
 type family XLetDecl x
 type family XProgram x
 type family XTypeDecl x
+type family XImport x
 
 type family XTypeSym x
 type family XTypeProd x

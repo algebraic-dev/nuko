@@ -18,7 +18,7 @@ import Nuko.Typer.Infer.Type   (inferTy)
 import qualified Data.Map            as Map
 import qualified Data.List.NonEmpty  as NonEmpty
 
-unifyFun :: TyperMonad m => Ty -> Range -> Range -> m (Ty, Ty)
+unifyFun :: MonadTyper m => Ty -> Range -> Range -> m (Ty, Ty)
 unifyFun (TyFun _ a b) _ _ = pure (a,b)
 unifyFun tau arg ret = do
   argTy <- TyHole arg <$> newHole
@@ -26,7 +26,7 @@ unifyFun tau arg ret = do
   unify tau (TyFun (arg <> ret) argTy retTy)
   pure (argTy, retTy)
 
-checkExpr :: TyperMonad m => Expr Normal -> Ty -> m ()
+checkExpr :: MonadTyper m => Expr Normal -> Ty -> m ()
 checkExpr expr ty = track (InCheck expr ty) $ case (expr, ty) of
   (_, TyRef _ ty') -> checkExpr expr ty'
   (_, TyHole _ hole) | isFilled hole -> checkExpr expr (getFilled hole)
@@ -41,7 +41,7 @@ checkExpr expr ty = track (InCheck expr ty) $ case (expr, ty) of
     inferred <- inferExpr expr'
     unify inferred ty'
 
-inferSttms :: TyperMonad m => Block Normal -> m Ty
+inferSttms :: MonadTyper m => Block Normal -> m Ty
 inferSttms (BlEnd expr) = inferExpr expr
 inferSttms (BlBind expr next) = do
   _ <- inferExpr expr
@@ -55,7 +55,7 @@ inferSttms (BlVar (Var pat expr _) next) = do
   scopeVars (Map.toList traversedMap)
     (inferSttms next)
 
-inferExpr :: TyperMonad m => Expr Normal -> m Ty
+inferExpr :: MonadTyper m => Expr Normal -> m Ty
 inferExpr expr = track (InInferExpr expr) $ do
   case expr of
     Lam pat body loc' -> do
@@ -73,7 +73,7 @@ inferExpr expr = track (InInferExpr expr) $ do
     Block sttms _ -> inferSttms sttms
     ast -> error $ "Not implemented yet " ++ show ast
 
-applyExpr :: TyperMonad m => Ty -> Expr Normal -> m Ty
+applyExpr :: MonadTyper m => Ty -> Expr Normal -> m Ty
 applyExpr ty expr = track (InApply ty expr) $ case ty of
   TyFun _ arg ret -> checkExpr expr arg >> pure ret
   TyForall _ _ _  -> instantiate ty >>= (`applyExpr` expr)

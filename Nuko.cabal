@@ -25,6 +25,10 @@ library
       Nuko.Driver
       Nuko.Error.Data
       Nuko.Error.Render
+      Nuko.Resolver
+      Nuko.Resolver.Import
+      Nuko.Resolver.Resolved
+      Nuko.Resolver.Support
       Nuko.Syntax.Ast
       Nuko.Syntax.Error
       Nuko.Syntax.Lexer
@@ -60,6 +64,8 @@ library
       GADTs
       ConstraintKinds
       FlexibleContexts
+      FunctionalDependencies
+      UndecidableInstances
   ghc-options: -Weverything -Wno-all-missed-specializations -Wno-implicit-prelude -Wno-missing-deriving-strategies -Wno-missing-kind-signatures -Wno-prepositive-qualified-module -Wno-missing-import-lists -Wno-missing-safe-haskell-mode -Wno-safe -Wno-missing-exported-signatures -Wno-unsafe -Wno-missed-specialisations -Wall
   build-depends:
       array
@@ -94,6 +100,8 @@ executable Nuko-exe
       GADTs
       ConstraintKinds
       FlexibleContexts
+      FunctionalDependencies
+      UndecidableInstances
   ghc-options: -Weverything -Wno-all-missed-specializations -Wno-implicit-prelude -Wno-missing-deriving-strategies -Wno-missing-kind-signatures -Wno-prepositive-qualified-module -Wno-missing-import-lists -Wno-missing-safe-haskell-mode -Wno-safe -Wno-missing-exported-signatures -Wno-unsafe -Wno-missed-specialisations -Wall -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       Nuko
@@ -122,6 +130,8 @@ test-suite Nuko-test
       GADTs
       ConstraintKinds
       FlexibleContexts
+      FunctionalDependencies
+      UndecidableInstances
   ghc-options: -Weverything -Wno-all-missed-specializations -Wno-implicit-prelude -Wno-missing-deriving-strategies -Wno-missing-kind-signatures -Wno-prepositive-qualified-module -Wno-missing-import-lists -Wno-missing-safe-haskell-mode -Wno-safe -Wno-missing-exported-signatures -Wno-unsafe -Wno-missed-specialisations -Wall -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       Nuko

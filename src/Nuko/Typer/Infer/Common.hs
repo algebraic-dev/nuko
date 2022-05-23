@@ -12,16 +12,17 @@ import Nuko.Syntax.Ast        (Normal)
 import Nuko.Typer.Unify       (unify)
 import Nuko.Typer.Infer.Type  (inferTy)
 
-import qualified Data.Map     as Map
+import qualified Data.Map       as Map
+import qualified Nuko.Tree.Expr as Expr
 
-seqPattern :: TyperMonad m => [Pat Normal] -> (Map.Map Name Ty) -> m ([Ty], Map.Map Name Ty)
+seqPattern :: MonadTyper m => [Pat Normal] -> (Map.Map Name Ty) -> m ([Ty], Map.Map Name Ty)
 seqPattern [] ids = pure ([], ids)
 seqPattern (x : xs) ids = do
   (resTy, ids') <- inferPattern x ids
   (resTys, ids'') <- seqPattern xs ids'
   pure (resTy : resTys, ids'')
 
-inferPattern :: TyperMonad m => Pat Normal -> (Map.Map Name Ty) -> m (Ty, Map.Map Name Ty)
+inferPattern :: MonadTyper m => Pat Normal -> (Map.Map Name Ty) -> m (Ty, Map.Map Name Ty)
 inferPattern pat ids = track (InInferPat pat) $ case pat of
   PWild range -> do
     hole <- TyHole range <$> newHole
@@ -32,9 +33,9 @@ inferPattern pat ids = track (InInferPat pat) $ case pat of
     (patTys, ids') <- seqPattern patterns ids
     unify (foldr (TyFun range) retTy patTys) consTy
     pure (retTy, ids')
-  PId name _ -> do
-    idTy <- TyHole name.loc <$> newHole
-    pure (idTy, Map.insert name.ident idTy ids)
+  PId (Expr.Name ident loc) _ -> do
+    idTy <- TyHole loc <$> newHole
+    pure (idTy, Map.insert ident idTy ids)
   PLit lit _ -> do
     resTy <- inferLit lit
     pure (resTy, ids)
@@ -44,7 +45,7 @@ inferPattern pat ids = track (InInferPat pat) $ case pat of
     pure (inferredTy, ids')
   PExt _ -> undefined
 
-checkPattern :: TyperMonad m => Pat Normal -> Ty -> (Map.Map Name Ty) -> m (Map.Map Name Ty)
+checkPattern :: MonadTyper m => Pat Normal -> Ty -> (Map.Map Name Ty) -> m (Map.Map Name Ty)
 checkPattern pat ty ids = track (InCheckPat pat) $ do
   (inferredPat, ids') <- inferPattern pat ids
   unify inferredPat ty

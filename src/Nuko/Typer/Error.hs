@@ -10,7 +10,7 @@ import Nuko.Error.Data
 import Nuko.Syntax.Range           (Range)
 import Control.Exception      (Exception)
 import Data.Text              (Text)
-import Nuko.Typer.Env         (Name, Env (trackers), TyperMonad, Tracker (..))
+import Nuko.Typer.Env         (Name, Env (trackers), MonadTyper, Tracker (..))
 import Nuko.Typer.Types       (Ty)
 import Control.Exception.Base (throwIO)
 import Control.Monad.IO.Class (liftIO)
@@ -43,7 +43,7 @@ instance Show TypeError where
 
 instance Exception TypeError
 
-typeError :: (TyperMonad m) => ErrCause -> m b
+typeError :: (MonadTyper m) => ErrCause -> m b
 typeError cause' = do
   env <- State.get
   liftIO $ throwIO $ TypeError cause' env

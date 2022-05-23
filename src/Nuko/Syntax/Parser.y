@@ -101,13 +101,13 @@ PathHelper(Pred)
     | Pred { ([], $1) }
 
 PathEnd
-    : Upper           { \p -> withPosListR p $1 (Lower (Path p $1)) }
-    | Lower           { \p -> withPosListR p $1 (Upper (Path p $1)) }
-    | Lower '.' Lower { \p -> withPosListR p $3 (Accessor (withPosListR p $1 $ Lower (Path p $1)) $3) }
+    : Upper           { \p -> withPosListR p $1 (Lower (Path p $1 NoExt)) }
+    | Lower           { \p -> withPosListR p $1 (Upper (Path p $1 NoExt)) }
+    | Lower '.' Lower { \p -> withPosListR p $3 (Accessor (withPosListR p $1 $ Lower (Path p $1 NoExt)) $3) }
 
 PathExpr : PathHelper(PathEnd) { let (p , f) = $1 in f p }
 
-Path(Pred) : PathHelper(Pred) { let (p , f) = $1 in Path p f }
+Path(Pred) : PathHelper(Pred) { let (p , f) = $1 in Path p f NoExt }
 
 -- Types
 
