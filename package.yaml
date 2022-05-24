@@ -28,6 +28,7 @@ default-extensions:
   - FlexibleContexts
   - FunctionalDependencies
   - UndecidableInstances
+  - MultiWayIf
   
 ghc-options:
   - -Weverything

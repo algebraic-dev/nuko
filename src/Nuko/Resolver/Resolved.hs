@@ -1,4 +1,7 @@
-module Nuko.Resolver.Resolved (Resolved) where
+module Nuko.Resolver.Resolved (
+  Resolved,
+  ResPath(..)
+) where
 
 import Nuko.Tree.Expr
 import Nuko.Tree.TopLevel
@@ -7,9 +10,9 @@ import Nuko.Syntax.Range  (Range, HasPosition(..))
 
 data Resolved
 
-data ResPath
-  = ResPath { mod  :: Name Resolved, name :: Name Resolved, loc :: Range }
-  | ResVar  { name :: Name Resolved, loc  :: Range }
+data ResPath 
+  = ResPath (Name Resolved) (Name Resolved) (Range)
+  | ResName (Name Resolved) (Range)
 
 type instance XLInt Resolved = Range
 type instance XLStr Resolved = Range
@@ -41,8 +44,8 @@ type instance XVar Resolved = Range
 type instance XExt Resolved = Void
 
 type instance XPath Resolved  = Range
-type instance XName Resolved  = Void
-type instance XNaExt Resolved = ResPath
+type instance XName Resolved  = Range
+type instance XNaExt Resolved = Void
 type instance XPaExt Resolved = ResPath
 
 type instance XLetDecl Resolved  = NoExt
@@ -70,15 +73,16 @@ deriving instance Show (TypeDecl Resolved)
 deriving instance Show (LetDecl Resolved)
 
 instance HasPosition (Name Resolved) where
-  getPos (Name _ r) = absurd r
-  getPos (NaExt r) = r.loc
+  getPos (Name _ r) = r
+  getPos (NaExt r) = absurd r
 
 instance HasPosition (Var Resolved) where
   getPos (Var _ _ r) = r
 
 instance HasPosition (Path Resolved) where
-  getPos (Path  _ _ r) = r
-  getPos (PaExt r)     = r.loc
+  getPos (Path  _ _ r)           = r
+  getPos (PaExt (ResPath _ _ r)) = r
+  getPos (PaExt (ResName _ r))   = r
 
 instance HasPosition (Literal Resolved) where
   getPos = \case

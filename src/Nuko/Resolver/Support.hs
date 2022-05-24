@@ -12,7 +12,8 @@ data ImportResult s
     | NotFound
 
 class Monad m => MonadImport s m | m -> s where
-    importModule :: Text -> m (ImportResult s)
+    importModule   :: Text -> m (ImportResult s)
+    stackNamespace :: Text -> (m a -> m a) -> m a
 
 instance MonadImport n m => MonadImport n (StateT s m) where
     importModule = lift . importModule

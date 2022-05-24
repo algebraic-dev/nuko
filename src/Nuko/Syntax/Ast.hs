@@ -37,7 +37,7 @@ type instance XBlock Normal = Range
 type instance XVar Normal = Range
 type instance XExt Normal = Void
 
-type instance XPath Normal = NoExt
+type instance XPath Normal = Range
 type instance XNaExt Normal = Void
 type instance XPaExt Normal = Void
 
