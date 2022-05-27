@@ -13,12 +13,12 @@ module Nuko.Tree.TopLevel (
   XImport
 ) where
 
-import Nuko.Tree.Expr ( Expr, Pat, Name, Type, Path )
+import Nuko.Tree.Expr ( Expr, Name, Type, Path )
 import Data.List.NonEmpty (NonEmpty)
 
 data LetDecl x = LetDecl
   { declName :: Name x
-  , declArgs :: [Pat x]
+  , declArgs :: [(Name x, Type x)]
   , declBody :: Expr x
   , declRet  :: Maybe (Type x)
   , declExt  :: XLetDecl x
@@ -42,7 +42,7 @@ data Import x  = Import
   }
 
 data Program x = Program
-  { tyDecls    :: [TypeDecl x]
+  { typeDecls  :: [TypeDecl x]
   , letDecls   :: [LetDecl x]
   , impDecl    :: [Import x]
   , programExt :: XProgram x

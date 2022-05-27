@@ -101,13 +101,13 @@ PathHelper(Pred)
     | Pred { ([], $1) }
 
 PathEnd
-    : Upper           { \p -> withPosListR p $1 (Lower (Path p $1 NoExt)) }
-    | Lower           { \p -> withPosListR p $1 (Upper (Path p $1 NoExt)) }
-    | Lower '.' Lower { \p -> withPosListR p $3 (Accessor (withPosListR p $1 $ Lower (Path p $1 NoExt)) $3) }
+    : Upper           { \p -> withPosListR p $1 (Lower $ withPos $1 p (Path p $1)) }
+    | Lower           { \p -> withPosListR p $1 (Upper $ withPos $1 p (Path p $1)) }
+    | Lower '.' Lower { \p -> withPosListR p $3 (Accessor (withPosListR p $1 $ Lower (Path p $1 (getPos $1 <> getPos p))) $3) }
 
 PathExpr : PathHelper(PathEnd) { let (p , f) = $1 in f p }
 
-Path(Pred) : PathHelper(Pred) { let (p , f) = $1 in Path p f NoExt }
+Path(Pred) : PathHelper(Pred) { let (p , f) = $1 in withPos p f $ Path p f }
 
 -- Types
 
@@ -199,12 +199,14 @@ TypeDecl : type Upper List(Lower) '=' TypeTy { TypeDecl $2 $3 $5 }
 
 Ret : ':' Type { $2 }
 
-LetDecl : let Lower List(AtomPat) Optional(Ret) '=' Expr { LetDecl $2 $3 $6 $4 NoExt }
+Binder : '(' Lower ':' Type ')' { ($2, $4) }
+
+LetDecl : let Lower List(Binder) Optional(Ret) '=' Expr { LetDecl $2 $3 $6 $4 NoExt }
 
 Program :: { Program Normal }
-    : LetDecl Program  { $2 { letDecls = $1 : $2.letDecls } }
-    | TypeDecl Program { $2 { tyDecls = $1  : $2.tyDecls } }
-    | {- Empty UwU -}  { Program [] [] NoExt }
+    : LetDecl Program  { $2 { letDecls  = $1 : $2.letDecls } }
+    | TypeDecl Program { $2 { typeDecls = $1 : $2.typeDecls } }
+    | {- Empty UwU -}  { Program [] [] [] NoExt }
 
 {
 
