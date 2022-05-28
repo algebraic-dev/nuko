@@ -10,9 +10,7 @@ import Nuko.Syntax.Range  (Range, HasPosition(..))
 
 data Resolved
 
-data ResPath 
-  = ResPath (Name Resolved) (Name Resolved) (Range)
-  | ResName (Name Resolved) (Range)
+data ResPath = ResPath (Name Resolved) (Name Resolved) (Range)
 
 type instance XLInt Resolved = Range
 type instance XLStr Resolved = Range
@@ -82,7 +80,6 @@ instance HasPosition (Var Resolved) where
 instance HasPosition (Path Resolved) where
   getPos (Path  _ _ r)           = r
   getPos (PaExt (ResPath _ _ r)) = r
-  getPos (PaExt (ResName _ r))   = r
 
 instance HasPosition (Literal Resolved) where
   getPos = \case

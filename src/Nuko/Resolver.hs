@@ -1,328 +1,337 @@
 module Nuko.Resolver (
     Env(..),
     Module(..),
-    resolveImport,
-    resolveProgram,
-    mergeRes,
     Resolution(..),
-    emptyEnv,
-    emptyMod,
+    MonadInit,
+    MonadResolve,
+    mergeResolution,
+    resolveProgram,
+    initProgram,
+    initToResolve
 ) where
 
+import Nuko.Resolver.Support
 import Nuko.Tree.Expr
 import Nuko.Tree.TopLevel
-import Nuko.Resolver.Resolved
-import Nuko.Resolver.Support      (MonadImport (..), ImportResult(..))
-import Nuko.Syntax.Ast            (Normal)
-import Control.Monad.RWS          (MonadReader (local))
+import Control.Monad.State        (evalStateT, void, gets, modify, StateT, MonadState(get, put), execStateT)
 import Control.Monad.Except       (MonadError (throwError))
+import Control.Monad.Reader       (asks, MonadReader (local))
 import Data.HashMap.Strict        (HashMap)
 import Data.Text                  (Text)
-import Data.HashSet               (HashSet)
+import Data.List.NonEmpty         (NonEmpty ((:|)))
+import Data.Maybe                 (catMaybes)
+import Nuko.Syntax.Range          (Range(..), HasPosition (getPos))
+import Nuko.Resolver.Error        (ResolutionError (..))
+import Lens.Micro.Platform        (Lens', view, over, _1, _2, set)
+import Nuko.Syntax.Ast            (Normal)
 import Data.Void                  (absurd)
-import Control.Monad              (foldM)
-import Control.Monad              (when)
-import Control.Monad.Reader       (ask, asks)
+import Data.Foldable              (traverse_)
 
-import qualified Data.HashSet        as HashSet
+import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.HashMap.Strict as HashMap
-import qualified Data.Text           as Text
-import Data.Bitraversable (Bitraversable(bitraverse))
-
-data Resolution = Single Text | Ambiguous (HashSet Text)
-  deriving Show
-
-data Module = Module
-  { moduleName :: Text
-  , valueDecls :: HashMap Text Resolution
-  , tyDecls    :: HashMap Text Resolution
-  , consDecls  :: HashMap Text Resolution
-  , fieldDecls :: HashMap Text Resolution
-  } deriving Show
-
-data Env = Env
-  { localBindings  :: HashSet Text
-  , typeBindings   :: HashSet Text
-  , loadedModules  :: HashMap Text Module
-  , aliasedModules :: HashMap Text Text
-  , currentModule  :: Module
-  }
+import qualified Data.Text as Text
+import Nuko.Resolver.Resolved (Resolved, ResPath (ResPath))
+import Data.HashSet (HashSet)
+import qualified Data.HashSet as HashSet
 
 type MonadResolve m =
   ( MonadReader Env m
+  , MonadState  Module m
+  , MonadError  ResolutionError m
   , MonadImport Module m
-  , MonadError Text m
   )
 
-mergeRes :: Resolution -> Resolution -> Resolution
-mergeRes (Ambiguous n) (Ambiguous m) = Ambiguous (n <> m)
-mergeRes (Ambiguous m) (Single n)    = mergeRes (Single n) (Ambiguous m)
-mergeRes (Single n) (Ambiguous m)    = Ambiguous (HashSet.insert n m)
-mergeRes (Single name) (Single other)
-  | name == other = Single name
-  | otherwise     = Ambiguous (HashSet.fromList [name, other])
+type MonadInit m =
+  ( MonadState  (Env, Module) m
+  , MonadError  ResolutionError m
+  , MonadImport Module m
+  )
 
-openModule :: Module -> Module -> Module
-openModule aMod bMod = aMod
-  { valueDecls = HashMap.unionWith mergeRes aMod.valueDecls bMod.valueDecls
-  , tyDecls    = HashMap.unionWith mergeRes aMod.tyDecls bMod.tyDecls
-  , consDecls  = HashMap.unionWith mergeRes aMod.consDecls bMod.consDecls
-  , fieldDecls = HashMap.unionWith mergeRes aMod.fieldDecls bMod.fieldDecls
-  }
-
-modCur :: (Module -> Module) -> Env -> Env
-modCur fn env = env { currentModule = fn env.currentModule }
-
-addDef :: Text -> Text -> HashMap Text Resolution -> HashMap Text Resolution
-addDef k = HashMap.insertWith mergeRes k . Single
-
-emptyEnv :: Module -> Env
-emptyEnv = Env HashSet.empty HashSet.empty HashMap.empty HashMap.empty
-
-emptyMod :: Text -> Module
-emptyMod name = Module name HashMap.empty HashMap.empty HashMap.empty HashMap.empty
-
-addVar :: Text -> Env -> Env
-addVar text env = env { localBindings = HashSet.insert text env.localBindings }
-
-addVars :: [Text] -> Env -> Env
-addVars []       env = env
-addVars (x : xs) env = addVars xs (addVar x env)
-
-addModuleToEnv :: Text -> Module -> Env -> Env
-addModuleToEnv name mod' env = env { loadedModules = HashMap.insert name mod' env.loadedModules }
-
-addAlias :: Text -> Text -> Env -> Env
-addAlias alias original env = env { aliasedModules = HashMap.insert alias original env.aliasedModules }
-
-withVars :: MonadReader Env m => HashSet Text -> m b -> m b
-withVars newVars = local (\env -> env { localBindings = env.localBindings <> newVars })
-
-withTys :: MonadReader Env m => HashSet Text -> m b -> m b
-withTys newVars = local (\env -> env { typeBindings = env.typeBindings <> newVars })
-
-withTy :: MonadReader Env m => Text -> m b -> m b
-withTy newVar = local (\env -> env { typeBindings = HashSet.insert newVar (env.typeBindings) })
+-- Paths
 
 getName :: Name Normal -> Text
 getName (Name t _) = t
-getName (NaExt x) = absurd x
+getName (NaExt x)  = absurd x
 
-getNameR :: Name Resolved -> Text
-getNameR (Name t _) = t
-getNameR (NaExt x) = absurd x
+getNameResolved :: Name Resolved -> Text
+getNameResolved (Name t _) = t
+getNameResolved (NaExt x)  = absurd x
 
-getModuleName :: Path Normal -> Text
-getModuleName (Path ls@(_ : _) f _) = (Text.intercalate "." (map getName ls)) <> "." <> getName f
-getModuleName (Path _ f _)          = getName f
-getModuleName (PaExt x)             = absurd x
+normalPath :: Path Normal -> Text
+normalPath (Path path final _) = Text.intercalate "." (map getName $ path <> [final])
+normalPath (PaExt ab)          = absurd ab
 
-appendName :: Text -> Text -> Text
-appendName "" t = t
-appendName x t  = x <> "." <> t
+resolved :: Text -> Resolution
+resolved = Resolution . (:| [])
 
--- Resolvers
+-- Initialization
 
--- | So, in the beginning we will just start the entire module just by reading
--- superficial information like the names. Then we just substitute all the paths
--- for paths that we know they exists (we qualify them.)
+getModName :: MonadInit m => m Text
+getModName = gets (_moduleName . snd)
 
-resolveProgram :: MonadResolve m => Program Normal -> Text -> Module -> m (Program Resolved, Module)
-resolveProgram program name prelude = do
+openMod :: MonadInit m => Module -> m ()
+openMod mod' = modify $ over (_1 . openedModules) $ HashMap.insert mod'._moduleName mod'
 
-  -- Initialization of all the names in the modules.
-  mod'   <- foldM initLetDecl (emptyMod name) program.letDecls
-  mod''  <- foldM initTypeDecl mod' program.typeDecls
-  env    <- foldM resolveImport (emptyEnv mod'') program.impDecl
+localMod :: MonadState (c, b) m => b -> m a -> m a
+localMod mod' op = do
+  old <- get
+  put (fst old, mod') *> op <* modify (set _2 (snd old))
 
-
-  let resolutionEnvironment = modCur (`openModule` prelude) env
-
-  res <- local (const resolutionEnvironment) $
-    Program
-      <$> traverse resolveTyDecl program.typeDecls
-      <*> traverse resolveLetDecl program.letDecls
-
-  pure (res [] NoExt, mod'')
-
--- | This function is useful to import all modules before it runs and resolve them
---   So i'll be able to track a lot of things here. Yes, it receives one module.
-
-resolveImport :: MonadResolve m => Env -> Import Normal -> m Env
-resolveImport env (Import path as_ _) = do
-  let moduleName = getModuleName path;
-  result <- importModule moduleName
+getModule :: (MonadImport Module m, MonadError ResolutionError m) => Range -> Text -> m Module
+getModule range name = do
+  result <- importModule name
   case result of
-    NotFound      -> throwError "Not found"
-    Succeded mod' -> do
-      let env' = addModuleToEnv moduleName mod' env
-      case as_ of
-        Just alias -> pure $ addAlias (getName alias) moduleName env'
-        Nothing    -> pure env'
+    NotFound      -> throwError (ModuleNotFound range name)
+    Succeded mod' -> pure mod'
 
--- | Initialize all declarations so we can use mutual recursivity and shit like that.
+initImport :: MonadInit m => Import Normal -> m ()
+initImport (Import (PaExt x) _ _)                 = absurd x
+initImport (Import mod'@(Path _ _ range) alias _) = do
+  _ <- getModule range (normalPath mod')
+  case alias of
+    Just alias' ->
+      modify $ over (_1 . aliasedModules) $ HashMap.insert (normalPath mod') (getName alias')
+    Nothing     ->
+      pure ()
 
-initLetDecl :: MonadResolve m => Module -> LetDecl Normal -> m Module
-initLetDecl mod' letDecl =
-  pure $ mod' { valueDecls = addDef (getName letDecl.declName) mod'.moduleName mod'.valueDecls }
+initLetDecl :: MonadInit m => LetDecl Normal -> m ()
+initLetDecl (LetDecl name _ _ _ _) = do
+  name' <- getModName
+  modify $ over (_2 . valueDecls) $ HashMap.insert (getName name) (resolved name')
 
-initTypeDeclArg :: MonadResolve m => Module -> TypeDeclArg Normal -> m Module
-initTypeDeclArg mod' = \case
-    TypeSym _      -> pure mod'
-    TypeProd f     -> pure $ foldr addField mod' f
-    TypeSum fields -> pure $ foldr addConst mod' fields
+initTyArgs :: MonadInit m => TypeDeclArg Normal -> m ()
+initTyArgs = \case
+    TypeSym _          -> pure ()
+    TypeProd fields    -> addFields fieldDecls (map (getName . fst) fields)
+    TypeSum  (x :| xs) -> addFields consDecls  (map (getName . fst) (x : xs))
   where
-    addField (name, _) mod'' = mod'' { fieldDecls = addDef (getName name) mod'.moduleName mod'.fieldDecls }
-    addConst (name, _) mod'' = mod'' { consDecls  = addDef (getName name) mod'.moduleName mod'.consDecls }
+    addFields :: MonadInit m => Lens' Module (HashMap Text Resolution) -> [Text] -> m ()
+    addFields field keys = do
+      name' <- getModName
+      res <- gets (view $ _2 . field)
+      let newRes = foldr (\key -> HashMap.insert key (resolved name')) res keys
+      modify (set (_2 . field) newRes)
 
-initTypeDecl :: MonadResolve m => Module -> TypeDecl Normal -> m Module
-initTypeDecl mod' typeDecl = do
-  let typeName = getName typeDecl.tyName
-  let modName  = appendName mod'.moduleName typeName
-  newMod  <- (initTypeDeclArg (emptyMod modName) typeDecl.tyDecl)
-  _result <- addModule modName newMod
-  pure (mod' { valueDecls = addDef typeName mod'.moduleName mod'.valueDecls })
-
-toRes :: Name Normal -> Name Resolved
-toRes (Name e f) = Name e f
-toRes (NaExt r) = absurd r
-
-normalizePath :: MonadResolve m => Path Normal -> (Name Normal -> XPath Normal -> m (Path Resolved)) -> m (Path Resolved)
-normalizePath (PaExt x)          fn = absurd x
-normalizePath (Path [] final r)  fn = fn final r
-normalizePath (Path mod' final range) fn = do
-    let name = Text.intercalate "." (map getName mod')
-    env <- ask
-    case (look name env.loadedModules, look name env.aliasedModules) of
-      (Just _, _)        -> pure $ PaExt (ResPath (Name name range) (toRes final) range)
-      (_, Just alias)    -> pure $ PaExt (ResPath (Name alias range) (toRes final) range)
-      (Nothing, Nothing) -> throwError "Cannot find"
+initTyDecl :: MonadInit m => TypeDecl Normal -> m ()
+initTyDecl (TypeDecl name _ decl) = do
+    name'         <- getModName
+    modify $ over (_2 . tyDecls) $ HashMap.insert (getName name) (resolved name')
+    modName       <- gets $ view (_2 . moduleName)
+    let newModName = appendToPre modName (getName name)
+    typeModule    <- localMod (emptyMod newModName) (initTyArgs decl *> gets snd)
+    void $ addModule newModName typeModule
   where
-    look :: Text -> HashMap Text v -> Maybe v
-    look n = HashMap.lookup n
-
-findIn :: MonadResolve m => (Module -> HashMap Text Resolution) ->Name Normal -> XPath Normal -> m (Path Resolved)
-findIn getOut name ext = do
-  mod' <- asks currentModule
-  case HashMap.lookup (getName name) (getOut mod') of
-    Just (Single s)    -> pure $ PaExt (ResPath (Name s ext) (toRes name) ext)
-    Just (Ambiguous x) -> throwError $ "Ambiguous shit man!" <> Text.pack (show x)
-    Nothing            -> throwError $ "Cannot find the fucking " <> (getName name)
+    appendToPre :: Text -> Text -> Text
+    appendToPre "" x = x
+    appendToPre x y  = x <> "." <> y
 
 
-nCons :: MonadResolve m => Name Normal -> XPath Normal -> m (Path Resolved)
-nCons = findIn consDecls
+initProgram :: MonadInit m => Module -> Program Normal -> m ()
+initProgram prelude (Program tyDeps letDeps impDeps _) = do
+  openMod prelude
+  traverse_ initImport impDeps
+  traverse_ initTyDecl tyDeps
+  traverse_ initLetDecl letDeps
 
-nDecl :: MonadResolve m => Name Normal -> XPath Normal -> m (Path Resolved)
-nDecl name ext = do
-  bindings <- asks localBindings
-  if HashSet.member (getName name) bindings
-    then pure $ PaExt $ ResName (toRes name) ext
-    else findIn valueDecls name ext
+-- Heleprs
 
-nTy :: MonadResolve m => Name Normal -> XPath Normal -> m (Path Resolved)
-nTy name ext = do
-  bindings <- asks typeBindings
-  if HashSet.member (getName name) bindings
-    then pure $ PaExt $ ResName (toRes name) ext
-    else findIn tyDecls name ext
+mergeResolution :: Resolution -> Resolution -> Resolution
+mergeResolution (Resolution x) (Resolution y) = Resolution $ NonEmpty.nub $ (x <> y)
 
--- | Program resolvers
+getOpened :: MonadResolve m => Lens' Module (HashMap Text Resolution) -> Range -> Text -> m Text
+getOpened lens range key = do
+    cached <- gets (view lens)
+    flip resolveRes (HashMap.lookup key cached) $ do
+      opened  <- asks _openedModules
+      current <- asks _currentModule
+      name    <- resolveRes (throwError (VariableNotFound range key))
+                            (joinResolutions (HashMap.elems opened) current)
+      modify $ over lens (HashMap.insert key (resolved name))
+      pure name
+  where
+    getValue = HashMap.lookup key . (view lens)
 
-accPat :: (MonadResolve m) => ([Pat Resolved], HashSet Text) -> Pat Normal -> m ([Pat Resolved], HashSet Text)
-accPat (resPaths, bindings') pat = do
-  (resPat, bindings'') <- resolvePat' bindings' pat
-  pure (resPat : resPaths, bindings'')
+    foldResolutions :: [Resolution] -> Resolution -> Resolution
+    foldResolutions otherRes mainRes = foldl mergeResolution mainRes otherRes
 
-resolvePat' :: MonadResolve m => HashSet Text -> Pat Normal -> m (Pat Resolved, HashSet Text)
-resolvePat' bindings = \case
-    (PWild r)   -> pure (PWild r, bindings)
-    (PId id' r) -> do
-      when (HashSet.member (getName id') bindings) (throwError "Duplicated")
-      pure (PId (toRes id') r, HashSet.insert (getName id') bindings)
-    (PCons path pats r) -> do
-      newPath <- normalizePath path nCons
-      (newPats, bindings') <- foldM accPat ([], bindings) pats
-      pure (PCons newPath newPats r, bindings')
-    PLit lit x -> pure $ (PLit (resolveLit lit) x, bindings)
-    PAnn p t x -> do
-      (pat, bindings') <- resolvePat' bindings p
-      resTy <- resolveType t
-      pure (PAnn pat resTy x, bindings')
-    PExt x -> absurd x
+    resolveRes :: MonadResolve m => m Text -> Maybe Resolution -> m Text
+    resolveRes toRet = \case
+        Nothing                       -> toRet
+        Just (Resolution (res :| [])) -> pure res
+        Just (Resolution ambiguity)   -> do
+          name <- gets _moduleName
+          throwError (AmbiguousNames range name key (Resolution ambiguity))
 
-resolvePat :: MonadResolve m => Pat Normal -> m (Pat Resolved, HashSet Text)
-resolvePat pat = resolvePat' HashSet.empty pat
+    joinResolutions :: [Module] -> Module -> Maybe Resolution
+    joinResolutions others main =
+      let otherRes = catMaybes $ map getValue others in
+      foldResolutions otherRes <$> (getValue main)
+
+
+fixQualify :: MonadResolve m => Range -> Text -> m Text
+fixQualify range name = do
+  aliases <- asks _aliasedModules
+  case HashMap.lookup name aliases of
+    Just res -> pure res
+    Nothing  -> _moduleName <$> getModule range name
+
+getBinding :: MonadResolve m => Path Normal -> m (Path Resolved)
+getBinding = \case
+  (PaExt x              ) -> absurd x
+  (Path _    (NaExt x) _) -> absurd x
+  (Path ls@(_:_) (Name name' range) _) ->
+    resolveCanonicalPath valueDecls (getPos ls) (joinPath ls) range name'
+  (Path []       (Name name' range) ext) -> do
+    bindings <- asks _localBindings
+    curName  <- asks (_moduleName . _currentModule)
+    quali <- if HashSet.member name' bindings
+                then pure $ curName
+                else getOpened valueDecls range name'
+    pure $ mkPath ext quali range name'
+
+
+joinPath :: [Name Normal] -> Text
+joinPath = Text.intercalate "." . map getName
+
+resolveCanonicalPath :: MonadResolve m => Lens' Module (HashMap Text Resolution) -> Range -> Text -> Range -> Text -> m (Path Resolved)
+resolveCanonicalPath lens modRange oldModName valRange valName = do
+  newModName <- fixQualify modRange oldModName
+  table <- getModule modRange newModName
+  case HashMap.lookup valName (view lens table) of
+    Just _   -> pure $ mkPath modRange newModName valRange valName
+    Nothing  -> throwError (VariableNotFound valRange (newModName <> valName))
+
+mkPath :: Range -> Text -> Range -> Text -> Path Resolved
+mkPath modRange modName valRange valName = PaExt (ResPath (Name modName modRange) (Name valName valRange) (modRange <> valRange))
+
+resolvePath :: MonadResolve m => Lens' Module (HashMap Text Resolution) -> Path Normal -> m (Path Resolved)
+resolvePath lens = \case
+  (PaExt x              ) -> absurd x
+  (Path _    (NaExt x) _) -> absurd x
+  (Path ls@(_:_) (Name name' range) _) -> resolveCanonicalPath lens (getPos ls) (joinPath ls) range name'
+  (Path []       (Name name' range) ext) -> (\x -> mkPath ext x range name') <$> getOpened lens range name'
+
+-- Resolution
+
+initToResolve :: (MonadImport Module m, MonadError  ResolutionError m) => StateT (Env, Module) m a -> Module -> m (Env, Module)
+initToResolve action mod' = execStateT action (emptyEnv mod', mod')
 
 resolveLit :: Literal Normal -> Literal Resolved
-resolveLit (LStr t e) = LStr t e
-resolveLit (LInt t e) = LInt t e
+resolveLit = \case
+  LStr t x -> LStr t x
+  LInt t x -> LInt t x
+
+resolvePattern :: MonadResolve m => Pat Normal -> m (Pat Resolved, HashSet Text)
+resolvePattern pat =
+    go HashSet.empty pat
+  where
+    seqGo :: MonadResolve m => HashSet Text -> [Pat Normal] -> m ([Pat Resolved], HashSet Text)
+    seqGo bindings []       = pure ([], bindings)
+    seqGo bindings (x : xs) = do
+      (pat', newBindings) <- go bindings x
+      (res, endBindings) <- seqGo newBindings xs
+      pure (pat' : res, endBindings)
+
+    go :: MonadResolve m => HashSet Text -> Pat Normal -> m (Pat Resolved, HashSet Text)
+    go bindings (PWild ext)       = pure (PWild ext, bindings)
+    go _        (PId (NaExt x) _) = absurd x
+    go bindings (PId (Name text range) ext)
+      | HashSet.member text bindings = throwError (DuplicatedPatId range text)
+      | otherwise = pure (PId (Name text range) ext, HashSet.insert text bindings)
+    go bindings (PLit lit ext)    = pure (PLit (resolveLit lit) ext, bindings)
+    go bindings (PAnn pat' ty ex) = do
+      (patRes, bindings') <- go bindings pat'
+      tyRes <- resolveType ty
+      pure (PAnn patRes tyRes ex, bindings')
+    go bindings (PCons p arg x)   = do
+      let (text, range)     = getPathInfo p
+      resolvedPath         <- unsafeQualifyPath p <$> getOpened consDecls text range
+      (resArgs, bindings') <- seqGo bindings arg
+      pure (PCons resolvedPath resArgs x, bindings')
+    go _ (PExt x) = absurd x
+
+    unsafeQualifyPath :: Path Normal -> Text -> Path Resolved
+    unsafeQualifyPath (Path p final range) mod' = PaExt (ResPath (Name mod' (getPos p)) (resolveName final) range)
+    unsafeQualifyPath (PaExt v)               _ = absurd v
+
+    getPathInfo :: Path Normal -> (Range, Text)
+    getPathInfo path@(Path _ _ range) = (range, normalPath path)
+    getPathInfo (PaExt ab)            = absurd ab
 
 resolveBlock :: MonadResolve m => Block Normal -> m (Block Resolved)
 resolveBlock = \case
-  (BlBind expr rest)         -> BlBind <$> resolveExpr expr <*> resolveBlock rest
-  (BlEnd expr)               -> BlEnd <$> resolveExpr expr
-  (BlVar (Var pat expr x) x') -> do
-    (patRes, bindings) <- resolvePat pat
-    var <- Var patRes <$> resolveExpr expr <*> pure x
-    (BlVar var) <$> (withVars bindings $ resolveBlock x')
-
-resolveBoth :: MonadResolve m => Pat Normal -> Expr Normal -> m (Pat Resolved, Expr Resolved)
-resolveBoth pat expr = do
-  (resPat, bindings) <- resolvePat pat
-  exprRes <- withVars bindings $ resolveExpr expr
-  pure (resPat, exprRes)
-
-resolveType :: MonadResolve m => Type Normal -> m (Type Resolved)
-resolveType = \case
-  TId path x   -> TId   <$> normalizePath path nTy <*> pure x
-  TPoly name x -> pure $ TPoly (toRes name) x
-  TCons cons types x -> TCons <$> normalizePath cons nTy <*> traverse resolveType types <*> pure x
-  TArrow f t x -> TArrow <$> resolveType f <*> resolveType t <*> pure x
-  TForall name ty x -> TForall <$> (pure $ toRes name) <*> withTy (getName name) (resolveType ty) <*> pure x
+  BlBind expr block         -> BlBind <$> resolveExpr expr <*> resolveBlock block
+  BlEnd expr                -> BlEnd  <$> resolveExpr expr
+  BlVar (Var pat val ext) block -> do
+    (resPat, bindings) <- resolvePattern pat
+    resExpr <- resolveExpr val
+    resBlock <- withBindings bindings (resolveBlock block)
+    pure (BlVar (Var resPat resExpr ext) resBlock)
 
 resolveExpr :: MonadResolve m => Expr Normal -> m (Expr Resolved)
 resolveExpr = \case
-    Lit a b     -> pure (Lit (resolveLit a) b)
-    Lam pat e x -> do
-      (patRes, exprRes) <- resolveBoth pat e
-      pure (Lam patRes exprRes x)
-    App name exprs x -> do
-      nameRes  <- resolveExpr name
-      exprsRes <- traverse resolveExpr exprs
-      pure (App nameRes exprsRes x)
-    Lower res x ->
-      Lower <$> (normalizePath res nDecl) <*> pure x
-    Upper res x ->
-       Upper <$> (normalizePath res nDecl) <*> pure x
-    Accessor expr field x  ->
-      Accessor <$> resolveExpr expr <*> pure (toRes field) <*> pure x
-    If cond if' els x ->
-      If <$> resolveExpr cond <*> resolveExpr if' <*> (traverse resolveExpr els) <*> pure x
-    Case strutinizer pats x -> do
-      resStructnizer <- resolveExpr strutinizer
-      patsRes <- traverse (uncurry resolveBoth) pats
-      pure $ Case resStructnizer patsRes x
-    Block block x ->
-      Block <$> resolveBlock block <*> pure x
-    Ann expr ty x ->
-      Ann <$> resolveExpr expr <*> resolveType ty <*> pure x
+  Lit lit x -> pure $ Lit (resolveLit lit) x
+  Lam pat body x -> uncurry Lam <$> resolveBoth pat body <*> pure x
+  App expr args x -> App <$> resolveExpr expr <*> traverse resolveExpr args <*> pure x
+  Lower path x -> Lower <$> getBinding path <*> pure x
+  Upper path x -> Lower <$> resolvePath consDecls path <*> pure x
+  If cond if' els' ext -> If <$> resolveExpr cond <*> resolveExpr if' <*> traverse resolveExpr els' <*> pure ext
+  Ann expr ty ext -> Ann <$> resolveExpr expr <*> resolveType ty <*> pure ext
+  Accessor expr field ext -> Accessor <$> resolveExpr expr <*> pure (resolveName field)  <*> pure ext
+  Case scutinizer fields ext -> Case <$> resolveExpr scutinizer <*> traverse (uncurry resolveBoth) fields <*> pure ext
+  Block block ext -> Block <$> resolveBlock block <*> pure ext
+
+resolveBoth :: MonadResolve m => Pat Normal -> Expr Normal -> m (Pat Resolved, Expr Resolved)
+resolveBoth pat expr = do
+  (resPat, bindings) <- resolvePattern pat
+  resExpr <- withBindings bindings (resolveExpr expr)
+  pure (resPat, resExpr)
+
+-- TODO: Probably get free polymorphic types and add tforalls for them?
+resolveType :: MonadResolve m => Type Normal -> m (Type Resolved)
+resolveType = \case
+  TId path ext        -> TId <$> resolvePath tyDecls path <*> pure ext
+  TPoly name ext      -> pure $ TPoly (resolveName name) ext
+  TCons path args ext -> TCons <$> resolvePath tyDecls path <*> traverse resolveType args <*> pure ext
+  TArrow from to ext  -> TArrow <$> resolveType from <*> resolveType to <*> pure ext
+  TForall name ty ext -> TForall (resolveName name) <$> resolveType ty <*> pure ext
+
+resolveName :: Name Normal -> Name Resolved
+resolveName (Name t x) = (Name t x)
+resolveName (NaExt v)  = absurd v
+
+withBindings :: MonadResolve m => HashSet Text -> m a -> m a
+withBindings bindings action = local (over localBindings (<> bindings)) action
 
 resolveLetDecl :: MonadResolve m => LetDecl Normal -> m (LetDecl Resolved)
-resolveLetDecl (LetDecl name args body ret x) = do
-  args'    <- traverse (\(name', ty) -> (toRes name',) <$> resolveType ty) args
-  let names = HashSet.fromList (map (getNameR . fst) args')
-  ret'     <- traverse resolveType ret
-  body'    <- withVars names $ resolveExpr body
-  pure (LetDecl (toRes name) args' body' ret' x)
+resolveLetDecl (LetDecl name args body ret ext) = do
+    resArgs     <- traverse resolveNameAndType args
+    let bindings = HashSet.fromList (map (getNameResolved . fst) resArgs)
+    resBody     <- withBindings bindings (resolveExpr body)
+    resRet      <- traverse resolveType ret
+    pure (LetDecl (resolveName name) resArgs resBody resRet ext)
+  where
+    resolveNameAndType :: MonadResolve m => (Name Normal, Type Normal) -> m (Name Resolved, Type Resolved)
+    resolveNameAndType (name', ty) = do
+      tt <- resolveType ty
+      pure (resolveName name', tt)
 
-resolveTyDeclArg  :: MonadResolve m => TypeDeclArg Normal -> m (TypeDeclArg Resolved)
-resolveTyDeclArg = \case
-  TypeSym ty  -> TypeSym  <$> resolveType ty
-  TypeProd ty -> TypeProd <$> traverse (bitraverse (pure . toRes) resolveType) ty
-  TypeSum ty  -> TypeSum  <$> traverse (bitraverse (pure . toRes) (traverse resolveType)) ty
+resolveTypeDecl :: MonadResolve m => TypeDecl Normal -> m (TypeDecl Resolved)
+resolveTypeDecl (TypeDecl name args decl) =
+    TypeDecl (resolveName name) (map resolveName args) <$> resolveTyDecl decl
+  where
+    resolveSec :: MonadResolve m => (b -> m c) -> (Name Normal, b) -> m (Name Resolved, c)
+    resolveSec action (name', snd') = (\snd'' -> (resolveName name', snd'')) <$> action snd'
 
-resolveTyDecl :: MonadResolve m => TypeDecl Normal -> m (TypeDecl Resolved)
-resolveTyDecl (TypeDecl name args decl) = do
-  declRes <- withTys (HashSet.fromList (map getName args)) (resolveTyDeclArg decl)
-  pure (TypeDecl (toRes name) (map toRes args) declRes)
+    resolveTyDecl :: MonadResolve m => TypeDeclArg Normal -> m (TypeDeclArg Resolved)
+    resolveTyDecl = \case
+      TypeSym ty      -> TypeSym  <$> resolveType ty
+      TypeProd fields -> TypeProd <$> traverse (resolveSec resolveType) fields
+      TypeSum fields  -> TypeSum  <$> traverse (resolveSec (traverse resolveType)) fields
+
+resolveProgram :: MonadResolve m => Program Normal -> m (Program Resolved)
+resolveProgram (Program tyDefs letDefs _ ext) =
+  Program <$> traverse resolveTypeDecl tyDefs
+          <*> traverse resolveLetDecl letDefs
+          <*> pure []
+          <*> pure ext
