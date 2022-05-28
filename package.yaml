@@ -11,7 +11,9 @@ description: <https://github.com/githubuser/Nuko#readme>
 dependencies:
   - base >= 4.7 && < 5
   - pretty-simple
-
+  - bytestring
+  - text
+  
 default-extensions:
   - DuplicateRecordFields
   - OverloadedRecordDot
@@ -29,6 +31,8 @@ default-extensions:
   - FunctionalDependencies
   - UndecidableInstances
   - MultiWayIf
+  - TupleSections
+  - TemplateHaskell
   
 ghc-options:
   - -Weverything
@@ -57,6 +61,8 @@ library:
   - pretty-terminal
   - containers
   - unordered-containers
+  - microlens-platform
+  - microlens-th
 
 executables:
   Nuko-exe:
