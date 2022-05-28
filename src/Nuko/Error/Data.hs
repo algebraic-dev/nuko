@@ -7,7 +7,8 @@ module Nuko.Error.Data (
   Annotation(..),
   rangeErr,
   posErr,
-  emptyReport
+  emptyReport,
+  getCompilerErr
 ) where
 
 import Nuko.Syntax.Range (Pos (Pos), Range (start), oneColRange)
@@ -64,3 +65,6 @@ rangeErr report range title =
 
 class CompilerError err where
   getReport   :: Report -> err -> Report
+
+getCompilerErr :: CompilerError err => Text -> Text -> err -> Report
+getCompilerErr code = getReport . emptyReport code
