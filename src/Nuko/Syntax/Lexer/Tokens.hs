@@ -15,6 +15,8 @@ data Token
   | TcWith         -- | The "with" keyword
   | TcIf           -- | The "if" keyword
   | TcThen         -- | The "then" keyword
+  | TcImport       -- | The "import" keyword
+  | TcAs           -- | The "as" keyword
   | TcElse         -- | The "else" keyword
   | TcType         -- | The "type" keyword
   | TcForall       -- | The "public" keyword
@@ -51,6 +53,8 @@ instance Show Token where
   show = \case
     TcLet      -> "let"
     TcMatch    -> "match"
+    TcAs       -> "as"
+    TcImport   -> "import"
     TcWith     -> "with"
     TcForall   -> "forall"
     TcIf       -> "if"

@@ -31,6 +31,8 @@ import qualified Data.List.NonEmpty as NE
     match    { Ranged TcMatch _ }
     with     { Ranged TcWith _ }
     let      { Ranged TcLet _ }
+    import   { Ranged TcImport _ }
+    as       { Ranged TcAs _ }
     if       { Ranged TcIf _ }
     then     { Ranged TcThen _ }
     else     { Ranged TcElse _ }
@@ -101,13 +103,13 @@ PathHelper(Pred)
     | Pred { ([], $1) }
 
 PathEnd
-    : Upper           { \p -> withPosListR p $1 (Lower $ withPos $1 p (Path p $1)) }
-    | Lower           { \p -> withPosListR p $1 (Upper $ withPos $1 p (Path p $1)) }
+    : Upper           { \p -> withPosListR p $1 (Upper $ withPosList $1 p (Path p $1)) }
+    | Lower           { \p -> withPosListR p $1 (Lower $ withPosList $1 p (Path p $1)) }
     | Lower '.' Lower { \p -> withPosListR p $3 (Accessor (withPosListR p $1 $ Lower (Path p $1 (getPos $1 <> getPos p))) $3) }
 
 PathExpr : PathHelper(PathEnd) { let (p , f) = $1 in f p }
 
-Path(Pred) : PathHelper(Pred) { let (p , f) = $1 in withPos p f $ Path p f }
+Path(Pred) : PathHelper(Pred) { let (p , f) = $1 in withPosListR p f $ Path p f }
 
 -- Types
 
@@ -203,9 +205,13 @@ Binder : '(' Lower ':' Type ')' { ($2, $4) }
 
 LetDecl : let Lower List(Binder) Optional(Ret) '=' Expr { LetDecl $2 $3 $6 $4 NoExt }
 
+ImpDecl : import Path(Upper)          { withPos $1 $2 $ Import $2 Nothing }
+ImpDecl : import Path(Upper) as Upper { withPos $1 $4 $ Import $2 (Just $4) }
+
 Program :: { Program Normal }
     : LetDecl Program  { $2 { letDecls  = $1 : $2.letDecls } }
     | TypeDecl Program { $2 { typeDecls = $1 : $2.typeDecls } }
+    | ImpDecl Program  { $2 { impDecl = $1 : $2.impDecl } }
     | {- Empty UwU -}  { Program [] [] [] NoExt }
 
 {

@@ -25,8 +25,8 @@ instance CompilerError ResolutionError where
       let err = rangeErr report range [Normal "The resolution of the name", Marked Main text, Normal "is ambiguous!"]
       in  err { subtitles = map (\t -> (Main, [Normal t])) (removeSelf res mod') }
     (VariableNotFound range text) ->
-      rangeErr report range [Normal "Cannot find variable ", Marked Main text]
+      rangeErr report range [Normal "Cannot find variable", Marked Main text]
     (ModuleNotFound range text) ->
-      rangeErr report range [Normal "Cannot find module ", Marked Main text]
+      rangeErr report range [Normal "Cannot find module", Marked Main text]
     (DuplicatedPatId range _) ->
       rangeErr report range [Normal "Duplicated pattern name"]

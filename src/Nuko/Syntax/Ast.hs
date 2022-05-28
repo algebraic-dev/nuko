@@ -48,7 +48,7 @@ type instance XTypeDecl Normal = NoExt
 type instance XTypeSym Normal = NoExt
 type instance XTypeProd Normal = NoExt
 type instance XTypeSum Normal = NoExt
-type instance XImport Normal = NoExt
+type instance XImport Normal = Range
 
 deriving instance Show (Name Normal)
 deriving instance Show (Expr Normal)

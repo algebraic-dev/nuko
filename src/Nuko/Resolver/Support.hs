@@ -36,7 +36,7 @@ data Module = Module
   , _tyDecls    :: HashMap Text Resolution
   , _consDecls  :: HashMap Text Resolution
   , _fieldDecls :: HashMap Text Resolution
-  }
+  } deriving Show
 
 data Env = Env
   { _localBindings  :: HashSet Text
@@ -57,6 +57,7 @@ emptyEnv = Env HashSet.empty HashMap.empty HashMap.empty
 data ImportResult s
     = Succeded s
     | NotFound
+    deriving stock Show
 
 class Monad m => MonadImport s m | m -> s where
     importModule   :: Text      -> m (ImportResult s)

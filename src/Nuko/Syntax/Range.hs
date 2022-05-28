@@ -52,7 +52,8 @@ instance HasPosition a => HasPosition (NE.NonEmpty a) where
   getPos x  = getPos (NE.head x) <> getPos (NE.last x)
 
 instance HasPosition a => HasPosition [a] where
-  getPos x = getPos (head x) <> getPos (last x)
+  getPos x@(_:_) = getPos (head x) <> getPos (last x)
+  getPos [] = error "oh no!"
 
 instance HasPosition (Ranged a) where
     getPos (Ranged _ a) = a
