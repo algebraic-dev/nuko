@@ -1,1 +1,0 @@
-forall c. (List c) -> (forall b. (forall a. List Int -> Int -> a) -> b)

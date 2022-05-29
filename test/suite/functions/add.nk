@@ -1,2 +1,0 @@
-let add (a: Int) (b: Int): Int = a + b
-let main: IO Unit = print (add 2 3)

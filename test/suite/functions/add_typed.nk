@@ -1,4 +1,0 @@
-let add (a : Int) (b : Int) : Int = 
-    a + b
-
-let main : Int = print (add 2 3)

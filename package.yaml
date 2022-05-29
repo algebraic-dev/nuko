@@ -1,38 +1,39 @@
-name: Nuko
-version: 0.1.0.0
-github: "felipegchi/Nuko"
-license: BSD3
-author: "Felipe G"
-maintainer: "chiyokuoni@gmail.com"
-copyright: "2022 Felipe G"
+name:         Nuko
+version:      0.1.0.0
+github:       "felipegchi/Nuko"
+license:      BSD3
+author:       "Felipe G"
+maintainer:   "chiyokuoni@gmail.com"
+copyright:    "2022 Felipe G"
 
 description: <https://github.com/githubuser/Nuko#readme>
 
 dependencies:
   - base >= 4.7 && < 5
-  - text
+  - pretty-simple
   - bytestring
-  - mtl
-  - containers
-  - array
-  - pretty-terminal
-  - transformers
-
+  - text
+  
 default-extensions:
-  - GeneralizedNewtypeDeriving
-  - OverloadedStrings
-  - TypeFamilies
-  - FlexibleInstances
-  - LambdaCase
-  - StandaloneDeriving
-  - FlexibleContexts
-  - DataKinds
-  - GADTs
-  - PatternSynonyms
-  - ConstraintKinds
   - DuplicateRecordFields
   - OverloadedRecordDot
-
+  - OverloadedStrings
+  - StandaloneDeriving
+  - GeneralizedNewtypeDeriving
+  - DerivingStrategies
+  - FlexibleInstances
+  - RankNTypes
+  - LambdaCase
+  - TypeFamilies
+  - GADTs
+  - ConstraintKinds
+  - FlexibleContexts
+  - FunctionalDependencies
+  - UndecidableInstances
+  - MultiWayIf
+  - TupleSections
+  - TemplateHaskell
+  
 ghc-options:
   - -Weverything
   - -Wno-all-missed-specializations
@@ -51,6 +52,17 @@ library:
   source-dirs: src
   ghc-options:
     - -Wall
+  dependencies:
+  - bytestring
+  - text
+  - mtl
+  - array
+  - transformers
+  - pretty-terminal
+  - containers
+  - unordered-containers
+  - microlens-platform
+  - microlens-th
 
 executables:
   Nuko-exe:
@@ -67,7 +79,7 @@ executables:
 tests:
   Nuko-test:
     main: Spec.hs
-    source-dirs: test
+    source-dirs: tests
     ghc-options:
       - -Wall
       - -threaded
@@ -79,3 +91,5 @@ tests:
       - tasty
       - tasty-golden
       - tasty-hunit
+      - bytestring
+      - text

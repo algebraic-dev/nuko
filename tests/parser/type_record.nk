@@ -1,0 +1,1 @@
+type Ata a = { ata: Int }

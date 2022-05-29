@@ -1,0 +1,22 @@
+Program
+    { tyDecls =
+        [ TypeDecl
+            { tyName = Name "Ata" 1:5-1:8
+            , tyArgs =
+                [ Name "a" 1:9-1:10 ]
+            , tyDecl = TypeProd
+                [
+                    ( Name "ata" 1:15-1:18
+                    , TId
+                        ( Path
+                            { path = []
+                            , final = Name "Int" 1:20-1:23
+                            }
+                        ) ( . )
+                    )
+                ]
+            }
+        ]
+    , letDecls = []
+    , programExt = ( . )
+    }

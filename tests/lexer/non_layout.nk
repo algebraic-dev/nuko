@@ -1,0 +1,4 @@
+type a = {
+    be : Int,
+    ce : String
+}
