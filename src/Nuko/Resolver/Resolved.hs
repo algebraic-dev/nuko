@@ -72,7 +72,6 @@ deriving instance Show (LetDecl Resolved)
 
 instance HasPosition (Name Resolved) where
   getPos (Name _ r) = r
-  getPos (NaExt r) = absurd r
 
 instance HasPosition (Var Resolved) where
   getPos (Var _ _ r) = r

@@ -15,7 +15,8 @@ module Nuko.Resolver.Support (
     aliasedModules,
     openedModules,
     importedModules,
-    currentModule
+    currentModule,
+    recImp
 ) where
 
 import Control.Monad.State   (MonadTrans (lift), StateT)
@@ -60,6 +61,10 @@ data ImportResult s
     = Succeded s
     | NotFound
     deriving stock Show
+
+recImp :: (s -> b) -> b -> ImportResult s -> b
+recImp fn _   (Succeded a) = fn a
+recImp _  alt NotFound     = alt
 
 class Monad m => MonadImport s m | m -> s where
     importModule   :: Text      -> m (ImportResult s)
