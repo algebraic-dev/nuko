@@ -66,7 +66,6 @@ deriving instance Show (LetDecl Normal)
 
 instance HasPosition (Name Normal) where
   getPos (Name _ r) = r
-  getPos (NaExt r)  = absurd r
 
 instance HasPosition (Var Normal) where
   getPos (Var _ _ r) = r

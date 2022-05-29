@@ -33,6 +33,7 @@ import qualified Data.List.NonEmpty as NE
     let      { Ranged TcLet _ }
     import   { Ranged TcImport _ }
     as       { Ranged TcAs _ }
+    open     { Ranged TcOpen _ }
     if       { Ranged TcIf _ }
     then     { Ranged TcThen _ }
     else     { Ranged TcElse _ }
@@ -211,8 +212,9 @@ ImpDecl : import Path(Upper) as Upper { withPos $1 $4 $ Import $2 (Just $4) }
 Program :: { Program Normal }
     : LetDecl Program  { $2 { letDecls  = $1 : $2.letDecls } }
     | TypeDecl Program { $2 { typeDecls = $1 : $2.typeDecls } }
-    | ImpDecl Program  { $2 { impDecl = $1 : $2.impDecl } }
-    | {- Empty UwU -}  { Program [] [] [] NoExt }
+    | ImpDecl Program  { $2 { impDecls = $1 : $2.impDecls } }
+    | open Path(Upper) Program { $3 { openDecls = $2 : $3.openDecls }}
+    | {- Empty UwU -}  { Program [] [] [] [] NoExt }
 
 {
 

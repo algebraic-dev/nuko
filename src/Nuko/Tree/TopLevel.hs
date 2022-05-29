@@ -44,7 +44,8 @@ data Import x  = Import
 data Program x = Program
   { typeDecls  :: [TypeDecl x]
   , letDecls   :: [LetDecl x]
-  , impDecl    :: [Import x]
+  , impDecls   :: [Import x]
+  , openDecls  :: [Path x]
   , programExt :: XProgram x
   }
 

@@ -53,6 +53,7 @@ lexer :-
 <0> "with"      { layoutKw TcWith    }
 <0> "let"       { token TcLet        }
 <0> "as"        { token TcAs         }
+<0> "open"      { token TcOpen       }
 <0> "match"     { token TcMatch      }
 <0> "import"    { token TcImport     }
 <0> "if"        { layoutKw TcIf      }

@@ -44,9 +44,7 @@ import Data.List.NonEmpty (NonEmpty)
 
 data NoExt = NoExt
 
-data Name x
-  = Name Text (XName x)
-  | NaExt (XNaExt x)
+data Name x = Name Text (XName x)
 
 data Path x
   = Path [Name x] (Name x) (XPath x)

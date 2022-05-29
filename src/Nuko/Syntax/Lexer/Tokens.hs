@@ -18,6 +18,7 @@ data Token
   | TcImport       -- | The "import" keyword
   | TcAs           -- | The "as" keyword
   | TcElse         -- | The "else" keyword
+  | TcOpen         -- | The "open" keyword
   | TcType         -- | The "type" keyword
   | TcForall       -- | The "public" keyword
   | TcPub          -- | The "public" keyword
