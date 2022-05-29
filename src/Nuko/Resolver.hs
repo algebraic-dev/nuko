@@ -13,25 +13,25 @@ module Nuko.Resolver (
 import Nuko.Resolver.Support
 import Nuko.Tree.Expr
 import Nuko.Tree.TopLevel
-import Control.Monad.State        (evalStateT, void, gets, modify, StateT, MonadState(get, put), execStateT)
+import Control.Monad.State        (void, gets, modify, StateT, MonadState(get, put), execStateT)
 import Control.Monad.Except       (MonadError (throwError))
 import Control.Monad.Reader       (asks, MonadReader (local))
 import Data.HashMap.Strict        (HashMap)
 import Data.Text                  (Text)
 import Data.List.NonEmpty         (NonEmpty ((:|)))
 import Data.Maybe                 (catMaybes)
-import Nuko.Syntax.Range          (Range(..), HasPosition (getPos))
+import Nuko.Syntax.Range          (Range(..))
 import Nuko.Resolver.Error        (ResolutionError (..))
 import Lens.Micro.Platform        (Lens', view, over, _1, _2, set)
 import Nuko.Syntax.Ast            (Normal)
 import Data.Void                  (absurd)
 import Data.Foldable              (traverse_)
+import Nuko.Resolver.Resolved     (Resolved, ResPath (ResPath))
+import Data.HashSet               (HashSet)
 
 import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.HashMap.Strict as HashMap
 import qualified Data.Text as Text
-import Nuko.Resolver.Resolved (Resolved, ResPath (ResPath))
-import Data.HashSet (HashSet)
 import qualified Data.HashSet as HashSet
 
 type MonadResolve m =
@@ -77,22 +77,20 @@ localMod mod' op = do
   old <- get
   put (fst old, mod') *> op <* modify (set _2 (snd old))
 
-getModule :: (MonadImport Module m, MonadError ResolutionError m) => Range -> Text -> m Module
+getModule :: (MonadInit m) => Range -> Text -> m Module
 getModule range name = do
   result <- importModule name
   case result of
-    NotFound      -> throwError (ModuleNotFound range name)
+    NotFound      -> throwError (ModuleNotFound range (name <> ">"))
     Succeded mod' -> pure mod'
 
 initImport :: MonadInit m => Import Normal -> m ()
 initImport (Import (PaExt x) _ _)                 = absurd x
-initImport (Import mod'@(Path _ _ range) alias _) = do
-  _ <- getModule range (normalPath mod')
-  case alias of
-    Just alias' ->
-      modify $ over (_1 . aliasedModules) $ HashMap.insert (normalPath mod') (getName alias')
-    Nothing     ->
-      pure ()
+initImport (Import mod'@(Path p f range) alias _) = do
+  module'  <- getModule range (normalPath mod')
+  let aliasName = maybe (last (p ++ [f])) id alias
+  modify $ over (_1 . aliasedModules) $ HashMap.insert (getName aliasName) (normalPath mod')
+  modify $ over (_1 . importedModules) $ HashMap.insert module'._moduleName module'
 
 initLetDecl :: MonadInit m => LetDecl Normal -> m ()
 initLetDecl (LetDecl name _ _ _ _) = do
@@ -119,6 +117,7 @@ initTyDecl (TypeDecl name _ decl) = do
     modName       <- gets $ view (_2 . moduleName)
     let newModName = appendToPre modName (getName name)
     typeModule    <- localMod (emptyMod newModName) (initTyArgs decl *> gets snd)
+    modify $ over (_1 . aliasedModules) $ HashMap.insert (getName name) newModName
     void $ addModule newModName typeModule
   where
     appendToPre :: Text -> Text -> Text
@@ -132,8 +131,10 @@ initProgram prelude (Program tyDeps letDeps impDeps _) = do
   traverse_ initImport impDeps
   traverse_ initTyDecl tyDeps
   traverse_ initLetDecl letDeps
+  res <- gets snd
+  modify (set (_1 . currentModule) res)
 
--- Heleprs
+-- Helpers
 
 mergeResolution :: Resolution -> Resolution -> Resolution
 mergeResolution (Resolution x) (Resolution y) = Resolution $ NonEmpty.nub $ (x <> y)
@@ -167,20 +168,29 @@ getOpened lens range key = do
       let otherRes = catMaybes $ map getValue others in
       foldResolutions otherRes <$> (getValue main)
 
-
 fixQualify :: MonadResolve m => Range -> Text -> m Text
 fixQualify range name = do
   aliases <- asks _aliasedModules
+  imports <- asks _importedModules
   case HashMap.lookup name aliases of
     Just res -> pure res
-    Nothing  -> _moduleName <$> getModule range name
+    Nothing  -> maybe (throwError (ModuleNotFound range name)) (const $ pure name) (HashMap.lookup name imports)
+
+getImportedModule :: MonadResolve m => Range -> Text -> m Module
+getImportedModule range name = do
+  aliases <- asks _aliasedModules
+  imports <- asks _importedModules
+  let resolvedName = maybe name id (HashMap.lookup name aliases)
+  case HashMap.lookup resolvedName imports of
+    Just res -> pure res
+    Nothing  -> throwError (ModuleNotFound range name)
 
 getBinding :: MonadResolve m => Path Normal -> m (Path Resolved)
 getBinding = \case
   (PaExt x              ) -> absurd x
   (Path _    (NaExt x) _) -> absurd x
   (Path ls@(_:_) (Name name' range) _) ->
-    resolveCanonicalPath valueDecls (getPos ls) (joinPath ls) range name'
+    resolveCanonicalPath valueDecls range (joinPath ls) range name'
   (Path []       (Name name' range) ext) -> do
     bindings <- asks _localBindings
     curName  <- asks (_moduleName . _currentModule)
@@ -196,10 +206,10 @@ joinPath = Text.intercalate "." . map getName
 resolveCanonicalPath :: MonadResolve m => Lens' Module (HashMap Text Resolution) -> Range -> Text -> Range -> Text -> m (Path Resolved)
 resolveCanonicalPath lens modRange oldModName valRange valName = do
   newModName <- fixQualify modRange oldModName
-  table <- getModule modRange newModName
+  table <- getImportedModule modRange newModName
   case HashMap.lookup valName (view lens table) of
     Just _   -> pure $ mkPath modRange newModName valRange valName
-    Nothing  -> throwError (VariableNotFound valRange (newModName <> valName))
+    Nothing  -> throwError (VariableNotFound valRange (oldModName <> "." <> valName))
 
 mkPath :: Range -> Text -> Range -> Text -> Path Resolved
 mkPath modRange modName valRange valName = PaExt (ResPath (Name modName modRange) (Name valName valRange) (modRange <> valRange))
@@ -208,12 +218,12 @@ resolvePath :: MonadResolve m => Lens' Module (HashMap Text Resolution) -> Path 
 resolvePath lens = \case
   (PaExt x              ) -> absurd x
   (Path _    (NaExt x) _) -> absurd x
-  (Path ls@(_:_) (Name name' range) _) -> resolveCanonicalPath lens (getPos ls) (joinPath ls) range name'
+  (Path ls@(_:_) (Name name' range) _) -> resolveCanonicalPath lens range (joinPath ls) range name'
   (Path []       (Name name' range) ext) -> (\x -> mkPath ext x range name') <$> getOpened lens range name'
 
 -- Resolution
 
-initToResolve :: (MonadImport Module m, MonadError  ResolutionError m) => StateT (Env, Module) m a -> Module -> m (Env, Module)
+initToResolve :: (MonadImport Module m) => StateT (Env, Module) m a -> Module -> m (Env, Module)
 initToResolve action mod' = execStateT action (emptyEnv mod', mod')
 
 resolveLit :: Literal Normal -> Literal Resolved
@@ -244,19 +254,10 @@ resolvePattern pat =
       tyRes <- resolveType ty
       pure (PAnn patRes tyRes ex, bindings')
     go bindings (PCons p arg x)   = do
-      let (text, range)     = getPathInfo p
-      resolvedPath         <- unsafeQualifyPath p <$> getOpened consDecls text range
+      resolvedPath         <- resolvePath consDecls p
       (resArgs, bindings') <- seqGo bindings arg
       pure (PCons resolvedPath resArgs x, bindings')
     go _ (PExt x) = absurd x
-
-    unsafeQualifyPath :: Path Normal -> Text -> Path Resolved
-    unsafeQualifyPath (Path p final range) mod' = PaExt (ResPath (Name mod' (getPos p)) (resolveName final) range)
-    unsafeQualifyPath (PaExt v)               _ = absurd v
-
-    getPathInfo :: Path Normal -> (Range, Text)
-    getPathInfo path@(Path _ _ range) = (range, normalPath path)
-    getPathInfo (PaExt ab)            = absurd ab
 
 resolveBlock :: MonadResolve m => Block Normal -> m (Block Resolved)
 resolveBlock = \case

@@ -14,6 +14,7 @@ module Nuko.Resolver.Support (
     localBindings,
     aliasedModules,
     openedModules,
+    importedModules,
     currentModule
 ) where
 
@@ -39,10 +40,11 @@ data Module = Module
   } deriving Show
 
 data Env = Env
-  { _localBindings  :: HashSet Text
-  , _aliasedModules :: HashMap Text Text
-  , _openedModules  :: HashMap Text Module
-  , _currentModule  :: Module
+  { _localBindings   :: HashSet Text
+  , _aliasedModules  :: HashMap Text Text
+  , _openedModules   :: HashMap Text Module
+  , _importedModules :: HashMap Text Module
+  , _currentModule   :: Module
   }
 
 makeLenses ''Module
@@ -52,7 +54,7 @@ emptyMod :: Text -> Module
 emptyMod text = Module text HashMap.empty HashMap.empty HashMap.empty HashMap.empty
 
 emptyEnv :: Module -> Env
-emptyEnv = Env HashSet.empty HashMap.empty HashMap.empty
+emptyEnv = Env HashSet.empty HashMap.empty HashMap.empty HashMap.empty
 
 data ImportResult s
     = Succeded s
