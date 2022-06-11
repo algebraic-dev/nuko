@@ -1,23 +1,21 @@
-
 {
 
 module Nuko.Syntax.Lexer where
 
+import Relude
+
 import Data.Text            (Text, append, index)
-import Data.Text.Encoding   (decodeUtf8)
 import Data.Text.Read       (decimal, double)
 import Control.Monad        (when)
 
 import Nuko.Syntax.Lexer.Support
 import Nuko.Syntax.Lexer.Tokens
 import Nuko.Syntax.Range
-import Nuko.Syntax.Error
 
-import Debug.Trace
-
-import qualified Control.Monad.State  as State
-import qualified Control.Monad.Except as Error
-import qualified Data.ByteString      as ByteString
+import qualified Control.Monad.Chronicle as Chronicle
+import qualified Control.Monad.State     as State
+import qualified Control.Monad.Except    as Error
+import qualified Data.ByteString         as ByteString
 
 }
 
@@ -71,7 +69,7 @@ lexer :-
 
 <0> @lower_id   { emit TcLowerId  }
 <0> @upper_id   { emit TcUpperId  }
-<0> @number     { emit $ TcInt . fst . fromRight . decimal }
+<0> @number     { emit $ TcInt . fst . unsafeRight . decimal }
 
 <0> "="         { layoutKw TcEqual }
 <0> "_"         { token TcWild   }
@@ -103,6 +101,10 @@ lexer :-
 {
 
 -- Some layout thing helpers
+
+unsafeRight :: Either e r -> r
+unsafeRight (Right r) = r
+unsafeRight (Left _)  = error "Wot!"
 
 emptyLayout _ _ = popCode *> pushCode newline *> ghostRange TcEnd
 
@@ -137,9 +139,8 @@ offsideRule _ _ = do
 -- Probably will not throw errors because all the data is determined
 -- by the lexer
 
-fromRight :: Either e r -> r
-fromRight (Right b) = b
-fromRight _ = error "Cannot unpack the data (error on lexer UwU)"
+flag :: Chronicle.MonadChronicle (Endo [SyntaxError]) m => SyntaxError -> m ()
+flag err = Chronicle.dictate $ Endo ([err] <>)
 
 handleEOF :: Lexer (Ranged Token)
 handleEOF = do
@@ -147,7 +148,7 @@ handleEOF = do
     code <- popCode
     when (code == str) $ do
         pos <- State.gets (currentPos . input)
-        Error.throwError $ UnfinishedStr pos
+        flag (UnfinishedStr pos)
     case layout of
         Nothing -> popCode *> ghostRange TcEOF
         Just _  -> popLayout *> ghostRange TcEnd
@@ -158,7 +159,11 @@ scan = do
         code <- startCode
         case alexScan inputCode code of
             AlexEOF              -> handleEOF
-            AlexError inp        -> Error.throwError $ UnexpectedChar (currentPos inp)
+            AlexError inp        -> do
+                flag (UnexpectedChar (currentPos inp))
+                case alexGetByte inp of
+                    Just (_, inp) -> setInput inp >> scan
+                    Nothing -> handleEOF
             AlexSkip restInput _ -> setInput restInput >> scan
             AlexToken input' tokl action -> do
                 pos <- State.gets (currentPos . input)
@@ -167,5 +172,4 @@ scan = do
     where
         setInput :: AlexInput -> Lexer ()
         setInput input' = State.modify $ \s -> s { input = input' }
-
 }

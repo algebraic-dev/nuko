@@ -23,29 +23,10 @@ source-repository head
 library
   exposed-modules:
       Nuko.Driver
-      Nuko.Error.Data
-      Nuko.Error.Render
-      Nuko.Resolver
-      Nuko.Resolver.Error
-      Nuko.Resolver.Resolved
-      Nuko.Resolver.Support
-      Nuko.Syntax.Ast
-      Nuko.Syntax.Error
       Nuko.Syntax.Lexer
       Nuko.Syntax.Lexer.Support
       Nuko.Syntax.Lexer.Tokens
-      Nuko.Syntax.Parser
       Nuko.Syntax.Range
-      Nuko.Tree.Expr
-      Nuko.Tree.TopLevel
-      Nuko.Typer.Env
-      Nuko.Typer.Error
-      Nuko.Typer.Infer.Common
-      Nuko.Typer.Infer.Expr
-      Nuko.Typer.Infer.Pat
-      Nuko.Typer.Infer.Type
-      Nuko.Typer.Types
-      Nuko.Typer.Unify
   other-modules:
       Paths_Nuko
   hs-source-dirs:
@@ -58,31 +39,19 @@ library
       GeneralizedNewtypeDeriving
       DerivingStrategies
       FlexibleInstances
-      RankNTypes
       LambdaCase
       TypeFamilies
-      GADTs
-      ConstraintKinds
+      NoImplicitPrelude
       FlexibleContexts
-      FunctionalDependencies
-      UndecidableInstances
-      MultiWayIf
-      TupleSections
-      TemplateHaskell
   ghc-options: -Weverything -Wno-all-missed-specializations -Wno-implicit-prelude -Wno-missing-deriving-strategies -Wno-missing-kind-signatures -Wno-prepositive-qualified-module -Wno-missing-import-lists -Wno-missing-safe-haskell-mode -Wno-safe -Wno-missing-exported-signatures -Wno-unsafe -Wno-missed-specialisations -Wall
   build-depends:
       array
-    , base >=4.7 && <5
+    , base <=4.16.0.0
     , bytestring
-    , containers
-    , microlens-platform
-    , microlens-th
+    , monad-chronicle
     , mtl
-    , pretty-simple
-    , pretty-terminal
-    , text
-    , transformers
-    , unordered-containers
+    , relude >=1.1.0.0 && <1.2
+    , these
   default-language: Haskell2010
 
 executable Nuko-exe
@@ -99,24 +68,20 @@ executable Nuko-exe
       GeneralizedNewtypeDeriving
       DerivingStrategies
       FlexibleInstances
-      RankNTypes
       LambdaCase
       TypeFamilies
-      GADTs
-      ConstraintKinds
+      NoImplicitPrelude
       FlexibleContexts
-      FunctionalDependencies
-      UndecidableInstances
-      MultiWayIf
-      TupleSections
-      TemplateHaskell
   ghc-options: -Weverything -Wno-all-missed-specializations -Wno-implicit-prelude -Wno-missing-deriving-strategies -Wno-missing-kind-signatures -Wno-prepositive-qualified-module -Wno-missing-import-lists -Wno-missing-safe-haskell-mode -Wno-safe -Wno-missing-exported-signatures -Wno-unsafe -Wno-missed-specialisations -Wall -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       Nuko
-    , base >=4.7 && <5
+    , array
+    , base <=4.16.0.0
     , bytestring
-    , pretty-simple
-    , text
+    , monad-chronicle
+    , mtl
+    , relude >=1.1.0.0 && <1.2
+    , these
   default-language: Haskell2010
 
 test-suite Nuko-test
@@ -134,24 +99,17 @@ test-suite Nuko-test
       GeneralizedNewtypeDeriving
       DerivingStrategies
       FlexibleInstances
-      RankNTypes
       LambdaCase
       TypeFamilies
-      GADTs
-      ConstraintKinds
+      NoImplicitPrelude
       FlexibleContexts
-      FunctionalDependencies
-      UndecidableInstances
-      MultiWayIf
-      TupleSections
-      TemplateHaskell
   ghc-options: -Weverything -Wno-all-missed-specializations -Wno-implicit-prelude -Wno-missing-deriving-strategies -Wno-missing-kind-signatures -Wno-prepositive-qualified-module -Wno-missing-import-lists -Wno-missing-safe-haskell-mode -Wno-safe -Wno-missing-exported-signatures -Wno-unsafe -Wno-missed-specialisations -Wall -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       Nuko
-    , base >=4.7 && <5
+    , base <=4.16.0.0
     , bytestring
     , filepath
-    , pretty-simple
+    , relude >=1.1.0.0 && <1.2
     , tasty
     , tasty-golden
     , tasty-hunit

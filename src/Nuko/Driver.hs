@@ -1,4 +1,6 @@
 module Nuko.Driver (compile) where
 
-compile :: IO ()
-compile = print "Nothing here dumbass!"
+import Relude (error)
+
+compile :: p
+compile = error "Todo! Nothing here dumbass!"

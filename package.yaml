@@ -9,11 +9,9 @@ copyright:    "2022 Felipe G"
 description: <https://github.com/githubuser/Nuko#readme>
 
 dependencies:
-  - base >= 4.7 && < 5
-  - pretty-simple
-  - bytestring
-  - text
-  
+  - base <= 4.16.0.0
+  - relude ^>= 1.1.0.0
+
 default-extensions:
   - DuplicateRecordFields
   - OverloadedRecordDot
@@ -22,18 +20,11 @@ default-extensions:
   - GeneralizedNewtypeDeriving
   - DerivingStrategies
   - FlexibleInstances
-  - RankNTypes
   - LambdaCase
   - TypeFamilies
-  - GADTs
-  - ConstraintKinds
+  - NoImplicitPrelude
   - FlexibleContexts
-  - FunctionalDependencies
-  - UndecidableInstances
-  - MultiWayIf
-  - TupleSections
-  - TemplateHaskell
-  
+
 ghc-options:
   - -Weverything
   - -Wno-all-missed-specializations
@@ -53,16 +44,11 @@ library:
   ghc-options:
     - -Wall
   dependencies:
-  - bytestring
-  - text
   - mtl
+  - bytestring
   - array
-  - transformers
-  - pretty-terminal
-  - containers
-  - unordered-containers
-  - microlens-platform
-  - microlens-th
+  - monad-chronicle
+  - these
 
 executables:
   Nuko-exe:
@@ -75,6 +61,11 @@ executables:
       - -with-rtsopts=-N
     dependencies:
       - Nuko
+      - mtl
+      - bytestring
+      - array
+      - monad-chronicle
+      - these
 
 tests:
   Nuko-test:

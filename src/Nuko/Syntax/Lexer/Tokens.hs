@@ -2,9 +2,7 @@ module Nuko.Syntax.Lexer.Tokens (
     Token(..)
 ) where
 
-import Data.Text (Text)
-
-import qualified Data.Text as Text
+import Relude (Text, Show, Int)
 
 -- | Unit of information that the lexer will use
 -- it does not stores any metadata like position.
@@ -48,40 +46,4 @@ data Token
   | TcSep          -- Separator between two expressions in an indentation block
   | TcEnd          -- The end of an indentation block
   | TcEOF
-
-instance Show Token where
-  show = \case
-    TcLet      -> "let"
-    TcMatch    -> "match"
-    TcAs       -> "as"
-    TcImport   -> "import"
-    TcWith     -> "with"
-    TcForall   -> "forall"
-    TcIf       -> "if"
-    TcThen     -> "then"
-    TcElse     -> "else"
-    TcType     -> "type"
-    TcPub      -> "pub"
-    TcStr s    -> show s
-    TcInt i    -> "$int(" ++ show i ++ ")"
-    TcLBracket -> "'{'"
-    TcRBracket -> "'}'"
-    TcWild     -> "_"
-    TcLBrace   -> "'['"
-    TcRBrace   -> "']'"
-    TcArrow    -> "->"
-    TcDoubleArrow -> "=>"
-    TcLowerId s -> "lower(" ++ Text.unpack s ++ ")"
-    TcUpperId s -> "upper(" ++ Text.unpack s ++ ")"
-    TcLPar  -> "'('"
-    TcRPar  -> "')'"
-    TcColon -> "':'"
-    TcEqual -> "'='"
-    TcPipe  -> "'|'"
-    TcComma -> "','"
-    TcSlash -> "'\\'"
-    TcDot   -> "'.'"
-    TcBegin -> "$begin"
-    TcSep   -> "$semi"
-    TcEnd   -> "$end"
-    TcEOF   -> "$EOF"
+  deriving Show
