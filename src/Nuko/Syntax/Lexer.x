@@ -26,7 +26,7 @@ $lower   = [a-z]
 $upper   = [A-Z]
 $letter  = [a-zA-Z]
 $symbol  = [\+\-\*\/\<\>\=\^\?]
-$end     = [\?\!]
+$end     = [\?]
 $graphic = [\x21-\x7E]
 
 @id_char   = $letter | $digit | _
@@ -34,6 +34,7 @@ $graphic = [\x21-\x7E]
 @upper_id  = $upper @id_char* $end?
 @wild      = _
 @number    = $digit+
+@not_id    = [^a-zA-Z0-9\ \n\r\t]+
 @stringraw = [$graphic$space]|$newline
 
 lexer :-
@@ -41,7 +42,7 @@ lexer :-
 <0> $space+     ;
 <0> $newline+   { \_ _ -> pushCode newline *> scan }
 
-<0> "--"        { \_ _   -> pushCode linecom *> scan }
+<0> "--"        { \_ _ -> pushCode linecom *> scan }
 
 <linecom> [^\n] ;
 <linecom> \n    { \_ _ ->  popCode *> scan }
@@ -69,6 +70,7 @@ lexer :-
 
 <0> @lower_id   { emit TcLowerId  }
 <0> @upper_id   { emit TcUpperId  }
+
 <0> @number     { emit $ TcInt . fst . unsafeRight . decimal }
 
 <0> "="         { layoutKw TcEqual }
@@ -84,6 +86,8 @@ lexer :-
 <0> "->"        { token TcArrow  }
 <0> "\"         { token TcSlash  }
 <0> "=>"        { layoutKw TcDoubleArrow  }
+
+<0> @not_id     { \t p -> flagLocal (UnexpectedSeq) p *> scan }
 
 -- Rule for parsing layout
 
@@ -138,9 +142,6 @@ offsideRule _ _ = do
 
 -- Probably will not throw errors because all the data is determined
 -- by the lexer
-
-flag :: Chronicle.MonadChronicle (Endo [SyntaxError]) m => SyntaxError -> m ()
-flag err = Chronicle.dictate $ Endo ([err] <>)
 
 handleEOF :: Lexer (Ranged Token)
 handleEOF = do

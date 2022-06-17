@@ -23,10 +23,15 @@ source-repository head
 library
   exposed-modules:
       Nuko.Driver
+      Nuko.Syntax.Error
       Nuko.Syntax.Lexer
       Nuko.Syntax.Lexer.Support
       Nuko.Syntax.Lexer.Tokens
+      Nuko.Syntax.Parser
       Nuko.Syntax.Range
+      Nuko.Syntax.Tree
+      Nuko.Tree.Expr
+      Nuko.Tree.TopLevel
   other-modules:
       Paths_Nuko
   hs-source-dirs:
@@ -46,7 +51,7 @@ library
   ghc-options: -Weverything -Wno-all-missed-specializations -Wno-implicit-prelude -Wno-missing-deriving-strategies -Wno-missing-kind-signatures -Wno-prepositive-qualified-module -Wno-missing-import-lists -Wno-missing-safe-haskell-mode -Wno-safe -Wno-missing-exported-signatures -Wno-unsafe -Wno-missed-specialisations -Wall
   build-depends:
       array
-    , base <=4.16.0.0
+    , base >=4.16.0.0
     , bytestring
     , monad-chronicle
     , mtl
@@ -76,7 +81,7 @@ executable Nuko-exe
   build-depends:
       Nuko
     , array
-    , base <=4.16.0.0
+    , base >=4.16.0.0
     , bytestring
     , monad-chronicle
     , mtl
@@ -106,7 +111,7 @@ test-suite Nuko-test
   ghc-options: -Weverything -Wno-all-missed-specializations -Wno-implicit-prelude -Wno-missing-deriving-strategies -Wno-missing-kind-signatures -Wno-prepositive-qualified-module -Wno-missing-import-lists -Wno-missing-safe-haskell-mode -Wno-safe -Wno-missing-exported-signatures -Wno-unsafe -Wno-missed-specialisations -Wall -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       Nuko
-    , base <=4.16.0.0
+    , base >=4.16.0.0
     , bytestring
     , filepath
     , relude >=1.1.0.0 && <1.2

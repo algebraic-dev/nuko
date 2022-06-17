@@ -20,27 +20,23 @@ module Nuko.Syntax.Lexer.Support (
   addToBuffer,
   ghostRange,
   runLexer,
+  flag,
+  terminate,
+  flagLocal
 ) where
 
 import Relude
-import Nuko.Syntax.Range        (Pos, Ranged)
+import Data.These               (These)
+import Nuko.Syntax.Range        (Pos, Ranged, Range)
 import Data.ByteString.Internal (w2c)
 import Control.Monad.Chronicle  (MonadChronicle, Chronicle)
-import Nuko.Syntax.Lexer.Tokens (Token)
+import Nuko.Syntax.Error        (SyntaxError(..))
 
 import qualified Control.Monad.Chronicle as Chronicle
 import qualified Control.Monad.State     as State
 import qualified Nuko.Syntax.Range       as Range
 import qualified Data.List.NonEmpty      as NonEmpty
 import qualified Data.ByteString         as ByteString
-import Data.These (These)
-
-data SyntaxError
-  = UnexpectedChar Pos
-  | UnfinishedStr Pos
-  | UnexpectedToken (Ranged Token)
-  | CannotAssign Range.Range
-  deriving Show
 
 -- | AlexInput is the Data Type used by the Alex inside the
 -- generated code to track the input data.
@@ -114,6 +110,11 @@ emit fn text pos = do
   lastPos <- State.gets (currentPos . input)
   pure (Range.Ranged (fn text) (Range.Range pos lastPos))
 
+flagLocal :: (Range -> SyntaxError) -> Pos -> Lexer ()
+flagLocal fn pos = do
+  lastPos <- State.gets (currentPos . input)
+  flag (fn (Range.Range pos lastPos))
+
 token :: a -> Text -> Pos -> Lexer (Ranged a)
 token = emit . const
 
@@ -141,3 +142,11 @@ runLexer lex' input =
   first
     (\s -> appEndo s [])
     (Chronicle.runChronicle $ State.evalStateT lex'.getLexer (initialState input))
+
+-- Support for error handling
+
+flag :: Chronicle.MonadChronicle (Endo [SyntaxError]) m => SyntaxError -> m ()
+flag err = Chronicle.dictate $ Endo ([err] <>)
+
+terminate :: Chronicle.MonadChronicle (Endo [SyntaxError]) m => SyntaxError -> m a
+terminate err = Chronicle.confess $ Endo ([err] <>)
