@@ -10,10 +10,11 @@ import Nuko.Syntax.Range
 import Nuko.Syntax.Tree
 import Nuko.Tree.TopLevel
 import Nuko.Tree.Expr
-import Data.Text            (Text)
 
+import Data.Text (Text)
+import Data.Bifunctor
 
-import qualified Prelude as Prelude
+import qualified Prelude                 as Prelude
 import qualified Control.Monad.Chronicle as Chronicle
 import qualified Data.List.NonEmpty      as NE
 
@@ -73,12 +74,16 @@ import qualified Data.List.NonEmpty      as NE
 -- Helpful predicates
 
 SepList(Sep, Pred)
-    : SepList1(Sep, Pred)          { $1 }
+    : SepListHelper(Sep, Pred)     { $1 }
     | {- UwU Empty -}              { [] }
 
+SepListHelper(Sep, Pred)
+    : Pred  Sep SepListHelper(Sep, Pred) { $1 : $3 }
+    | Pred                               { $1 : [] }
+
 SepList1(Sep, Pred)
-    : Pred  Sep SepList1(Sep, Pred)   { $1 : $3 }
-    | Pred                           { [$1] }
+    : Pred  Sep SepListHelper(Sep, Pred) { $1 :| $3 }
+    | Pred                               { $1 :| [] }
 
 List1(Pred)
     : Pred List1(Pred)  { $1 NE.<| $2 }
@@ -128,7 +133,6 @@ Type
 
 -- Patterns
 
-
 AtomPat :: { Pat Normal }
     : '_'                         { PWild $1.position }
     | Lower                       { PId $1 NoExt }
@@ -171,8 +175,8 @@ End : end   { ()         }
 -- Match can be sucessed of a End so.. sometimes it will give an layout error
 ClosedExpr :: { Expr Normal }
     : if ClosedExpr OptSep then ClosedExpr OptSep else ClosedExpr { withPos $1 $8 $ If $2 $5 (Just $8) }
-    | match ClosedExpr with begin SepList(sep, CaseClause) End    { withPosList $1 $5 $ Match $2 $5 }
     | Atom App                                                    { withPos $1 $2 $ App $1 $2 }
+    | match ClosedExpr with begin SepList1(sep, CaseClause) End   { withPos $1 $5 $ Match $2 $5 }
     | '\\' Pat '=>' ClosedExpr                                    { withPos $1 $4 $ Lam $2 $4 }
     | begin BlockExpr End                                         { case $2 of { BlEnd x -> x; _ -> withPos $1 $2 $ Block $2} }
     | Atom                                                        { $1 }
@@ -193,9 +197,9 @@ SumClause :: { (Name Normal, [Ty Normal]) }
     : '|' Upper List(TypeAtom) { ($2, $3) }
 
 TypeTy :: { TypeDeclArg Normal }
-    : '{' SepList(',', ProdClause) '}' { TypeProd $2 }
-    | List1(SumClause)                 { TypeSum $1 }
-    | Type                             { TypeSym $1 }
+    : '{' SepList(',', ProdClause) '}'  { TypeProd $2 }
+    | List1(SumClause)                  { TypeSum $1 }
+    | Type                              { TypeSym $1 }
 
 TypeDecl : type Upper List(Lower) '=' TypeTy { TypeDecl $2 $3 $5 }
 
@@ -205,15 +209,23 @@ Binder : '(' Lower ':' Type ')' { ($2, $4) }
 
 LetDecl : let Lower List(Binder) Optional(Ret) '=' Expr { LetDecl $2 $3 $6 $4 NoExt }
 
-Imp :: { ImportTree Normal }
-    : Upper '.' Imp                { undefined }
-    | Upper '.' '(' List1(Imp) ')' { undefined }
-    | Lower                        { undefined }
-    | Upper                        { undefined }
-    | Lower as Lower               { undefined }
-    | Upper as Upper               { undefined }
+-- Import declaration
 
-ImportDecl : import Imp { undefined }
+ImpPath :: { NonEmpty (Name Normal) }
+    : SepList1('.', Upper) { $1 }
+
+ImpDeps :: { ImportDeps Normal }
+    : Upper as Upper { ImpDepAs (ImpDepUpper $1) $3 }
+    | Lower as Lower { ImpDepAs (ImpDepLower $1) $3 }
+    | Upper { ImpDep (ImpDepUpper $1) }
+    | Lower { ImpDep (ImpDepLower $1) }
+
+Imp :: { ImportTree Normal }
+    : ImpPath                                 { Imp $1 }
+    | ImpPath '(' SepList1(',', ImpDeps) ')'  { ImpList $1 $3 }
+    | ImpPath as Upper                        { ImpAs $1 $3 }
+
+ImportDecl : import Imp { Import $2 NoExt }
 
 Program :: { Program Normal }
     : LetDecl Program    { $2 { letDecls  = $1 : $2.letDecls } }

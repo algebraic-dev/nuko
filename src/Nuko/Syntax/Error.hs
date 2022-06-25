@@ -5,8 +5,7 @@ import Nuko.Syntax.Range ( Ranged, Range, Pos )
 import Nuko.Syntax.Lexer.Tokens (Token)
 
 data SyntaxError
-  = UnexpectedChar Pos
-  | UnexpectedSeq Range
+  = UnexpectedStr Range
   | UnfinishedStr Pos
   | UnexpectedToken (Ranged Token)
   | CannotAssign Range

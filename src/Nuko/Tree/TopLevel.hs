@@ -5,6 +5,8 @@ module Nuko.Tree.TopLevel (
   TypeDeclArg(..),
   Import(..),
   ImportTree(..),
+  ImportDeps(..),
+  ImportDepsKind(..),
   XLetDecl,
   XTypeDecl,
   XTypeProd,
@@ -37,10 +39,20 @@ data TypeDecl x = TypeDecl
   , tyDecl :: !(TypeDeclArg x)
   }
 
+type ImpPath x = NonEmpty (Name x)
+
+data ImportDepsKind x
+  = ImpDepLower (Name x)
+  | ImpDepUpper (Name x)
+
+data ImportDeps x
+  = ImpDepAs (ImportDepsKind x) (Name x)
+  | ImpDep   (ImportDepsKind x)
+
 data ImportTree x
-  = ImpMod (Name x) (ImportTree x)
-  | ImpItem [ImportTree x]
-  | ImpAs (Name x) (Name x)
+  = ImpAs (ImpPath x) (Name x)
+  | ImpList (ImpPath x) (NonEmpty (ImportDeps x))
+  | Imp (ImpPath x)
 
 data Import x  = Import
   { modName :: ImportTree x

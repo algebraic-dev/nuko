@@ -87,7 +87,7 @@ lexer :-
 <0> "\"         { token TcSlash  }
 <0> "=>"        { layoutKw TcDoubleArrow  }
 
-<0> @not_id     { \t p -> flagLocal (UnexpectedSeq) p *> scan }
+<0> @not_id     { \t p -> flagLocal (UnexpectedStr) p *> scan }
 
 -- Rule for parsing layout
 
@@ -161,7 +161,7 @@ scan = do
         case alexScan inputCode code of
             AlexEOF              -> handleEOF
             AlexError inp        -> do
-                flag (UnexpectedChar (currentPos inp))
+                flag (UnexpectedStr (oneColRange (currentPos inp)))
                 case alexGetByte inp of
                     Just (_, inp) -> setInput inp >> scan
                     Nothing -> handleEOF

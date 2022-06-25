@@ -86,7 +86,7 @@ data Expr x
   | Upper (Path x) !(XUpper x)
   | Field (Expr x) (Name x) !(XField x)
   | If (Expr x) (Expr x) (Maybe (Expr x)) !(XIf x)
-  | Match (Expr x) [(Pat x, Expr x)] !(XMatch x)
+  | Match (Expr x) (NonEmpty (Pat x, Expr x)) !(XMatch x)
   | Ann (Expr x) (Ty x) !(XAnn x)
   | Block (Block x) !(XBlock x)
   | Ext !(XExt x)

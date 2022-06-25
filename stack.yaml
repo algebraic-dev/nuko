@@ -4,6 +4,10 @@ packages:
 resolver:
   compiler: ghc-9.2.1
 
+ghc-options:
+  "$locals": -Wall
+  happy: -a -g -c
+  
 extra-deps:
   - github: kowainik/relude
     commit: 508ca5463591720100e41b29f1b8dac25c0b31a8
