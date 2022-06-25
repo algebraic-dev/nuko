@@ -1,37 +1,166 @@
+These UnexpectedStr
+    ( Range
+        { start = Pos
+            { line = 18
+            , column = 11
+            }
+        , end = Pos
+            { line = 18
+            , column = 12
+            }
+        }
+    )
+UnexpectedStr
+    ( Range
+        { start = Pos
+            { line = 28
+            , column = 13
+            }
+        , end = Pos
+            { line = 28
+            , column = 14
+            }
+        }
+    )
+
 Program
-    { tyDecls =
+    { typeDecls =
         [ TypeDecl
-            { tyName = Name "Range" 1:5-1:10
+            { tyName = Name
+                { text = "Range"
+                , ext = Range
+                    { start = Pos
+                        { line = 0
+                        , column = 5
+                        }
+                    , end = Pos
+                        { line = 0
+                        , column = 10
+                        }
+                    }
+                }
             , tyArgs = []
             , tyDecl = TypeProd
                 [
-                    ( Name "line" 1:15-1:19
-                    , TId
-                        ( Path
-                            { path = []
-                            , final = Name "Int" 1:21-1:24
+                    ( Name
+                        { text = "line"
+                        , ext = Range
+                            { start = Pos
+                                { line = 0
+                                , column = 15
+                                }
+                            , end = Pos
+                                { line = 0
+                                , column = 19
+                                }
                             }
-                        ) ( . )
+                        }
+                    , TId
+                        ( Path []
+                            ( Name
+                                { text = "Int"
+                                , ext = Range
+                                    { start = Pos
+                                        { line = 0
+                                        , column = 21
+                                        }
+                                    , end = Pos
+                                        { line = 0
+                                        , column = 24
+                                        }
+                                    }
+                                }
+                            )
+                            ( Range
+                                { start = Pos
+                                    { line = 0
+                                    , column = 21
+                                    }
+                                , end = Pos
+                                    { line = 0
+                                    , column = 24
+                                    }
+                                }
+                            )
+                        ) NoExt
                     )
                 ]
             }
         , TypeDecl
-            { tyName = Name "Hole" 3:5-3:9
+            { tyName = Name
+                { text = "Hole"
+                , ext = Range
+                    { start = Pos
+                        { line = 2
+                        , column = 5
+                        }
+                    , end = Pos
+                        { line = 2
+                        , column = 9
+                        }
+                    }
+                }
             , tyArgs = []
             , tyDecl = TypeSum
                 (
-                    ( Name "Filled" 4:4-4:10
+                    ( Name
+                        { text = "Filled"
+                        , ext = Range
+                            { start = Pos
+                                { line = 3
+                                , column = 4
+                                }
+                            , end = Pos
+                                { line = 3
+                                , column = 10
+                                }
+                            }
+                        }
                     ,
                         [ TId
-                            ( Path
-                                { path = []
-                                , final = Name "Range" 4:11-4:16
-                                }
-                            ) ( . )
+                            ( Path []
+                                ( Name
+                                    { text = "Range"
+                                    , ext = Range
+                                        { start = Pos
+                                            { line = 3
+                                            , column = 11
+                                            }
+                                        , end = Pos
+                                            { line = 3
+                                            , column = 16
+                                            }
+                                        }
+                                    }
+                                )
+                                ( Range
+                                    { start = Pos
+                                        { line = 3
+                                        , column = 11
+                                        }
+                                    , end = Pos
+                                        { line = 3
+                                        , column = 16
+                                        }
+                                    }
+                                )
+                            ) NoExt
                         ]
                     ) :|
                     [
-                        ( Name "Empty" 5:4-5:9
+                        ( Name
+                            { text = "Empty"
+                            , ext = Range
+                                { start = Pos
+                                    { line = 4
+                                    , column = 4
+                                    }
+                                , end = Pos
+                                    { line = 4
+                                    , column = 9
+                                    }
+                                }
+                            }
                         , []
                         )
                     ]
@@ -40,335 +169,1640 @@ Program
         ]
     , letDecls =
         [ LetDecl
-            { declName = Name "isEmpty?" 8:4-8:12
-            , declArgs =
-                [ PAnn
-                    ( PId
-                        ( Name "hole" 8:14-8:18 ) ( . )
-                    )
-                    ( TId
-                        ( Path
-                            { path = []
-                            , final = Name "Hole" 8:20-8:24
-                            }
-                        ) ( . )
-                    ) 8:14-8:24
-                ]
-            , declBody = Case
-                ( Upper
-                    ( Path
-                        { path = []
-                        , final = Name "hole" 9:8-9:12
+            { declName = Name
+                { text = "isEmpty?"
+                , ext = Range
+                    { start = Pos
+                        { line = 7
+                        , column = 4
                         }
-                    ) 9:8-9:12
-                )
+                    , end = Pos
+                        { line = 7
+                        , column = 12
+                        }
+                    }
+                }
+            , declArgs =
                 [
-                    ( PCons
-                        ( Path
-                            { path = []
-                            , final = Name "Filled" 10:4-10:10
+                    ( Name
+                        { text = "hole"
+                        , ext = Range
+                            { start = Pos
+                                { line = 7
+                                , column = 14
+                                }
+                            , end = Pos
+                                { line = 7
+                                , column = 18
+                                }
+                            }
+                        }
+                    , TId
+                        ( Path []
+                            ( Name
+                                { text = "Hole"
+                                , ext = Range
+                                    { start = Pos
+                                        { line = 7
+                                        , column = 20
+                                        }
+                                    , end = Pos
+                                        { line = 7
+                                        , column = 24
+                                        }
+                                    }
+                                }
+                            )
+                            ( Range
+                                { start = Pos
+                                    { line = 7
+                                    , column = 20
+                                    }
+                                , end = Pos
+                                    { line = 7
+                                    , column = 24
+                                    }
+                                }
+                            )
+                        ) NoExt
+                    )
+                ]
+            , declBody = Match
+                ( Lower
+                    ( Path []
+                        ( Name
+                            { text = "hole"
+                            , ext = Range
+                                { start = Pos
+                                    { line = 8
+                                    , column = 8
+                                    }
+                                , end = Pos
+                                    { line = 8
+                                    , column = 12
+                                    }
+                                }
                             }
                         )
-                        [ PId
-                            ( Name "range" 10:11-10:16 ) ( . )
-                        ] 10:4-10:16
-                    , Lower
-                        ( Path
-                            { path = []
-                            , final = Name "False" 10:20-10:25
+                        ( Range
+                            { start = Pos
+                                { line = 8
+                                , column = 8
+                                }
+                            , end = Pos
+                                { line = 8
+                                , column = 12
+                                }
                             }
-                        ) 10:20-10:25
+                        )
                     )
-                ,
+                    ( Range
+                        { start = Pos
+                            { line = 8
+                            , column = 8
+                            }
+                        , end = Pos
+                            { line = 8
+                            , column = 12
+                            }
+                        }
+                    )
+                )
+                (
                     ( PCons
-                        ( Path
-                            { path = []
-                            , final = Name "Empty" 11:4-11:9
+                        ( Path []
+                            ( Name
+                                { text = "Filled"
+                                , ext = Range
+                                    { start = Pos
+                                        { line = 9
+                                        , column = 4
+                                        }
+                                    , end = Pos
+                                        { line = 9
+                                        , column = 10
+                                        }
+                                    }
+                                }
+                            )
+                            ( Range
+                                { start = Pos
+                                    { line = 9
+                                    , column = 4
+                                    }
+                                , end = Pos
+                                    { line = 9
+                                    , column = 10
+                                    }
+                                }
+                            )
+                        )
+                        [ PId
+                            ( Name
+                                { text = "range"
+                                , ext = Range
+                                    { start = Pos
+                                        { line = 9
+                                        , column = 11
+                                        }
+                                    , end = Pos
+                                        { line = 9
+                                        , column = 16
+                                        }
+                                    }
+                                }
+                            ) NoExt
+                        ]
+                        ( Range
+                            { start = Pos
+                                { line = 9
+                                , column = 4
+                                }
+                            , end = Pos
+                                { line = 9
+                                , column = 16
+                                }
                             }
-                        ) [] 11:4-11:9
-                    , Lower
-                        ( Path
-                            { path = []
-                            , final = Name "True" 11:20-11:24
+                        )
+                    , Upper
+                        ( Path []
+                            ( Name
+                                { text = "False"
+                                , ext = Range
+                                    { start = Pos
+                                        { line = 9
+                                        , column = 20
+                                        }
+                                    , end = Pos
+                                        { line = 9
+                                        , column = 25
+                                        }
+                                    }
+                                }
+                            )
+                            ( Range
+                                { start = Pos
+                                    { line = 9
+                                    , column = 20
+                                    }
+                                , end = Pos
+                                    { line = 9
+                                    , column = 25
+                                    }
+                                }
+                            )
+                        )
+                        ( Range
+                            { start = Pos
+                                { line = 9
+                                , column = 20
+                                }
+                            , end = Pos
+                                { line = 9
+                                , column = 25
+                                }
                             }
-                        ) 11:20-11:24
-                    )
-                ] 9:2-11:24
+                        )
+                    ) :|
+                    [
+                        ( PCons
+                            ( Path []
+                                ( Name
+                                    { text = "Empty"
+                                    , ext = Range
+                                        { start = Pos
+                                            { line = 10
+                                            , column = 4
+                                            }
+                                        , end = Pos
+                                            { line = 10
+                                            , column = 9
+                                            }
+                                        }
+                                    }
+                                )
+                                ( Range
+                                    { start = Pos
+                                        { line = 10
+                                        , column = 4
+                                        }
+                                    , end = Pos
+                                        { line = 10
+                                        , column = 9
+                                        }
+                                    }
+                                )
+                            ) []
+                            ( Range
+                                { start = Pos
+                                    { line = 10
+                                    , column = 4
+                                    }
+                                , end = Pos
+                                    { line = 10
+                                    , column = 9
+                                    }
+                                }
+                            )
+                        , Upper
+                            ( Path []
+                                ( Name
+                                    { text = "True"
+                                    , ext = Range
+                                        { start = Pos
+                                            { line = 10
+                                            , column = 20
+                                            }
+                                        , end = Pos
+                                            { line = 10
+                                            , column = 24
+                                            }
+                                        }
+                                    }
+                                )
+                                ( Range
+                                    { start = Pos
+                                        { line = 10
+                                        , column = 20
+                                        }
+                                    , end = Pos
+                                        { line = 10
+                                        , column = 24
+                                        }
+                                    }
+                                )
+                            )
+                            ( Range
+                                { start = Pos
+                                    { line = 10
+                                    , column = 20
+                                    }
+                                , end = Pos
+                                    { line = 10
+                                    , column = 24
+                                    }
+                                }
+                            )
+                        )
+                    ]
+                )
+                ( Range
+                    { start = Pos
+                        { line = 8
+                        , column = 2
+                        }
+                    , end = Pos
+                        { line = 10
+                        , column = 24
+                        }
+                    }
+                )
             , declRet = Just
                 ( TId
-                    ( Path
-                        { path = []
-                        , final = Name "Bool" 8:27-8:31
-                        }
-                    ) ( . )
-                )
-            , declExt = ( . )
-            }
-        , LetDecl
-            { declName = Name "isEmpty?" 14:4-14:12
-            , declArgs = []
-            , declBody = Case
-                ( Upper
-                    ( Path
-                        { path = []
-                        , final = Name "hole" 15:8-15:12
-                        }
-                    ) 15:8-15:12
-                )
-                [
-                    ( PCons
-                        ( Path
-                            { path = []
-                            , final = Name "Filled" 16:4-16:10
+                    ( Path []
+                        ( Name
+                            { text = "Bool"
+                            , ext = Range
+                                { start = Pos
+                                    { line = 7
+                                    , column = 27
+                                    }
+                                , end = Pos
+                                    { line = 7
+                                    , column = 31
+                                    }
+                                }
                             }
                         )
-                        [ PId
-                            ( Name "range" 16:11-16:16 ) ( . )
-                        ] 16:4-16:16
-                    , Lower
-                        ( Path
-                            { path = []
-                            , final = Name "False" 16:20-16:25
+                        ( Range
+                            { start = Pos
+                                { line = 7
+                                , column = 27
+                                }
+                            , end = Pos
+                                { line = 7
+                                , column = 31
+                                }
                             }
-                        ) 16:20-16:25
+                        )
+                    ) NoExt
+                )
+            , declExt = NoExt
+            }
+        , LetDecl
+            { declName = Name
+                { text = "isEmpty?"
+                , ext = Range
+                    { start = Pos
+                        { line = 13
+                        , column = 4
+                        }
+                    , end = Pos
+                        { line = 13
+                        , column = 12
+                        }
+                    }
+                }
+            , declArgs = []
+            , declBody = Match
+                ( Lower
+                    ( Path []
+                        ( Name
+                            { text = "hole"
+                            , ext = Range
+                                { start = Pos
+                                    { line = 14
+                                    , column = 8
+                                    }
+                                , end = Pos
+                                    { line = 14
+                                    , column = 12
+                                    }
+                                }
+                            }
+                        )
+                        ( Range
+                            { start = Pos
+                                { line = 14
+                                , column = 8
+                                }
+                            , end = Pos
+                                { line = 14
+                                , column = 12
+                                }
+                            }
+                        )
                     )
-                ,
+                    ( Range
+                        { start = Pos
+                            { line = 14
+                            , column = 8
+                            }
+                        , end = Pos
+                            { line = 14
+                            , column = 12
+                            }
+                        }
+                    )
+                )
+                (
                     ( PCons
-                        ( Path
-                            { path = []
-                            , final = Name "Empty" 17:4-17:9
+                        ( Path []
+                            ( Name
+                                { text = "Filled"
+                                , ext = Range
+                                    { start = Pos
+                                        { line = 15
+                                        , column = 4
+                                        }
+                                    , end = Pos
+                                        { line = 15
+                                        , column = 10
+                                        }
+                                    }
+                                }
+                            )
+                            ( Range
+                                { start = Pos
+                                    { line = 15
+                                    , column = 4
+                                    }
+                                , end = Pos
+                                    { line = 15
+                                    , column = 10
+                                    }
+                                }
+                            )
+                        )
+                        [ PId
+                            ( Name
+                                { text = "range"
+                                , ext = Range
+                                    { start = Pos
+                                        { line = 15
+                                        , column = 11
+                                        }
+                                    , end = Pos
+                                        { line = 15
+                                        , column = 16
+                                        }
+                                    }
+                                }
+                            ) NoExt
+                        ]
+                        ( Range
+                            { start = Pos
+                                { line = 15
+                                , column = 4
+                                }
+                            , end = Pos
+                                { line = 15
+                                , column = 16
+                                }
                             }
-                        ) [] 17:4-17:9
-                    , Lower
-                        ( Path
-                            { path = []
-                            , final = Name "True" 17:20-17:24
+                        )
+                    , Upper
+                        ( Path []
+                            ( Name
+                                { text = "False"
+                                , ext = Range
+                                    { start = Pos
+                                        { line = 15
+                                        , column = 20
+                                        }
+                                    , end = Pos
+                                        { line = 15
+                                        , column = 25
+                                        }
+                                    }
+                                }
+                            )
+                            ( Range
+                                { start = Pos
+                                    { line = 15
+                                    , column = 20
+                                    }
+                                , end = Pos
+                                    { line = 15
+                                    , column = 25
+                                    }
+                                }
+                            )
+                        )
+                        ( Range
+                            { start = Pos
+                                { line = 15
+                                , column = 20
+                                }
+                            , end = Pos
+                                { line = 15
+                                , column = 25
+                                }
                             }
-                        ) 17:20-17:24
-                    )
-                ] 15:2-17:24
+                        )
+                    ) :|
+                    [
+                        ( PCons
+                            ( Path []
+                                ( Name
+                                    { text = "Empty"
+                                    , ext = Range
+                                        { start = Pos
+                                            { line = 16
+                                            , column = 4
+                                            }
+                                        , end = Pos
+                                            { line = 16
+                                            , column = 9
+                                            }
+                                        }
+                                    }
+                                )
+                                ( Range
+                                    { start = Pos
+                                        { line = 16
+                                        , column = 4
+                                        }
+                                    , end = Pos
+                                        { line = 16
+                                        , column = 9
+                                        }
+                                    }
+                                )
+                            ) []
+                            ( Range
+                                { start = Pos
+                                    { line = 16
+                                    , column = 4
+                                    }
+                                , end = Pos
+                                    { line = 16
+                                    , column = 9
+                                    }
+                                }
+                            )
+                        , Upper
+                            ( Path []
+                                ( Name
+                                    { text = "True"
+                                    , ext = Range
+                                        { start = Pos
+                                            { line = 16
+                                            , column = 20
+                                            }
+                                        , end = Pos
+                                            { line = 16
+                                            , column = 24
+                                            }
+                                        }
+                                    }
+                                )
+                                ( Range
+                                    { start = Pos
+                                        { line = 16
+                                        , column = 20
+                                        }
+                                    , end = Pos
+                                        { line = 16
+                                        , column = 24
+                                        }
+                                    }
+                                )
+                            )
+                            ( Range
+                                { start = Pos
+                                    { line = 16
+                                    , column = 20
+                                    }
+                                , end = Pos
+                                    { line = 16
+                                    , column = 24
+                                    }
+                                }
+                            )
+                        )
+                    ]
+                )
+                ( Range
+                    { start = Pos
+                        { line = 14
+                        , column = 2
+                        }
+                    , end = Pos
+                        { line = 16
+                        , column = 24
+                        }
+                    }
+                )
             , declRet = Just
                 ( TArrow
                     ( TId
-                        ( Path
-                            { path = []
-                            , final = Name "Hole" 14:15-14:19
-                            }
-                        ) ( . )
+                        ( Path []
+                            ( Name
+                                { text = "Hole"
+                                , ext = Range
+                                    { start = Pos
+                                        { line = 13
+                                        , column = 15
+                                        }
+                                    , end = Pos
+                                        { line = 13
+                                        , column = 19
+                                        }
+                                    }
+                                }
+                            )
+                            ( Range
+                                { start = Pos
+                                    { line = 13
+                                    , column = 15
+                                    }
+                                , end = Pos
+                                    { line = 13
+                                    , column = 19
+                                    }
+                                }
+                            )
+                        ) NoExt
                     )
                     ( TId
-                        ( Path
-                            { path = []
-                            , final = Name "Bool" 14:23-14:27
+                        ( Path []
+                            ( Name
+                                { text = "Bool"
+                                , ext = Range
+                                    { start = Pos
+                                        { line = 13
+                                        , column = 23
+                                        }
+                                    , end = Pos
+                                        { line = 13
+                                        , column = 27
+                                        }
+                                    }
+                                }
+                            )
+                            ( Range
+                                { start = Pos
+                                    { line = 13
+                                    , column = 23
+                                    }
+                                , end = Pos
+                                    { line = 13
+                                    , column = 27
+                                    }
+                                }
+                            )
+                        ) NoExt
+                    )
+                    ( Range
+                        { start = Pos
+                            { line = 13
+                            , column = 15
                             }
-                        ) ( . )
-                    ) 14:15-14:27
+                        , end = Pos
+                            { line = 13
+                            , column = 27
+                            }
+                        }
+                    )
                 )
-            , declExt = ( . )
+            , declExt = NoExt
             }
         , LetDecl
-            { declName = Name "isEmpty!" 19:4-19:12
+            { declName = Name
+                { text = "isEmpty"
+                , ext = Range
+                    { start = Pos
+                        { line = 18
+                        , column = 4
+                        }
+                    , end = Pos
+                        { line = 18
+                        , column = 11
+                        }
+                    }
+                }
             , declArgs =
-                [ PAnn
-                    ( PId
-                        ( Name "hole" 19:14-19:18 ) ( . )
-                    )
-                    ( TId
-                        ( Path
-                            { path = []
-                            , final = Name "Hole" 19:20-19:24
+                [
+                    ( Name
+                        { text = "hole"
+                        , ext = Range
+                            { start = Pos
+                                { line = 18
+                                , column = 14
+                                }
+                            , end = Pos
+                                { line = 18
+                                , column = 18
+                                }
                             }
-                        ) ( . )
-                    ) 19:14-19:24
+                        }
+                    , TId
+                        ( Path []
+                            ( Name
+                                { text = "Hole"
+                                , ext = Range
+                                    { start = Pos
+                                        { line = 18
+                                        , column = 20
+                                        }
+                                    , end = Pos
+                                        { line = 18
+                                        , column = 24
+                                        }
+                                    }
+                                }
+                            )
+                            ( Range
+                                { start = Pos
+                                    { line = 18
+                                    , column = 20
+                                    }
+                                , end = Pos
+                                    { line = 18
+                                    , column = 24
+                                    }
+                                }
+                            )
+                        ) NoExt
+                    )
                 ]
             , declBody = If
                 ( App
-                    ( Upper
-                        ( Path
-                            { path = []
-                            , final = Name "isEmpty?" 20:5-20:13
+                    ( Lower
+                        ( Path []
+                            ( Name
+                                { text = "isEmpty?"
+                                , ext = Range
+                                    { start = Pos
+                                        { line = 19
+                                        , column = 5
+                                        }
+                                    , end = Pos
+                                        { line = 19
+                                        , column = 13
+                                        }
+                                    }
+                                }
+                            )
+                            ( Range
+                                { start = Pos
+                                    { line = 19
+                                    , column = 5
+                                    }
+                                , end = Pos
+                                    { line = 19
+                                    , column = 13
+                                    }
+                                }
+                            )
+                        )
+                        ( Range
+                            { start = Pos
+                                { line = 19
+                                , column = 5
+                                }
+                            , end = Pos
+                                { line = 19
+                                , column = 13
+                                }
                             }
-                        ) 20:5-20:13
+                        )
                     )
-                    ( Upper
-                        ( Path
-                            { path = []
-                            , final = Name "hole" 20:14-20:18
+                    ( Lower
+                        ( Path []
+                            ( Name
+                                { text = "hole"
+                                , ext = Range
+                                    { start = Pos
+                                        { line = 19
+                                        , column = 14
+                                        }
+                                    , end = Pos
+                                        { line = 19
+                                        , column = 18
+                                        }
+                                    }
+                                }
+                            )
+                            ( Range
+                                { start = Pos
+                                    { line = 19
+                                    , column = 14
+                                    }
+                                , end = Pos
+                                    { line = 19
+                                    , column = 18
+                                    }
+                                }
+                            )
+                        )
+                        ( Range
+                            { start = Pos
+                                { line = 19
+                                , column = 14
+                                }
+                            , end = Pos
+                                { line = 19
+                                , column = 18
+                                }
                             }
-                        ) 20:14-20:18 :| []
-                    ) 20:5-20:18
+                        ) :| []
+                    )
+                    ( Range
+                        { start = Pos
+                            { line = 19
+                            , column = 5
+                            }
+                        , end = Pos
+                            { line = 19
+                            , column = 18
+                            }
+                        }
+                    )
                 )
                 ( App
-                    ( Upper
-                        ( Path
-                            { path = []
-                            , final = Name "print" 21:9-21:14
+                    ( Lower
+                        ( Path []
+                            ( Name
+                                { text = "print"
+                                , ext = Range
+                                    { start = Pos
+                                        { line = 20
+                                        , column = 9
+                                        }
+                                    , end = Pos
+                                        { line = 20
+                                        , column = 14
+                                        }
+                                    }
+                                }
+                            )
+                            ( Range
+                                { start = Pos
+                                    { line = 20
+                                    , column = 9
+                                    }
+                                , end = Pos
+                                    { line = 20
+                                    , column = 14
+                                    }
+                                }
+                            )
+                        )
+                        ( Range
+                            { start = Pos
+                                { line = 20
+                                , column = 9
+                                }
+                            , end = Pos
+                                { line = 20
+                                , column = 14
+                                }
                             }
-                        ) 21:9-21:14
+                        )
                     )
                     ( Lit
-                        ( LStr "It's empty!!" 21:15-21:29 ) ( . ) :| []
-                    ) 21:9-21:29
+                        ( LStr "It's empty!!"
+                            ( Range
+                                { start = Pos
+                                    { line = 20
+                                    , column = 15
+                                    }
+                                , end = Pos
+                                    { line = 20
+                                    , column = 29
+                                    }
+                                }
+                            )
+                        ) NoExt :| []
+                    )
+                    ( Range
+                        { start = Pos
+                            { line = 20
+                            , column = 9
+                            }
+                        , end = Pos
+                            { line = 20
+                            , column = 29
+                            }
+                        }
+                    )
                 )
                 ( Just
                     ( App
-                        ( Upper
-                            ( Path
-                                { path = []
-                                , final = Name "print" 22:9-22:14
+                        ( Lower
+                            ( Path []
+                                ( Name
+                                    { text = "print"
+                                    , ext = Range
+                                        { start = Pos
+                                            { line = 21
+                                            , column = 9
+                                            }
+                                        , end = Pos
+                                            { line = 21
+                                            , column = 14
+                                            }
+                                        }
+                                    }
+                                )
+                                ( Range
+                                    { start = Pos
+                                        { line = 21
+                                        , column = 9
+                                        }
+                                    , end = Pos
+                                        { line = 21
+                                        , column = 14
+                                        }
+                                    }
+                                )
+                            )
+                            ( Range
+                                { start = Pos
+                                    { line = 21
+                                    , column = 9
+                                    }
+                                , end = Pos
+                                    { line = 21
+                                    , column = 14
+                                    }
                                 }
-                            ) 22:9-22:14
+                            )
                         )
                         ( Lit
-                            ( LStr "Is's not empty.'" 22:15-22:33 ) ( . ) :| []
-                        ) 22:9-22:33
+                            ( LStr "Is's not empty.'"
+                                ( Range
+                                    { start = Pos
+                                        { line = 21
+                                        , column = 15
+                                        }
+                                    , end = Pos
+                                        { line = 21
+                                        , column = 33
+                                        }
+                                    }
+                                )
+                            ) NoExt :| []
+                        )
+                        ( Range
+                            { start = Pos
+                                { line = 21
+                                , column = 9
+                                }
+                            , end = Pos
+                                { line = 21
+                                , column = 33
+                                }
+                            }
+                        )
                     )
-                ) 20:2-22:33
+                )
+                ( Range
+                    { start = Pos
+                        { line = 19
+                        , column = 2
+                        }
+                    , end = Pos
+                        { line = 21
+                        , column = 33
+                        }
+                    }
+                )
             , declRet = Just
                 ( TId
-                    ( Path
-                        { path = []
-                        , final = Name "Unit" 19:27-19:31
-                        }
-                    ) ( . )
+                    ( Path []
+                        ( Name
+                            { text = "Unit"
+                            , ext = Range
+                                { start = Pos
+                                    { line = 18
+                                    , column = 27
+                                    }
+                                , end = Pos
+                                    { line = 18
+                                    , column = 31
+                                    }
+                                }
+                            }
+                        )
+                        ( Range
+                            { start = Pos
+                                { line = 18
+                                , column = 27
+                                }
+                            , end = Pos
+                                { line = 18
+                                , column = 31
+                                }
+                            }
+                        )
+                    ) NoExt
                 )
-            , declExt = ( . )
+            , declExt = NoExt
             }
         , LetDecl
-            { declName = Name "getLineOr" 24:4-24:13
-            , declArgs =
-                [ PAnn
-                    ( PId
-                        ( Name "hole" 24:15-24:19 ) ( . )
-                    )
-                    ( TId
-                        ( Path
-                            { path = []
-                            , final = Name "Hole" 24:21-24:25
-                            }
-                        ) ( . )
-                    ) 24:15-24:25
-                , PAnn
-                    ( PId
-                        ( Name "alt" 24:28-24:31 ) ( . )
-                    )
-                    ( TId
-                        ( Path
-                            { path = []
-                            , final = Name "Int" 24:33-24:36
-                            }
-                        ) ( . )
-                    ) 24:28-24:36
-                ]
-            , declBody = Case
-                ( Upper
-                    ( Path
-                        { path = []
-                        , final = Name "hole" 25:8-25:12
+            { declName = Name
+                { text = "getLineOr"
+                , ext = Range
+                    { start = Pos
+                        { line = 23
+                        , column = 4
                         }
-                    ) 25:8-25:12
-                )
+                    , end = Pos
+                        { line = 23
+                        , column = 13
+                        }
+                    }
+                }
+            , declArgs =
                 [
-                    ( PCons
-                        ( Path
-                            { path = []
-                            , final = Name "Filled" 26:4-26:10
-                            }
-                        )
-                        [ PId
-                            ( Name "range" 26:11-26:16 ) ( . )
-                        ] 26:4-26:16
-                    , Accessor
-                        ( Lower
-                            ( Path
-                                { path = []
-                                , final = Name "range" 26:20-26:25
+                    ( Name
+                        { text = "hole"
+                        , ext = Range
+                            { start = Pos
+                                { line = 23
+                                , column = 15
                                 }
-                            ) 26:20-26:25
-                        )
-                        ( Name "line" 26:26-26:30 ) 26:26-26:30
+                            , end = Pos
+                                { line = 23
+                                , column = 19
+                                }
+                            }
+                        }
+                    , TId
+                        ( Path []
+                            ( Name
+                                { text = "Hole"
+                                , ext = Range
+                                    { start = Pos
+                                        { line = 23
+                                        , column = 21
+                                        }
+                                    , end = Pos
+                                        { line = 23
+                                        , column = 25
+                                        }
+                                    }
+                                }
+                            )
+                            ( Range
+                                { start = Pos
+                                    { line = 23
+                                    , column = 21
+                                    }
+                                , end = Pos
+                                    { line = 23
+                                    , column = 25
+                                    }
+                                }
+                            )
+                        ) NoExt
                     )
                 ,
-                    ( PCons
-                        ( Path
-                            { path = []
-                            , final = Name "Empty" 27:4-27:9
+                    ( Name
+                        { text = "alt"
+                        , ext = Range
+                            { start = Pos
+                                { line = 23
+                                , column = 28
+                                }
+                            , end = Pos
+                                { line = 23
+                                , column = 31
+                                }
                             }
-                        ) [] 27:4-27:9
-                    , Upper
-                        ( Path
-                            { path = []
-                            , final = Name "alt" 27:20-27:23
-                            }
-                        ) 27:20-27:23
+                        }
+                    , TId
+                        ( Path []
+                            ( Name
+                                { text = "Int"
+                                , ext = Range
+                                    { start = Pos
+                                        { line = 23
+                                        , column = 33
+                                        }
+                                    , end = Pos
+                                        { line = 23
+                                        , column = 36
+                                        }
+                                    }
+                                }
+                            )
+                            ( Range
+                                { start = Pos
+                                    { line = 23
+                                    , column = 33
+                                    }
+                                , end = Pos
+                                    { line = 23
+                                    , column = 36
+                                    }
+                                }
+                            )
+                        ) NoExt
                     )
-                ] 25:2-27:23
+                ]
+            , declBody = Match
+                ( Lower
+                    ( Path []
+                        ( Name
+                            { text = "hole"
+                            , ext = Range
+                                { start = Pos
+                                    { line = 24
+                                    , column = 8
+                                    }
+                                , end = Pos
+                                    { line = 24
+                                    , column = 12
+                                    }
+                                }
+                            }
+                        )
+                        ( Range
+                            { start = Pos
+                                { line = 24
+                                , column = 8
+                                }
+                            , end = Pos
+                                { line = 24
+                                , column = 12
+                                }
+                            }
+                        )
+                    )
+                    ( Range
+                        { start = Pos
+                            { line = 24
+                            , column = 8
+                            }
+                        , end = Pos
+                            { line = 24
+                            , column = 12
+                            }
+                        }
+                    )
+                )
+                (
+                    ( PCons
+                        ( Path []
+                            ( Name
+                                { text = "Filled"
+                                , ext = Range
+                                    { start = Pos
+                                        { line = 25
+                                        , column = 4
+                                        }
+                                    , end = Pos
+                                        { line = 25
+                                        , column = 10
+                                        }
+                                    }
+                                }
+                            )
+                            ( Range
+                                { start = Pos
+                                    { line = 25
+                                    , column = 4
+                                    }
+                                , end = Pos
+                                    { line = 25
+                                    , column = 10
+                                    }
+                                }
+                            )
+                        )
+                        [ PId
+                            ( Name
+                                { text = "range"
+                                , ext = Range
+                                    { start = Pos
+                                        { line = 25
+                                        , column = 11
+                                        }
+                                    , end = Pos
+                                        { line = 25
+                                        , column = 16
+                                        }
+                                    }
+                                }
+                            ) NoExt
+                        ]
+                        ( Range
+                            { start = Pos
+                                { line = 25
+                                , column = 4
+                                }
+                            , end = Pos
+                                { line = 25
+                                , column = 16
+                                }
+                            }
+                        )
+                    , Field
+                        ( Lower
+                            ( Path []
+                                ( Name
+                                    { text = "range"
+                                    , ext = Range
+                                        { start = Pos
+                                            { line = 25
+                                            , column = 20
+                                            }
+                                        , end = Pos
+                                            { line = 25
+                                            , column = 25
+                                            }
+                                        }
+                                    }
+                                )
+                                ( Range
+                                    { start = Pos
+                                        { line = 25
+                                        , column = 20
+                                        }
+                                    , end = Pos
+                                        { line = 25
+                                        , column = 25
+                                        }
+                                    }
+                                )
+                            )
+                            ( Range
+                                { start = Pos
+                                    { line = 25
+                                    , column = 20
+                                    }
+                                , end = Pos
+                                    { line = 25
+                                    , column = 25
+                                    }
+                                }
+                            )
+                        )
+                        ( Name
+                            { text = "line"
+                            , ext = Range
+                                { start = Pos
+                                    { line = 25
+                                    , column = 26
+                                    }
+                                , end = Pos
+                                    { line = 25
+                                    , column = 30
+                                    }
+                                }
+                            }
+                        )
+                        ( Range
+                            { start = Pos
+                                { line = 25
+                                , column = 26
+                                }
+                            , end = Pos
+                                { line = 25
+                                , column = 30
+                                }
+                            }
+                        )
+                    ) :|
+                    [
+                        ( PCons
+                            ( Path []
+                                ( Name
+                                    { text = "Empty"
+                                    , ext = Range
+                                        { start = Pos
+                                            { line = 26
+                                            , column = 4
+                                            }
+                                        , end = Pos
+                                            { line = 26
+                                            , column = 9
+                                            }
+                                        }
+                                    }
+                                )
+                                ( Range
+                                    { start = Pos
+                                        { line = 26
+                                        , column = 4
+                                        }
+                                    , end = Pos
+                                        { line = 26
+                                        , column = 9
+                                        }
+                                    }
+                                )
+                            ) []
+                            ( Range
+                                { start = Pos
+                                    { line = 26
+                                    , column = 4
+                                    }
+                                , end = Pos
+                                    { line = 26
+                                    , column = 9
+                                    }
+                                }
+                            )
+                        , Lower
+                            ( Path []
+                                ( Name
+                                    { text = "alt"
+                                    , ext = Range
+                                        { start = Pos
+                                            { line = 26
+                                            , column = 20
+                                            }
+                                        , end = Pos
+                                            { line = 26
+                                            , column = 23
+                                            }
+                                        }
+                                    }
+                                )
+                                ( Range
+                                    { start = Pos
+                                        { line = 26
+                                        , column = 20
+                                        }
+                                    , end = Pos
+                                        { line = 26
+                                        , column = 23
+                                        }
+                                    }
+                                )
+                            )
+                            ( Range
+                                { start = Pos
+                                    { line = 26
+                                    , column = 20
+                                    }
+                                , end = Pos
+                                    { line = 26
+                                    , column = 23
+                                    }
+                                }
+                            )
+                        )
+                    ]
+                )
+                ( Range
+                    { start = Pos
+                        { line = 24
+                        , column = 2
+                        }
+                    , end = Pos
+                        { line = 26
+                        , column = 23
+                        }
+                    }
+                )
             , declRet = Just
                 ( TId
-                    ( Path
-                        { path = []
-                        , final = Name "Int" 24:39-24:42
-                        }
-                    ) ( . )
+                    ( Path []
+                        ( Name
+                            { text = "Int"
+                            , ext = Range
+                                { start = Pos
+                                    { line = 23
+                                    , column = 39
+                                    }
+                                , end = Pos
+                                    { line = 23
+                                    , column = 42
+                                    }
+                                }
+                            }
+                        )
+                        ( Range
+                            { start = Pos
+                                { line = 23
+                                , column = 39
+                                }
+                            , end = Pos
+                                { line = 23
+                                , column = 42
+                                }
+                            }
+                        )
+                    ) NoExt
                 )
-            , declExt = ( . )
+            , declExt = NoExt
             }
         , LetDecl
-            { declName = Name "sequenced!" 29:4-29:14
+            { declName = Name
+                { text = "sequenced"
+                , ext = Range
+                    { start = Pos
+                        { line = 28
+                        , column = 4
+                        }
+                    , end = Pos
+                        { line = 28
+                        , column = 13
+                        }
+                    }
+                }
             , declArgs = []
             , declBody = Block
                 ( BlBind
                     ( App
-                        ( Upper
-                            ( Path
-                                { path = []
-                                , final = Name "print" 30:2-30:7
+                        ( Lower
+                            ( Path []
+                                ( Name
+                                    { text = "print"
+                                    , ext = Range
+                                        { start = Pos
+                                            { line = 29
+                                            , column = 2
+                                            }
+                                        , end = Pos
+                                            { line = 29
+                                            , column = 7
+                                            }
+                                        }
+                                    }
+                                )
+                                ( Range
+                                    { start = Pos
+                                        { line = 29
+                                        , column = 2
+                                        }
+                                    , end = Pos
+                                        { line = 29
+                                        , column = 7
+                                        }
+                                    }
+                                )
+                            )
+                            ( Range
+                                { start = Pos
+                                    { line = 29
+                                    , column = 2
+                                    }
+                                , end = Pos
+                                    { line = 29
+                                    , column = 7
+                                    }
                                 }
-                            ) 30:2-30:7
+                            )
                         )
                         ( Lit
-                            ( LStr "a" 30:8-30:11 ) ( . ) :| []
-                        ) 30:2-30:11
+                            ( LStr "a"
+                                ( Range
+                                    { start = Pos
+                                        { line = 29
+                                        , column = 8
+                                        }
+                                    , end = Pos
+                                        { line = 29
+                                        , column = 11
+                                        }
+                                    }
+                                )
+                            ) NoExt :| []
+                        )
+                        ( Range
+                            { start = Pos
+                                { line = 29
+                                , column = 2
+                                }
+                            , end = Pos
+                                { line = 29
+                                , column = 11
+                                }
+                            }
+                        )
                     )
                     ( BlBind
                         ( App
-                            ( Upper
-                                ( Path
-                                    { path = []
-                                    , final = Name "print" 31:2-31:7
+                            ( Lower
+                                ( Path []
+                                    ( Name
+                                        { text = "print"
+                                        , ext = Range
+                                            { start = Pos
+                                                { line = 30
+                                                , column = 2
+                                                }
+                                            , end = Pos
+                                                { line = 30
+                                                , column = 7
+                                                }
+                                            }
+                                        }
+                                    )
+                                    ( Range
+                                        { start = Pos
+                                            { line = 30
+                                            , column = 2
+                                            }
+                                        , end = Pos
+                                            { line = 30
+                                            , column = 7
+                                            }
+                                        }
+                                    )
+                                )
+                                ( Range
+                                    { start = Pos
+                                        { line = 30
+                                        , column = 2
+                                        }
+                                    , end = Pos
+                                        { line = 30
+                                        , column = 7
+                                        }
                                     }
-                                ) 31:2-31:7
+                                )
                             )
                             ( Lit
-                                ( LStr "b" 31:8-31:11 ) ( . ) :| []
-                            ) 31:2-31:11
+                                ( LStr "b"
+                                    ( Range
+                                        { start = Pos
+                                            { line = 30
+                                            , column = 8
+                                            }
+                                        , end = Pos
+                                            { line = 30
+                                            , column = 11
+                                            }
+                                        }
+                                    )
+                                ) NoExt :| []
+                            )
+                            ( Range
+                                { start = Pos
+                                    { line = 30
+                                    , column = 2
+                                    }
+                                , end = Pos
+                                    { line = 30
+                                    , column = 11
+                                    }
+                                }
+                            )
                         )
                         ( BlEnd
                             ( App
-                                ( Upper
-                                    ( Path
-                                        { path = []
-                                        , final = Name "print" 32:2-32:7
+                                ( Lower
+                                    ( Path []
+                                        ( Name
+                                            { text = "print"
+                                            , ext = Range
+                                                { start = Pos
+                                                    { line = 31
+                                                    , column = 2
+                                                    }
+                                                , end = Pos
+                                                    { line = 31
+                                                    , column = 7
+                                                    }
+                                                }
+                                            }
+                                        )
+                                        ( Range
+                                            { start = Pos
+                                                { line = 31
+                                                , column = 2
+                                                }
+                                            , end = Pos
+                                                { line = 31
+                                                , column = 7
+                                                }
+                                            }
+                                        )
+                                    )
+                                    ( Range
+                                        { start = Pos
+                                            { line = 31
+                                            , column = 2
+                                            }
+                                        , end = Pos
+                                            { line = 31
+                                            , column = 7
+                                            }
                                         }
-                                    ) 32:2-32:7
+                                    )
                                 )
                                 ( Lit
-                                    ( LStr "c" 32:8-32:11 ) ( . ) :| []
-                                ) 32:2-32:11
+                                    ( LStr "c"
+                                        ( Range
+                                            { start = Pos
+                                                { line = 31
+                                                , column = 8
+                                                }
+                                            , end = Pos
+                                                { line = 31
+                                                , column = 11
+                                                }
+                                            }
+                                        )
+                                    ) NoExt :| []
+                                )
+                                ( Range
+                                    { start = Pos
+                                        { line = 31
+                                        , column = 2
+                                        }
+                                    , end = Pos
+                                        { line = 31
+                                        , column = 11
+                                        }
+                                    }
+                                )
                             )
                         )
                     )
-                ) 30:2-32:11
+                )
+                ( Range
+                    { start = Pos
+                        { line = 29
+                        , column = 2
+                        }
+                    , end = Pos
+                        { line = 31
+                        , column = 11
+                        }
+                    }
+                )
             , declRet = Just
                 ( TId
-                    ( Path
-                        { path = []
-                        , final = Name "Unit" 29:16-29:20
-                        }
-                    ) ( . )
+                    ( Path []
+                        ( Name
+                            { text = "Unit"
+                            , ext = Range
+                                { start = Pos
+                                    { line = 28
+                                    , column = 16
+                                    }
+                                , end = Pos
+                                    { line = 28
+                                    , column = 20
+                                    }
+                                }
+                            }
+                        )
+                        ( Range
+                            { start = Pos
+                                { line = 28
+                                , column = 16
+                                }
+                            , end = Pos
+                                { line = 28
+                                , column = 20
+                                }
+                            }
+                        )
+                    ) NoExt
                 )
-            , declExt = ( . )
+            , declExt = NoExt
             }
         ]
-    , programExt = ( . )
+    , impDecls = []
+    , programExt = NoExt
     }

@@ -1,0 +1,5 @@
+import A.B.C
+import A.B.C (d, e)
+import A.B.C as E
+
+import A.B.C (d as d, e as e)

@@ -1,10 +1,130 @@
-(type,1:0-1:4)
-(upper(Ata),1:5-1:8)
-(lower(a),1:9-1:10)
-('=',1:11-1:12)
-('{',1:13-1:14)
-(lower(ata),1:15-1:18)
-(':',1:18-1:19)
-(upper(Int),1:20-1:23)
-('}',1:24-1:25)
-($EOF,1:25-1:25)
+That Ranged
+    { info = TcType
+    , position = Range
+        { start = Pos
+            { line = 0
+            , column = 0
+            }
+        , end = Pos
+            { line = 0
+            , column = 4
+            }
+        }
+    }
+Ranged
+    { info = TcUpperId "Ata"
+    , position = Range
+        { start = Pos
+            { line = 0
+            , column = 5
+            }
+        , end = Pos
+            { line = 0
+            , column = 8
+            }
+        }
+    }
+Ranged
+    { info = TcLowerId "a"
+    , position = Range
+        { start = Pos
+            { line = 0
+            , column = 9
+            }
+        , end = Pos
+            { line = 0
+            , column = 10
+            }
+        }
+    }
+Ranged
+    { info = TcEqual
+    , position = Range
+        { start = Pos
+            { line = 0
+            , column = 11
+            }
+        , end = Pos
+            { line = 0
+            , column = 12
+            }
+        }
+    }
+Ranged
+    { info = TcLBracket
+    , position = Range
+        { start = Pos
+            { line = 0
+            , column = 13
+            }
+        , end = Pos
+            { line = 0
+            , column = 14
+            }
+        }
+    }
+Ranged
+    { info = TcLowerId "ata"
+    , position = Range
+        { start = Pos
+            { line = 0
+            , column = 15
+            }
+        , end = Pos
+            { line = 0
+            , column = 18
+            }
+        }
+    }
+Ranged
+    { info = TcColon
+    , position = Range
+        { start = Pos
+            { line = 0
+            , column = 18
+            }
+        , end = Pos
+            { line = 0
+            , column = 19
+            }
+        }
+    }
+Ranged
+    { info = TcUpperId "Int"
+    , position = Range
+        { start = Pos
+            { line = 0
+            , column = 20
+            }
+        , end = Pos
+            { line = 0
+            , column = 23
+            }
+        }
+    }
+Ranged
+    { info = TcRBracket
+    , position = Range
+        { start = Pos
+            { line = 0
+            , column = 24
+            }
+        , end = Pos
+            { line = 0
+            , column = 25
+            }
+        }
+    }
+Ranged
+    { info = TcEOF
+    , position = Range
+        { start = Pos
+            { line = 0
+            , column = 25
+            }
+        , end = Pos
+            { line = 0
+            , column = 25
+            }
+        }
+    }

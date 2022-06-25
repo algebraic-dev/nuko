@@ -1,1 +1,27 @@
-UnexpectedChar 3:4
+This UnexpectedStr
+    ( Range
+        { start = Pos
+            { line = 2
+            , column = 4
+            }
+        , end = Pos
+            { line = 2
+            , column = 5
+            }
+        }
+    )
+UnexpectedToken
+    ( Ranged
+        { info = TcEnd
+        , position = Range
+            { start = Pos
+                { line = 2
+                , column = 5
+                }
+            , end = Pos
+                { line = 2
+                , column = 5
+                }
+            }
+        }
+    )

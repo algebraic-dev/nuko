@@ -1,13 +1,169 @@
-(type,1:0-1:4)
-(lower(a),1:5-1:6)
-('=',1:7-1:8)
-('{',1:9-1:10)
-(lower(be),2:4-2:6)
-(':',2:7-2:8)
-(upper(Int),2:9-2:12)
-(',',2:12-2:13)
-(lower(ce),3:4-3:6)
-(':',3:7-3:8)
-(upper(String),3:9-3:15)
-('}',4:0-4:1)
-($EOF,4:1-4:1)
+That Ranged
+    { info = TcType
+    , position = Range
+        { start = Pos
+            { line = 0
+            , column = 0
+            }
+        , end = Pos
+            { line = 0
+            , column = 4
+            }
+        }
+    }
+Ranged
+    { info = TcLowerId "a"
+    , position = Range
+        { start = Pos
+            { line = 0
+            , column = 5
+            }
+        , end = Pos
+            { line = 0
+            , column = 6
+            }
+        }
+    }
+Ranged
+    { info = TcEqual
+    , position = Range
+        { start = Pos
+            { line = 0
+            , column = 7
+            }
+        , end = Pos
+            { line = 0
+            , column = 8
+            }
+        }
+    }
+Ranged
+    { info = TcLBracket
+    , position = Range
+        { start = Pos
+            { line = 0
+            , column = 9
+            }
+        , end = Pos
+            { line = 0
+            , column = 10
+            }
+        }
+    }
+Ranged
+    { info = TcLowerId "be"
+    , position = Range
+        { start = Pos
+            { line = 1
+            , column = 4
+            }
+        , end = Pos
+            { line = 1
+            , column = 6
+            }
+        }
+    }
+Ranged
+    { info = TcColon
+    , position = Range
+        { start = Pos
+            { line = 1
+            , column = 7
+            }
+        , end = Pos
+            { line = 1
+            , column = 8
+            }
+        }
+    }
+Ranged
+    { info = TcUpperId "Int"
+    , position = Range
+        { start = Pos
+            { line = 1
+            , column = 9
+            }
+        , end = Pos
+            { line = 1
+            , column = 12
+            }
+        }
+    }
+Ranged
+    { info = TcComma
+    , position = Range
+        { start = Pos
+            { line = 1
+            , column = 12
+            }
+        , end = Pos
+            { line = 1
+            , column = 13
+            }
+        }
+    }
+Ranged
+    { info = TcLowerId "ce"
+    , position = Range
+        { start = Pos
+            { line = 2
+            , column = 4
+            }
+        , end = Pos
+            { line = 2
+            , column = 6
+            }
+        }
+    }
+Ranged
+    { info = TcColon
+    , position = Range
+        { start = Pos
+            { line = 2
+            , column = 7
+            }
+        , end = Pos
+            { line = 2
+            , column = 8
+            }
+        }
+    }
+Ranged
+    { info = TcUpperId "String"
+    , position = Range
+        { start = Pos
+            { line = 2
+            , column = 9
+            }
+        , end = Pos
+            { line = 2
+            , column = 15
+            }
+        }
+    }
+Ranged
+    { info = TcRBracket
+    , position = Range
+        { start = Pos
+            { line = 3
+            , column = 0
+            }
+        , end = Pos
+            { line = 3
+            , column = 1
+            }
+        }
+    }
+Ranged
+    { info = TcEOF
+    , position = Range
+        { start = Pos
+            { line = 3
+            , column = 1
+            }
+        , end = Pos
+            { line = 3
+            , column = 1
+            }
+        }
+    }

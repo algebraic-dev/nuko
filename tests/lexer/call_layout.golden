@@ -1,16 +1,208 @@
-(let,1:0-1:3)
-(lower(a),1:4-1:5)
-('=',1:6-1:7)
-($begin,2:4-2:4)
-(lower(b),2:4-2:5)
-(lower(c),3:8-3:9)
-(lower(d),3:10-3:11)
-(lower(e),3:12-3:13)
-($semi,4:4-4:4)
-(lower(c),4:4-4:5)
-(lower(f),4:6-4:7)
-($semi,5:4-5:4)
-(lower(d),5:4-5:5)
-(lower(g),6:5-6:6)
-($end,6:6-6:6)
-($EOF,6:6-6:6)
+That Ranged
+    { info = TcLet
+    , position = Range
+        { start = Pos
+            { line = 0
+            , column = 0
+            }
+        , end = Pos
+            { line = 0
+            , column = 3
+            }
+        }
+    }
+Ranged
+    { info = TcLowerId "a"
+    , position = Range
+        { start = Pos
+            { line = 0
+            , column = 4
+            }
+        , end = Pos
+            { line = 0
+            , column = 5
+            }
+        }
+    }
+Ranged
+    { info = TcEqual
+    , position = Range
+        { start = Pos
+            { line = 0
+            , column = 6
+            }
+        , end = Pos
+            { line = 0
+            , column = 7
+            }
+        }
+    }
+Ranged
+    { info = TcBegin
+    , position = Range
+        { start = Pos
+            { line = 1
+            , column = 4
+            }
+        , end = Pos
+            { line = 1
+            , column = 4
+            }
+        }
+    }
+Ranged
+    { info = TcLowerId "b"
+    , position = Range
+        { start = Pos
+            { line = 1
+            , column = 4
+            }
+        , end = Pos
+            { line = 1
+            , column = 5
+            }
+        }
+    }
+Ranged
+    { info = TcLowerId "c"
+    , position = Range
+        { start = Pos
+            { line = 2
+            , column = 8
+            }
+        , end = Pos
+            { line = 2
+            , column = 9
+            }
+        }
+    }
+Ranged
+    { info = TcLowerId "d"
+    , position = Range
+        { start = Pos
+            { line = 2
+            , column = 10
+            }
+        , end = Pos
+            { line = 2
+            , column = 11
+            }
+        }
+    }
+Ranged
+    { info = TcLowerId "e"
+    , position = Range
+        { start = Pos
+            { line = 2
+            , column = 12
+            }
+        , end = Pos
+            { line = 2
+            , column = 13
+            }
+        }
+    }
+Ranged
+    { info = TcSep
+    , position = Range
+        { start = Pos
+            { line = 3
+            , column = 4
+            }
+        , end = Pos
+            { line = 3
+            , column = 4
+            }
+        }
+    }
+Ranged
+    { info = TcLowerId "c"
+    , position = Range
+        { start = Pos
+            { line = 3
+            , column = 4
+            }
+        , end = Pos
+            { line = 3
+            , column = 5
+            }
+        }
+    }
+Ranged
+    { info = TcLowerId "f"
+    , position = Range
+        { start = Pos
+            { line = 3
+            , column = 6
+            }
+        , end = Pos
+            { line = 3
+            , column = 7
+            }
+        }
+    }
+Ranged
+    { info = TcSep
+    , position = Range
+        { start = Pos
+            { line = 4
+            , column = 4
+            }
+        , end = Pos
+            { line = 4
+            , column = 4
+            }
+        }
+    }
+Ranged
+    { info = TcLowerId "d"
+    , position = Range
+        { start = Pos
+            { line = 4
+            , column = 4
+            }
+        , end = Pos
+            { line = 4
+            , column = 5
+            }
+        }
+    }
+Ranged
+    { info = TcLowerId "g"
+    , position = Range
+        { start = Pos
+            { line = 5
+            , column = 5
+            }
+        , end = Pos
+            { line = 5
+            , column = 6
+            }
+        }
+    }
+Ranged
+    { info = TcEnd
+    , position = Range
+        { start = Pos
+            { line = 5
+            , column = 6
+            }
+        , end = Pos
+            { line = 5
+            , column = 6
+            }
+        }
+    }
+Ranged
+    { info = TcEOF
+    , position = Range
+        { start = Pos
+            { line = 5
+            , column = 6
+            }
+        , end = Pos
+            { line = 5
+            , column = 6
+            }
+        }
+    }

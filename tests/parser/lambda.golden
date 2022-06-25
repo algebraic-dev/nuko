@@ -1,77 +1,349 @@
-Program
-    { tyDecls = []
+That Program
+    { typeDecls = []
     , letDecls =
         [ LetDecl
-            { declName = Name "a" 1:4-1:5
+            { declName = Name
+                { text = "a"
+                , ext = Range
+                    { start = Pos
+                        { line = 0
+                        , column = 4
+                        }
+                    , end = Pos
+                        { line = 0
+                        , column = 5
+                        }
+                    }
+                }
             , declArgs = []
             , declBody = Block
                 ( BlBind
                     ( Lam
                         ( PId
-                            ( Name "a" 2:5-2:6 ) ( . )
-                        )
-                        ( Upper
-                            ( Path
-                                { path = []
-                                , final = Name "b" 2:10-2:11
+                            ( Name
+                                { text = "a"
+                                , ext = Range
+                                    { start = Pos
+                                        { line = 1
+                                        , column = 5
+                                        }
+                                    , end = Pos
+                                        { line = 1
+                                        , column = 6
+                                        }
+                                    }
                                 }
-                            ) 2:10-2:11
-                        ) 2:4-2:11
+                            ) NoExt
+                        )
+                        ( Lower
+                            ( Path []
+                                ( Name
+                                    { text = "b"
+                                    , ext = Range
+                                        { start = Pos
+                                            { line = 1
+                                            , column = 10
+                                            }
+                                        , end = Pos
+                                            { line = 1
+                                            , column = 11
+                                            }
+                                        }
+                                    }
+                                )
+                                ( Range
+                                    { start = Pos
+                                        { line = 1
+                                        , column = 10
+                                        }
+                                    , end = Pos
+                                        { line = 1
+                                        , column = 11
+                                        }
+                                    }
+                                )
+                            )
+                            ( Range
+                                { start = Pos
+                                    { line = 1
+                                    , column = 10
+                                    }
+                                , end = Pos
+                                    { line = 1
+                                    , column = 11
+                                    }
+                                }
+                            )
+                        )
+                        ( Range
+                            { start = Pos
+                                { line = 1
+                                , column = 4
+                                }
+                            , end = Pos
+                                { line = 1
+                                , column = 11
+                                }
+                            }
+                        )
                     )
                     ( BlBind
                         ( Lam
                             ( PId
-                                ( Name "b" 3:5-3:6 ) ( . )
-                            )
-                            ( Upper
-                                ( Path
-                                    { path = []
-                                    , final = Name "c" 3:10-3:11
+                                ( Name
+                                    { text = "b"
+                                    , ext = Range
+                                        { start = Pos
+                                            { line = 2
+                                            , column = 5
+                                            }
+                                        , end = Pos
+                                            { line = 2
+                                            , column = 6
+                                            }
+                                        }
                                     }
-                                ) 3:10-3:11
-                            ) 3:4-3:11
+                                ) NoExt
+                            )
+                            ( Lower
+                                ( Path []
+                                    ( Name
+                                        { text = "c"
+                                        , ext = Range
+                                            { start = Pos
+                                                { line = 2
+                                                , column = 10
+                                                }
+                                            , end = Pos
+                                                { line = 2
+                                                , column = 11
+                                                }
+                                            }
+                                        }
+                                    )
+                                    ( Range
+                                        { start = Pos
+                                            { line = 2
+                                            , column = 10
+                                            }
+                                        , end = Pos
+                                            { line = 2
+                                            , column = 11
+                                            }
+                                        }
+                                    )
+                                )
+                                ( Range
+                                    { start = Pos
+                                        { line = 2
+                                        , column = 10
+                                        }
+                                    , end = Pos
+                                        { line = 2
+                                        , column = 11
+                                        }
+                                    }
+                                )
+                            )
+                            ( Range
+                                { start = Pos
+                                    { line = 2
+                                    , column = 4
+                                    }
+                                , end = Pos
+                                    { line = 2
+                                    , column = 11
+                                    }
+                                }
+                            )
                         )
                         ( BlEnd
                             ( Lam
                                 ( PId
-                                    ( Name "d" 4:5-4:6 ) ( . )
+                                    ( Name
+                                        { text = "d"
+                                        , ext = Range
+                                            { start = Pos
+                                                { line = 3
+                                                , column = 5
+                                                }
+                                            , end = Pos
+                                                { line = 3
+                                                , column = 6
+                                                }
+                                            }
+                                        }
+                                    ) NoExt
                                 )
                                 ( Block
                                     ( BlBind
-                                        ( Upper
-                                            ( Path
-                                                { path = []
-                                                , final = Name "e" 4:10-4:11
+                                        ( Lower
+                                            ( Path []
+                                                ( Name
+                                                    { text = "e"
+                                                    , ext = Range
+                                                        { start = Pos
+                                                            { line = 3
+                                                            , column = 10
+                                                            }
+                                                        , end = Pos
+                                                            { line = 3
+                                                            , column = 11
+                                                            }
+                                                        }
+                                                    }
+                                                )
+                                                ( Range
+                                                    { start = Pos
+                                                        { line = 3
+                                                        , column = 10
+                                                        }
+                                                    , end = Pos
+                                                        { line = 3
+                                                        , column = 11
+                                                        }
+                                                    }
+                                                )
+                                            )
+                                            ( Range
+                                                { start = Pos
+                                                    { line = 3
+                                                    , column = 10
+                                                    }
+                                                , end = Pos
+                                                    { line = 3
+                                                    , column = 11
+                                                    }
                                                 }
-                                            ) 4:10-4:11
+                                            )
                                         )
                                         ( BlBind
-                                            ( Upper
-                                                ( Path
-                                                    { path = []
-                                                    , final = Name "f" 5:10-5:11
+                                            ( Lower
+                                                ( Path []
+                                                    ( Name
+                                                        { text = "f"
+                                                        , ext = Range
+                                                            { start = Pos
+                                                                { line = 4
+                                                                , column = 10
+                                                                }
+                                                            , end = Pos
+                                                                { line = 4
+                                                                , column = 11
+                                                                }
+                                                            }
+                                                        }
+                                                    )
+                                                    ( Range
+                                                        { start = Pos
+                                                            { line = 4
+                                                            , column = 10
+                                                            }
+                                                        , end = Pos
+                                                            { line = 4
+                                                            , column = 11
+                                                            }
+                                                        }
+                                                    )
+                                                )
+                                                ( Range
+                                                    { start = Pos
+                                                        { line = 4
+                                                        , column = 10
+                                                        }
+                                                    , end = Pos
+                                                        { line = 4
+                                                        , column = 11
+                                                        }
                                                     }
-                                                ) 5:10-5:11
+                                                )
                                             )
                                             ( BlEnd
-                                                ( Upper
-                                                    ( Path
-                                                        { path = []
-                                                        , final = Name "g" 6:10-6:11
+                                                ( Lower
+                                                    ( Path []
+                                                        ( Name
+                                                            { text = "g"
+                                                            , ext = Range
+                                                                { start = Pos
+                                                                    { line = 5
+                                                                    , column = 10
+                                                                    }
+                                                                , end = Pos
+                                                                    { line = 5
+                                                                    , column = 11
+                                                                    }
+                                                                }
+                                                            }
+                                                        )
+                                                        ( Range
+                                                            { start = Pos
+                                                                { line = 5
+                                                                , column = 10
+                                                                }
+                                                            , end = Pos
+                                                                { line = 5
+                                                                , column = 11
+                                                                }
+                                                            }
+                                                        )
+                                                    )
+                                                    ( Range
+                                                        { start = Pos
+                                                            { line = 5
+                                                            , column = 10
+                                                            }
+                                                        , end = Pos
+                                                            { line = 5
+                                                            , column = 11
+                                                            }
                                                         }
-                                                    ) 6:10-6:11
+                                                    )
                                                 )
                                             )
                                         )
-                                    ) 4:10-6:11
-                                ) 4:4-6:11
+                                    )
+                                    ( Range
+                                        { start = Pos
+                                            { line = 3
+                                            , column = 10
+                                            }
+                                        , end = Pos
+                                            { line = 5
+                                            , column = 11
+                                            }
+                                        }
+                                    )
+                                )
+                                ( Range
+                                    { start = Pos
+                                        { line = 3
+                                        , column = 4
+                                        }
+                                    , end = Pos
+                                        { line = 5
+                                        , column = 11
+                                        }
+                                    }
+                                )
                             )
                         )
                     )
-                ) 2:4-6:11
+                )
+                ( Range
+                    { start = Pos
+                        { line = 1
+                        , column = 4
+                        }
+                    , end = Pos
+                        { line = 5
+                        , column = 11
+                        }
+                    }
+                )
             , declRet = Nothing
-            , declExt = ( . )
+            , declExt = NoExt
             }
         ]
-    , programExt = ( . )
+    , impDecls = []
+    , programExt = NoExt
     }

@@ -24,6 +24,7 @@ default-extensions:
   - TypeFamilies
   - NoImplicitPrelude
   - FlexibleContexts
+  - OverloadedStrings
 
 ghc-options:
   - -Weverything
@@ -84,3 +85,8 @@ tests:
       - tasty-hunit
       - bytestring
       - text
+      - these
+      - pretty-simple
+    default-extensions:
+      - NoImplicitPrelude
+      - OverloadedStrings

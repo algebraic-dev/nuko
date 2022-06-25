@@ -1,35 +1,139 @@
-Program
-    { tyDecls = []
+That Program
+    { typeDecls = []
     , letDecls =
         [ LetDecl
-            { declName = Name "a" 1:4-1:5
+            { declName = Name
+                { text = "a"
+                , ext = Range
+                    { start = Pos
+                        { line = 0
+                        , column = 4
+                        }
+                    , end = Pos
+                        { line = 0
+                        , column = 5
+                        }
+                    }
+                }
             , declArgs = []
             , declBody = Lit
-                ( LInt 2 1:29-1:30 ) ( . )
+                ( LInt 2
+                    ( Range
+                        { start = Pos
+                            { line = 0
+                            , column = 29
+                            }
+                        , end = Pos
+                            { line = 0
+                            , column = 30
+                            }
+                        }
+                    )
+                ) NoExt
             , declRet = Just
                 ( TArrow
                     ( TId
-                        ( Path
-                            { path = []
-                            , final = Name "Int" 1:8-1:11
-                            }
-                        ) ( . )
+                        ( Path []
+                            ( Name
+                                { text = "Int"
+                                , ext = Range
+                                    { start = Pos
+                                        { line = 0
+                                        , column = 8
+                                        }
+                                    , end = Pos
+                                        { line = 0
+                                        , column = 11
+                                        }
+                                    }
+                                }
+                            )
+                            ( Range
+                                { start = Pos
+                                    { line = 0
+                                    , column = 8
+                                    }
+                                , end = Pos
+                                    { line = 0
+                                    , column = 11
+                                    }
+                                }
+                            )
+                        ) NoExt
                     )
                     ( TArrow
                         ( TPoly
-                            ( Name "a" 1:15-1:16 ) ( . )
+                            ( Name
+                                { text = "a"
+                                , ext = Range
+                                    { start = Pos
+                                        { line = 0
+                                        , column = 15
+                                        }
+                                    , end = Pos
+                                        { line = 0
+                                        , column = 16
+                                        }
+                                    }
+                                }
+                            ) NoExt
                         )
                         ( TId
-                            ( Path
-                                { path = []
-                                , final = Name "String" 1:20-1:26
+                            ( Path []
+                                ( Name
+                                    { text = "String"
+                                    , ext = Range
+                                        { start = Pos
+                                            { line = 0
+                                            , column = 20
+                                            }
+                                        , end = Pos
+                                            { line = 0
+                                            , column = 26
+                                            }
+                                        }
+                                    }
+                                )
+                                ( Range
+                                    { start = Pos
+                                        { line = 0
+                                        , column = 20
+                                        }
+                                    , end = Pos
+                                        { line = 0
+                                        , column = 26
+                                        }
+                                    }
+                                )
+                            ) NoExt
+                        )
+                        ( Range
+                            { start = Pos
+                                { line = 0
+                                , column = 15
                                 }
-                            ) ( . )
-                        ) 1:15-1:26
-                    ) 1:8-1:26
+                            , end = Pos
+                                { line = 0
+                                , column = 26
+                                }
+                            }
+                        )
+                    )
+                    ( Range
+                        { start = Pos
+                            { line = 0
+                            , column = 8
+                            }
+                        , end = Pos
+                            { line = 0
+                            , column = 26
+                            }
+                        }
+                    )
                 )
-            , declExt = ( . )
+            , declExt = NoExt
             }
         ]
-    , programExt = ( . )
+    , impDecls = []
+    , programExt = NoExt
     }

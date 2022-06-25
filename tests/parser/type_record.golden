@@ -1,22 +1,82 @@
-Program
-    { tyDecls =
+That Program
+    { typeDecls =
         [ TypeDecl
-            { tyName = Name "Ata" 1:5-1:8
+            { tyName = Name
+                { text = "Ata"
+                , ext = Range
+                    { start = Pos
+                        { line = 0
+                        , column = 5
+                        }
+                    , end = Pos
+                        { line = 0
+                        , column = 8
+                        }
+                    }
+                }
             , tyArgs =
-                [ Name "a" 1:9-1:10 ]
+                [ Name
+                    { text = "a"
+                    , ext = Range
+                        { start = Pos
+                            { line = 0
+                            , column = 9
+                            }
+                        , end = Pos
+                            { line = 0
+                            , column = 10
+                            }
+                        }
+                    }
+                ]
             , tyDecl = TypeProd
                 [
-                    ( Name "ata" 1:15-1:18
-                    , TId
-                        ( Path
-                            { path = []
-                            , final = Name "Int" 1:20-1:23
+                    ( Name
+                        { text = "ata"
+                        , ext = Range
+                            { start = Pos
+                                { line = 0
+                                , column = 15
+                                }
+                            , end = Pos
+                                { line = 0
+                                , column = 18
+                                }
                             }
-                        ) ( . )
+                        }
+                    , TId
+                        ( Path []
+                            ( Name
+                                { text = "Int"
+                                , ext = Range
+                                    { start = Pos
+                                        { line = 0
+                                        , column = 20
+                                        }
+                                    , end = Pos
+                                        { line = 0
+                                        , column = 23
+                                        }
+                                    }
+                                }
+                            )
+                            ( Range
+                                { start = Pos
+                                    { line = 0
+                                    , column = 20
+                                    }
+                                , end = Pos
+                                    { line = 0
+                                    , column = 23
+                                    }
+                                }
+                            )
+                        ) NoExt
                     )
                 ]
             }
         ]
     , letDecls = []
-    , programExt = ( . )
+    , impDecls = []
+    , programExt = NoExt
     }

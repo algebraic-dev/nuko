@@ -1,1 +1,52 @@
-CannotAssign 2:4-2:13
+These AssignInEndOfBlock
+    ( Range
+        { start = Pos
+            { line = 1
+            , column = 4
+            }
+        , end = Pos
+            { line = 1
+            , column = 13
+            }
+        }
+    )
+
+Program
+    { typeDecls = []
+    , letDecls =
+        [ LetDecl
+            { declName = Name
+                { text = "a"
+                , ext = Range
+                    { start = Pos
+                        { line = 0
+                        , column = 4
+                        }
+                    , end = Pos
+                        { line = 0
+                        , column = 5
+                        }
+                    }
+                }
+            , declArgs = []
+            , declBody = Lit
+                ( LInt 3
+                    ( Range
+                        { start = Pos
+                            { line = 1
+                            , column = 12
+                            }
+                        , end = Pos
+                            { line = 1
+                            , column = 13
+                            }
+                        }
+                    )
+                ) NoExt
+            , declRet = Nothing
+            , declExt = NoExt
+            }
+        ]
+    , impDecls = []
+    , programExt = NoExt
+    }

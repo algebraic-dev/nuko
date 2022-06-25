@@ -1,0 +1,301 @@
+That Program
+    { typeDecls = []
+    , letDecls = []
+    , impDecls =
+        [ Import
+            { modName = Imp
+                ( Name
+                    { text = "A"
+                    , ext = Range
+                        { start = Pos
+                            { line = 0
+                            , column = 7
+                            }
+                        , end = Pos
+                            { line = 0
+                            , column = 8
+                            }
+                        }
+                    } :|
+                    [ Name
+                        { text = "B"
+                        , ext = Range
+                            { start = Pos
+                                { line = 0
+                                , column = 9
+                                }
+                            , end = Pos
+                                { line = 0
+                                , column = 10
+                                }
+                            }
+                        }
+                    , Name
+                        { text = "C"
+                        , ext = Range
+                            { start = Pos
+                                { line = 0
+                                , column = 11
+                                }
+                            , end = Pos
+                                { line = 0
+                                , column = 12
+                                }
+                            }
+                        }
+                    ]
+                )
+            , impExt = NoExt
+            }
+        , Import
+            { modName = ImpList
+                ( Name
+                    { text = "A"
+                    , ext = Range
+                        { start = Pos
+                            { line = 1
+                            , column = 7
+                            }
+                        , end = Pos
+                            { line = 1
+                            , column = 8
+                            }
+                        }
+                    } :|
+                    [ Name
+                        { text = "B"
+                        , ext = Range
+                            { start = Pos
+                                { line = 1
+                                , column = 9
+                                }
+                            , end = Pos
+                                { line = 1
+                                , column = 10
+                                }
+                            }
+                        }
+                    , Name
+                        { text = "C"
+                        , ext = Range
+                            { start = Pos
+                                { line = 1
+                                , column = 11
+                                }
+                            , end = Pos
+                                { line = 1
+                                , column = 12
+                                }
+                            }
+                        }
+                    ]
+                )
+                ( ImpDep
+                    ( ImpDepLower
+                        ( Name
+                            { text = "d"
+                            , ext = Range
+                                { start = Pos
+                                    { line = 1
+                                    , column = 14
+                                    }
+                                , end = Pos
+                                    { line = 1
+                                    , column = 15
+                                    }
+                                }
+                            }
+                        )
+                    ) :|
+                    [ ImpDep
+                        ( ImpDepLower
+                            ( Name
+                                { text = "e"
+                                , ext = Range
+                                    { start = Pos
+                                        { line = 1
+                                        , column = 17
+                                        }
+                                    , end = Pos
+                                        { line = 1
+                                        , column = 18
+                                        }
+                                    }
+                                }
+                            )
+                        )
+                    ]
+                )
+            , impExt = NoExt
+            }
+        , Import
+            { modName = ImpAs
+                ( Name
+                    { text = "A"
+                    , ext = Range
+                        { start = Pos
+                            { line = 2
+                            , column = 7
+                            }
+                        , end = Pos
+                            { line = 2
+                            , column = 8
+                            }
+                        }
+                    } :|
+                    [ Name
+                        { text = "B"
+                        , ext = Range
+                            { start = Pos
+                                { line = 2
+                                , column = 9
+                                }
+                            , end = Pos
+                                { line = 2
+                                , column = 10
+                                }
+                            }
+                        }
+                    , Name
+                        { text = "C"
+                        , ext = Range
+                            { start = Pos
+                                { line = 2
+                                , column = 11
+                                }
+                            , end = Pos
+                                { line = 2
+                                , column = 12
+                                }
+                            }
+                        }
+                    ]
+                )
+                ( Name
+                    { text = "E"
+                    , ext = Range
+                        { start = Pos
+                            { line = 2
+                            , column = 16
+                            }
+                        , end = Pos
+                            { line = 2
+                            , column = 17
+                            }
+                        }
+                    }
+                )
+            , impExt = NoExt
+            }
+        , Import
+            { modName = ImpList
+                ( Name
+                    { text = "A"
+                    , ext = Range
+                        { start = Pos
+                            { line = 4
+                            , column = 7
+                            }
+                        , end = Pos
+                            { line = 4
+                            , column = 8
+                            }
+                        }
+                    } :|
+                    [ Name
+                        { text = "B"
+                        , ext = Range
+                            { start = Pos
+                                { line = 4
+                                , column = 9
+                                }
+                            , end = Pos
+                                { line = 4
+                                , column = 10
+                                }
+                            }
+                        }
+                    , Name
+                        { text = "C"
+                        , ext = Range
+                            { start = Pos
+                                { line = 4
+                                , column = 11
+                                }
+                            , end = Pos
+                                { line = 4
+                                , column = 12
+                                }
+                            }
+                        }
+                    ]
+                )
+                ( ImpDepAs
+                    ( ImpDepLower
+                        ( Name
+                            { text = "d"
+                            , ext = Range
+                                { start = Pos
+                                    { line = 4
+                                    , column = 14
+                                    }
+                                , end = Pos
+                                    { line = 4
+                                    , column = 15
+                                    }
+                                }
+                            }
+                        )
+                    )
+                    ( Name
+                        { text = "d"
+                        , ext = Range
+                            { start = Pos
+                                { line = 4
+                                , column = 19
+                                }
+                            , end = Pos
+                                { line = 4
+                                , column = 20
+                                }
+                            }
+                        }
+                    ) :|
+                    [ ImpDepAs
+                        ( ImpDepLower
+                            ( Name
+                                { text = "e"
+                                , ext = Range
+                                    { start = Pos
+                                        { line = 4
+                                        , column = 22
+                                        }
+                                    , end = Pos
+                                        { line = 4
+                                        , column = 23
+                                        }
+                                    }
+                                }
+                            )
+                        )
+                        ( Name
+                            { text = "e"
+                            , ext = Range
+                                { start = Pos
+                                    { line = 4
+                                    , column = 27
+                                    }
+                                , end = Pos
+                                    { line = 4
+                                    , column = 28
+                                    }
+                                }
+                            }
+                        )
+                    ]
+                )
+            , impExt = NoExt
+            }
+        ]
+    , programExt = NoExt
+    }
