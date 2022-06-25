@@ -43,7 +43,7 @@ import Relude ( Show, Int, Maybe, NonEmpty, Text )
 
 data NoExt = NoExt deriving Show
 
-data Name x = Name Text !(XName x)
+data Name x = Name { text:: Text, ext :: !(XName x) }
 
 data Path x
   = Path [Name x] (Name x) !(XPath x)
@@ -71,7 +71,9 @@ data Pat x
   | PExt !(XPExt x)
 
 data Var x
-  = Var (Pat x) (Expr x) !(XVar x)
+  = Var { pat :: (Pat x)
+        , val :: (Expr x)
+        , ext :: !(XVar x) }
 
 data Block x
   = BlBind (Expr x) (Block x)

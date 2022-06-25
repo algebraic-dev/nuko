@@ -8,6 +8,7 @@ import Nuko.Syntax.Lexer
 import Nuko.Syntax.Range
 import Nuko.Syntax.Range
 import Nuko.Syntax.Tree
+import Nuko.Syntax.Error
 import Nuko.Tree.TopLevel
 import Nuko.Tree.Expr
 
@@ -168,6 +169,8 @@ BlockExpr :: { Block Normal }
     : Expr       List1(sep) BlockExpr { BlBind $1 $3 }
     | VarExpr    List1(sep) BlockExpr { BlVar $1 $3 }
     | Expr                            { BlEnd $1 }
+    | VarExpr                         {% flag (AssignInEndOfBlock $ $1.ext)
+                                      >> pure (BlEnd $1.val) }
 
 End : end   { ()         }
     | error {% popLayout }
@@ -215,22 +218,24 @@ ImpPath :: { NonEmpty (Name Normal) }
     : SepList1('.', Upper) { $1 }
 
 ImpDeps :: { ImportDeps Normal }
-    : Upper as Upper { ImpDepAs (ImpDepUpper $1) $3 }
+    : Upper as Lower {% terminate (WrongUsageOfCase LowerCase $3.ext) }
+    | Lower as Upper {% terminate (WrongUsageOfCase UpperCase $3.ext) }
+    | Upper as Upper { ImpDepAs (ImpDepUpper $1) $3 }
     | Lower as Lower { ImpDepAs (ImpDepLower $1) $3 }
-    | Upper { ImpDep (ImpDepUpper $1) }
-    | Lower { ImpDep (ImpDepLower $1) }
+    | Upper          { ImpDep (ImpDepUpper $1) }
+    | Lower          { ImpDep (ImpDepLower $1) }
 
 Imp :: { ImportTree Normal }
-    : ImpPath                                 { Imp $1 }
-    | ImpPath '(' SepList1(',', ImpDeps) ')'  { ImpList $1 $3 }
-    | ImpPath as Upper                        { ImpAs $1 $3 }
+    : ImpPath                                { Imp $1 }
+    | ImpPath '(' SepList1(',', ImpDeps) ')' { ImpList $1 $3 }
+    | ImpPath as Upper                       { ImpAs $1 $3 }
 
 ImportDecl : import Imp { Import $2 NoExt }
 
 Program :: { Program Normal }
-    : LetDecl Program    { $2 { letDecls  = $1 : $2.letDecls } }
+    : LetDecl Program    { $2 { letDecls  = $1 : $2.letDecls }  }
     | TypeDecl Program   { $2 { typeDecls = $1 : $2.typeDecls } }
-    | ImportDecl Program { $2 { impDecls = $1 : $2.impDecls } }
+    | ImportDecl Program { $2 { impDecls  = $1 : $2.impDecls }  }
     | {- Empty UwU -}    { Program [] [] [] NoExt }
 {
 
@@ -260,6 +265,6 @@ getInt = \case
     _ -> error "Chiyoku.. you have to be more careful when you try to use this function!"
 
 lexer      = (scan >>=)
-parseError = terminate . (trace "Maldito final >:C" . UnexpectedToken)
+parseError = terminate . UnexpectedToken
 
 }

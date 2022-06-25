@@ -3,8 +3,9 @@
 module Nuko.Syntax.Lexer where
 
 import Relude
+import Relude.String.Reexport
 
-import Data.Text            (Text, append, index)
+import Relude.String        (Text)
 import Data.Text.Read       (decimal, double)
 import Control.Monad        (when)
 
@@ -34,7 +35,7 @@ $graphic = [\x21-\x7E]
 @upper_id  = $upper @id_char* $end?
 @wild      = _
 @number    = $digit+
-@not_id    = [^a-zA-Z0-9\ \n\r\t]+
+@not_id    = [^a-zA-Z0-9\ \n\r\t:=\(\)\{\}\:\|\.\,\-\>\\=>]+
 @stringraw = [$graphic$space]|$newline
 
 lexer :-
@@ -60,9 +61,9 @@ lexer :-
 <0> "forall"    { token TcForall     }
 <0> "pub"       { token TcPub        }
 <0> \"          { \_ pos -> do
-                    pushCode str
-                    res <- scan
-                    pure (Ranged (info res) (Range pos (end $ position res)))
+                     pushCode str
+                     res <- scan
+                     pure (Ranged (info res) (Range pos (end $ position res)))
                 }
 
 <str> \"        { \_ pos  -> popCode *> resetBuffer >>= \s -> emit TcStr s pos  }
