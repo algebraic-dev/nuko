@@ -9,8 +9,7 @@ import Nuko.Syntax.Range
 import Nuko.Syntax.Range
 import Nuko.Syntax.Tree
 import Nuko.Syntax.Error
-import Nuko.Tree.TopLevel
-import Nuko.Tree.Expr
+import Nuko.Tree
 
 import Data.Text (Text)
 import Data.Bifunctor
@@ -100,8 +99,8 @@ Optional(Pred)
 
 -- Parsing of identifiers and paths
 
-Lower :: { Name Normal } : lower { Name (getData $1) $1.position }
-Upper :: { Name Normal } : upper { Name (getData $1) $1.position }
+Lower :: { Name } : lower { Name (getData $1) $1.position }
+Upper :: { Name } : upper { Name (getData $1) $1.position }
 
 PathHelper(Pred)
     : Upper '.' PathHelper(Pred) { let (p, f) = $3 in ($1 : p, f) }
@@ -118,12 +117,12 @@ Path(Pred) : PathHelper(Pred) { let (p , f) = $1 in withPosListR p f $ Path p f 
 
 -- Types
 
-TypeAtom :: { Ty Normal }
+TypeAtom :: { Ty (Nuko 'Normal) }
     : Lower        { TPoly $1 NoExt }
     | Path(Upper)  { TId $1 NoExt }
     | '(' Type ')' { $2 }
 
-TypeCon :: { Ty Normal }
+TypeCon :: { Ty (Nuko 'Normal) }
     : Path(Upper) List1(TypeAtom) { withPos $1 $2 $ TCons $1 $2 }
     | TypeCon '->' TypeCon        { withPos $1 $3 $ TArrow $1 $3 }
     | TypeAtom                    { $1 }
@@ -134,13 +133,13 @@ Type
 
 -- Patterns
 
-AtomPat :: { Pat Normal }
+AtomPat :: { Pat (Nuko 'Normal) }
     : '_'                         { PWild $1.position }
     | Lower                       { PId $1 NoExt }
     | Literal                     { PLit $1 NoExt }
     | '(' Pat ')'                 { $2 }
 
-Pat :: { Pat Normal }
+Pat :: { Pat (Nuko 'Normal) }
     : Path(Upper) List(AtomPat) { withPosList $1 $2 $ PCons $1 $2 }
     | Pat ':' Type              { withPos $1 $3     $ PAnn $1 $3 }
     | AtomPat                   { $1 }
@@ -149,34 +148,34 @@ Pat :: { Pat Normal }
 
 OptSep : Optional(sep) { () }
 
-Literal :: { Literal Normal }
+Literal :: { Literal (Nuko 'Normal) }
     : int  { LInt (getInt $1) $1.position }
     | str  { LStr (getData $1) $1.position }
 
-Atom :: { Expr Normal }
+Atom :: { Expr (Nuko 'Normal) }
     : PathExpr     { $1 }
     | Literal      { Lit $1 NoExt }
     | '(' Expr ')' { $2 }
 
-App :: { NE.NonEmpty (Expr Normal) }
+App :: { NE.NonEmpty (Expr (Nuko 'Normal)) }
     : Atom App { $1 NE.<| $2 }
     | Atom      { $1 NE.:| [] }
 
-VarExpr :: { Var Normal }
+VarExpr :: { Var (Nuko 'Normal) }
     : let Pat '=' Expr  { withPos $1 $4 $ Var $2 $4 }
 
-BlockExpr :: { Block Normal }
+BlockExpr :: { Block (Nuko 'Normal) }
     : Expr       List1(sep) BlockExpr { BlBind $1 $3 }
     | VarExpr    List1(sep) BlockExpr { BlVar $1 $3 }
     | Expr                            { BlEnd $1 }
-    | VarExpr                         {% flag (AssignInEndOfBlock $ $1.ext)
+    | VarExpr                         {% flag (AssignInEndOfBlock $1.ext)
                                       >> pure (BlEnd $1.val) }
 
 End : end   { ()         }
     | error {% popLayout }
 
 -- Match can be sucessed of a End so.. sometimes it will give an layout error
-ClosedExpr :: { Expr Normal }
+ClosedExpr :: { Expr (Nuko 'Normal) }
     : if ClosedExpr OptSep then ClosedExpr OptSep else ClosedExpr { withPos $1 $8 $ If $2 $5 (Just $8) }
     | Atom App                                                    { withPos $1 $2 $ App $1 $2 }
     | match ClosedExpr with begin SepList1(sep, CaseClause) End   { withPos $1 $5 $ Match $2 $5 }
@@ -184,22 +183,22 @@ ClosedExpr :: { Expr Normal }
     | begin BlockExpr End                                         { case $2 of { BlEnd x -> x; _ -> withPos $1 $2 $ Block $2} }
     | Atom                                                        { $1 }
 
-Expr :: { Expr Normal }
+Expr :: { Expr (Nuko 'Normal) }
     : ClosedExpr                                         { $1 }
     | ClosedExpr ':' Type                                { withPos $1 $3 $ Ann $1 $3 }
 
-CaseClause :: { ((Pat Normal, Expr Normal)) }
+CaseClause :: { ((Pat (Nuko 'Normal), Expr (Nuko 'Normal))) }
     : Pat '=>' Expr { ($1, $3) }
 
 -- Top level
 
-ProdClause :: { (Name Normal, Ty Normal) }
+ProdClause :: { (Name, Ty (Nuko 'Normal)) }
     : Lower ':' Type { ($1, $3) }
 
-SumClause :: { (Name Normal, [Ty Normal]) }
+SumClause :: { (Name, [Ty (Nuko 'Normal)]) }
     : '|' Upper List(TypeAtom) { ($2, $3) }
 
-TypeTy :: { TypeDeclArg Normal }
+TypeTy :: { TypeDeclArg (Nuko 'Normal) }
     : '{' SepList(',', ProdClause) '}'  { TypeProd $2 }
     | List1(SumClause)                  { TypeSum $1 }
     | Type                              { TypeSym $1 }
@@ -214,25 +213,25 @@ LetDecl : let Lower List(Binder) Optional(Ret) '=' Expr { LetDecl $2 $3 $6 $4 No
 
 -- Import declaration
 
-ImpPath :: { NonEmpty (Name Normal) }
+ImpPath :: { NonEmpty Name }
     : SepList1('.', Upper) { $1 }
 
-ImpDeps :: { ImportDeps Normal }
-    : Upper as Lower {% terminate (WrongUsageOfCase LowerCase $3.ext) }
-    | Lower as Upper {% terminate (WrongUsageOfCase UpperCase $3.ext) }
+ImpDeps :: { ImportDeps (Nuko 'Normal) }
+    : Upper as Lower {% terminate (WrongUsageOfCase LowerCase $3.range) }
+    | Lower as Upper {% terminate (WrongUsageOfCase UpperCase $3.range) }
     | Upper as Upper { ImpDepAs (ImpDepUpper $1) $3 }
     | Lower as Lower { ImpDepAs (ImpDepLower $1) $3 }
     | Upper          { ImpDep (ImpDepUpper $1) }
     | Lower          { ImpDep (ImpDepLower $1) }
 
-Imp :: { ImportTree Normal }
+Imp :: { ImportTree (Nuko 'Normal) }
     : ImpPath                                { Imp $1 }
     | ImpPath '(' SepList1(',', ImpDeps) ')' { ImpList $1 $3 }
     | ImpPath as Upper                       { ImpAs $1 $3 }
 
 ImportDecl : import Imp { Import $2 NoExt }
 
-Program :: { Program Normal }
+Program :: { Program (Nuko 'Normal) }
     : LetDecl Program    { $2 { letDecls  = $1 : $2.letDecls }  }
     | TypeDecl Program   { $2 { typeDecls = $1 : $2.typeDecls } }
     | ImportDecl Program { $2 { impDecls  = $1 : $2.impDecls }  }
@@ -241,7 +240,7 @@ Program :: { Program Normal }
 
 withPosList :: (HasPosition a, HasPosition b) => a -> [b] -> (Range -> c) -> c
 withPosList p []       fn = fn (getPos p)
-withPosList p (x : xs) fn = fn (getPos p <> getPos (last (x :| xs)))
+withPosList p (x : xs) fn = fn (getPos p <> getPos (Relude.last (x :| xs)))
 
 withPosListR :: (HasPosition a, HasPosition b) => [b] -> a -> (Range -> c) -> c
 withPosListR []     p fn = fn (getPos p)

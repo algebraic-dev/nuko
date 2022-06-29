@@ -25,6 +25,7 @@ default-extensions:
   - NoImplicitPrelude
   - FlexibleContexts
   - OverloadedStrings
+  - DataKinds
 
 ghc-options:
   - -Weverything

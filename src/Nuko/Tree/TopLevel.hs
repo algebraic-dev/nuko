@@ -16,13 +16,13 @@ module Nuko.Tree.TopLevel (
   XImport,
 ) where
 
-import Nuko.Tree.Expr     (Expr, Name, Ty)
+import Nuko.Tree.Expr     (Expr, Ty, XName)
 import Data.List.NonEmpty (NonEmpty)
 import Data.Maybe         (Maybe)
 
 data LetDecl x = LetDecl
-  { declName :: Name x
-  , declArgs :: [(Name x, Ty x)]
+  { declName :: XName x
+  , declArgs :: [(XName x, Ty x)]
   , declBody :: Expr x
   , declRet  :: Maybe (Ty x)
   , declExt  :: !(XLetDecl x)
@@ -30,27 +30,27 @@ data LetDecl x = LetDecl
 
 data TypeDeclArg x
   = TypeSym (Ty x)
-  | TypeProd [(Name x, Ty x)]
-  | TypeSum (NonEmpty (Name x, [Ty x]))
+  | TypeProd [(XName x, Ty x)]
+  | TypeSum (NonEmpty (XName x, [Ty x]))
 
 data TypeDecl x = TypeDecl
-  { tyName :: Name x
-  , tyArgs :: [Name x]
+  { tyName :: XName x
+  , tyArgs :: [XName x]
   , tyDecl :: !(TypeDeclArg x)
   }
 
-type ImpPath x = NonEmpty (Name x)
+type ImpPath x = NonEmpty (XName x)
 
 data ImportDepsKind x
-  = ImpDepLower (Name x)
-  | ImpDepUpper (Name x)
+  = ImpDepLower (XName x)
+  | ImpDepUpper (XName x)
 
 data ImportDeps x
-  = ImpDepAs (ImportDepsKind x) (Name x)
+  = ImpDepAs (ImportDepsKind x) (XName x)
   | ImpDep   (ImportDepsKind x)
 
 data ImportTree x
-  = ImpAs (ImpPath x) (Name x)
+  = ImpAs (ImpPath x) (XName x)
   | ImpList (ImpPath x) (NonEmpty (ImportDeps x))
   | Imp (ImpPath x)
 

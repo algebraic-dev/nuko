@@ -1,96 +1,97 @@
-module Nuko.Syntax.Tree (Normal) where
+{-# OPTIONS_GHC -Wno-missing-export-lists #-}
+{-# OPTIONS_GHC -Wno-orphans #-}
 
-import Nuko.Tree.Expr
-import Nuko.Tree.TopLevel
-import Nuko.Syntax.Range  ( Range, HasPosition(..) )
+-- | This modules instantiates the tree to Nuko 'Normal
+--   Yeah.. i use a lot of orphan instances here :P
+module Nuko.Syntax.Tree where
+
 import Relude             ( Show, Semigroup((<>)), Void )
+import Data.Text          ( Text )
+import Nuko.Tree
+import Nuko.Syntax.Range  ( Range, HasPosition(..) )
 
-data Normal
+data Name = Name { text :: Text, range :: Range } deriving Show
+data Path = Path { mod :: [Name], last :: Name, range :: Range } deriving Show
 
-type instance XName Normal = Range
-type instance XLInt Normal = Range
-type instance XLStr Normal = Range
+type instance XName (Nuko 'Normal) = Name
+type instance XPath (Nuko 'Normal) = Path
 
-type instance XTId Normal = NoExt
-type instance XTPoly Normal = NoExt
-type instance XTCons Normal = Range
-type instance XTArrow Normal = Range
-type instance XTForall Normal = Range
+type instance XLInt (Nuko 'Normal) = Range
+type instance XLStr (Nuko 'Normal) = Range
 
-type instance XPWild Normal = Range
-type instance XPId Normal = NoExt
-type instance XPLit Normal = NoExt
-type instance XPAnn Normal = Range
-type instance XPCons Normal = Range
-type instance XPExt Normal = Void
+type instance XTId (Nuko 'Normal) = NoExt
+type instance XTPoly (Nuko 'Normal) = NoExt
+type instance XTCons (Nuko 'Normal) = Range
+type instance XTArrow (Nuko 'Normal) = Range
+type instance XTForall (Nuko 'Normal) = Range
 
-type instance XLit Normal = NoExt
-type instance XLam Normal = Range
-type instance XAnn Normal = Range
-type instance XApp Normal = Range
-type instance XLower Normal = Range
-type instance XUpper Normal = Range
-type instance XField Normal = Range
-type instance XIf Normal = Range
-type instance XMatch Normal = Range
-type instance XBlock Normal = Range
-type instance XVar Normal = Range
-type instance XExt Normal = Void
+type instance XPWild (Nuko 'Normal) = Range
+type instance XPId (Nuko 'Normal) = NoExt
+type instance XPLit (Nuko 'Normal) = NoExt
+type instance XPAnn (Nuko 'Normal) = Range
+type instance XPCons (Nuko 'Normal) = Range
+type instance XPExt (Nuko 'Normal) = Void
 
-type instance XPath Normal = Range
-type instance XNaExt Normal = Void
-type instance XPaExt Normal = Void
+type instance XLit (Nuko 'Normal) = NoExt
+type instance XLam (Nuko 'Normal) = Range
+type instance XAnn (Nuko 'Normal) = Range
+type instance XApp (Nuko 'Normal) = Range
+type instance XLower (Nuko 'Normal) = Range
+type instance XUpper (Nuko 'Normal) = Range
+type instance XField (Nuko 'Normal) = Range
+type instance XIf (Nuko 'Normal) = Range
+type instance XMatch (Nuko 'Normal) = Range
+type instance XBlock (Nuko 'Normal) = Range
+type instance XVar (Nuko 'Normal) = Range
+type instance XExt (Nuko 'Normal) = Void
 
-type instance XLetDecl Normal = NoExt
-type instance XProgram Normal = NoExt
-type instance XTypeDecl Normal = NoExt
+type instance XLetDecl (Nuko 'Normal) = NoExt
+type instance XProgram (Nuko 'Normal) = NoExt
+type instance XTypeDecl (Nuko 'Normal) = NoExt
 
-type instance XTypeSym Normal = NoExt
-type instance XTypeProd Normal = NoExt
-type instance XTypeSum Normal = NoExt
-type instance XImport Normal = NoExt
+type instance XTypeSym (Nuko 'Normal) = NoExt
+type instance XTypeProd (Nuko 'Normal) = NoExt
+type instance XTypeSum (Nuko 'Normal) = NoExt
+type instance XImport (Nuko 'Normal) = NoExt
 
-deriving instance Show (Name Normal)
-deriving instance Show (Expr Normal)
-deriving instance Show (Block Normal)
-deriving instance Show (Var Normal)
-deriving instance Show (Literal Normal)
-deriving instance Show (Pat Normal)
-deriving instance Show (Ty Normal)
-deriving instance Show (Path Normal)
-deriving instance Show (Import Normal)
-deriving instance Show (ImportDepsKind Normal)
-deriving instance Show (ImportDeps Normal)
-deriving instance Show (ImportTree Normal)
-deriving instance Show (Program Normal)
-deriving instance Show (TypeDeclArg Normal)
-deriving instance Show (TypeDecl Normal)
-deriving instance Show (LetDecl Normal)
+deriving instance Show (Expr (Nuko 'Normal))
+deriving instance Show (Block (Nuko 'Normal))
+deriving instance Show (Var (Nuko 'Normal))
+deriving instance Show (Literal (Nuko 'Normal))
+deriving instance Show (Pat (Nuko 'Normal))
+deriving instance Show (Ty (Nuko 'Normal))
+deriving instance Show (Import (Nuko 'Normal))
+deriving instance Show (ImportDepsKind (Nuko 'Normal))
+deriving instance Show (ImportDeps (Nuko 'Normal))
+deriving instance Show (ImportTree (Nuko 'Normal))
+deriving instance Show (Program (Nuko 'Normal))
+deriving instance Show (TypeDeclArg (Nuko 'Normal))
+deriving instance Show (TypeDecl (Nuko 'Normal))
+deriving instance Show (LetDecl (Nuko 'Normal))
 
-instance HasPosition (Name Normal) where
+instance HasPosition Path where
+  getPos (Path _ _ r) = r
+
+instance HasPosition Name where
   getPos (Name _ r) = r
 
-instance HasPosition (Var Normal) where
+instance HasPosition (Var (Nuko 'Normal)) where
   getPos (Var _ _ r) = r
 
-instance HasPosition (Path Normal) where
-  getPos (Path (x : _) g _) = getPos x <> getPos g
-  getPos (Path [] g _)      = getPos g
-
-instance HasPosition (Literal Normal) where
+instance HasPosition (Literal (Nuko 'Normal)) where
   getPos = \case
     LStr _ r -> r
     LInt _ r -> r
 
-instance HasPosition (Pat Normal) where
+instance HasPosition (Pat (Nuko 'Normal)) where
   getPos = \case
-    PWild r -> r
-    PId id' _ -> getPos id'
+    PWild r     -> r
     PCons _ _ r -> r
-    PLit i _ -> getPos i
-    PAnn _ _ r -> r
+    PLit i _    -> getPos i
+    PAnn _ _ r  -> r
+    PId n _     -> getPos n
 
-instance HasPosition (Expr Normal) where
+instance HasPosition (Expr (Nuko 'Normal)) where
   getPos = \case
     Lit t _ -> getPos t
     Lam _ _ r -> r
@@ -103,13 +104,13 @@ instance HasPosition (Expr Normal) where
     Block _  r -> r
     Ann _ _ r  -> r
 
-instance HasPosition (Block Normal) where
+instance HasPosition (Block (Nuko 'Normal)) where
   getPos = \case
     BlBind x r           -> getPos x <> getPos r
     BlVar (Var _ _ r1) r -> r1 <> getPos r
     BlEnd x              -> getPos x
 
-instance HasPosition (Ty Normal) where
+instance HasPosition (Ty (Nuko 'Normal)) where
   getPos = \case
     TId n _       -> getPos n
     TPoly n _     -> getPos n

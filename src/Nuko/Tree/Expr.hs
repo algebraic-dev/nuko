@@ -1,10 +1,8 @@
 module Nuko.Tree.Expr (
   Literal(..),
-  Path(..),
   Pat(..),
   Expr(..),
   NoExt(..),
-  Name(..),
   Block(..),
   Ty(..),
   Var(..),
@@ -34,8 +32,6 @@ module Nuko.Tree.Expr (
   XTCons,
   XTArrow,
   XTForall,
-  XPaExt,
-  XNaExt,
   XPath,
 ) where
 
@@ -43,37 +39,32 @@ import Relude ( Show, Int, Maybe, NonEmpty, Text )
 
 data NoExt = NoExt deriving Show
 
-data Name x = Name { text:: Text, ext :: !(XName x) }
-
-data Path x
-  = Path [Name x] (Name x) !(XPath x)
-  | PaExt !(XPaExt x)
+-- Abstract Syntax Tree
 
 data Ty x
-  = TId (Path x) !(XTId x)
-  | TPoly (Name x) !(XTPoly x)
-  | TCons (Path x) (NonEmpty (Ty x)) !(XTCons x)
+  = TId (XPath x) !(XTId x)
+  | TPoly (XName x) !(XTPoly x)
+  | TCons (XPath x) (NonEmpty (Ty x)) !(XTCons x)
   | TArrow  (Ty x) (Ty x) !(XTArrow x)
-  | TForall (Name x) (Ty x) !(XTForall x)
+  | TForall (XName x) (Ty x) !(XTForall x)
 
 data Literal x
   = LStr Text !(XLInt x)
   | LInt Int !(XLStr x)
 
--- | Describes patterns that are useful for things like
---  in Match and let bindings.
 data Pat x
   = PWild !(XPWild x)
-  | PId (Name x) !(XPId x)
-  | PCons (Path x) [Pat x] !(XPCons x)
+  | PId (XName x) !(XPId x)
+  | PCons (XPath x) [Pat x] !(XPCons x)
   | PLit (Literal x) !(XPLit x)
   | PAnn (Pat x) (Ty x) !(XPAnn x)
   | PExt !(XPExt x)
 
-data Var x
-  = Var { pat :: (Pat x)
-        , val :: (Expr x)
-        , ext :: !(XVar x) }
+data Var x = Var
+  { pat :: (Pat x)
+  , val :: (Expr x)
+  , ext :: !(XVar x)
+  }
 
 data Block x
   = BlBind (Expr x) (Block x)
@@ -84,9 +75,9 @@ data Expr x
   = Lit (Literal x) !(XLit x)
   | Lam (Pat x) (Expr x) !(XLam x)
   | App (Expr x) (NonEmpty (Expr x)) !(XApp x)
-  | Lower (Path x) !(XLower x)
-  | Upper (Path x) !(XUpper x)
-  | Field (Expr x) (Name x) !(XField x)
+  | Lower (XPath x) !(XLower x)
+  | Upper (XPath x) !(XUpper x)
+  | Field (Expr x) (XName x) !(XField x)
   | If (Expr x) (Expr x) (Maybe (Expr x)) !(XIf x)
   | Match (Expr x) (NonEmpty (Pat x, Expr x)) !(XMatch x)
   | Ann (Expr x) (Ty x) !(XAnn x)
@@ -126,5 +117,4 @@ type family XBlock x
 type family XExt x
 
 type family XPath x
-type family XPaExt x
-type family XNaExt x
+

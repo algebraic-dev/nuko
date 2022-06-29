@@ -23,6 +23,7 @@ source-repository head
 library
   exposed-modules:
       Nuko.Driver
+      Nuko.Resolver.Tree
       Nuko.Syntax.Error
       Nuko.Syntax.Lexer
       Nuko.Syntax.Lexer.Support
@@ -30,6 +31,7 @@ library
       Nuko.Syntax.Parser
       Nuko.Syntax.Range
       Nuko.Syntax.Tree
+      Nuko.Tree
       Nuko.Tree.Expr
       Nuko.Tree.TopLevel
   other-modules:
@@ -49,6 +51,7 @@ library
       NoImplicitPrelude
       FlexibleContexts
       OverloadedStrings
+      DataKinds
   ghc-options: -Weverything -Wno-all-missed-specializations -Wno-implicit-prelude -Wno-missing-deriving-strategies -Wno-missing-kind-signatures -Wno-prepositive-qualified-module -Wno-missing-import-lists -Wno-missing-safe-haskell-mode -Wno-safe -Wno-missing-exported-signatures -Wno-unsafe -Wno-missed-specialisations -Wall
   build-depends:
       array
@@ -79,6 +82,7 @@ executable Nuko-exe
       NoImplicitPrelude
       FlexibleContexts
       OverloadedStrings
+      DataKinds
   ghc-options: -Weverything -Wno-all-missed-specializations -Wno-implicit-prelude -Wno-missing-deriving-strategies -Wno-missing-kind-signatures -Wno-prepositive-qualified-module -Wno-missing-import-lists -Wno-missing-safe-haskell-mode -Wno-safe -Wno-missing-exported-signatures -Wno-unsafe -Wno-missed-specialisations -Wall -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       Nuko
@@ -111,6 +115,7 @@ test-suite Nuko-test
       NoImplicitPrelude
       FlexibleContexts
       OverloadedStrings
+      DataKinds
       NoImplicitPrelude
       OverloadedStrings
   ghc-options: -Weverything -Wno-all-missed-specializations -Wno-implicit-prelude -Wno-missing-deriving-strategies -Wno-missing-kind-signatures -Wno-prepositive-qualified-module -Wno-missing-import-lists -Wno-missing-safe-haskell-mode -Wno-safe -Wno-missing-exported-signatures -Wno-unsafe -Wno-missed-specialisations -Wall -threaded -rtsopts -with-rtsopts=-N
