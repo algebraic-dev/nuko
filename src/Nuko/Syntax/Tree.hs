@@ -10,6 +10,8 @@ import Data.Text          ( Text )
 import Nuko.Tree
 import Nuko.Syntax.Range  ( Range, HasPosition(..) )
 
+type Normal = Nuko 'Normal
+
 data Name = Name { text :: Text, range :: Range } deriving Show
 data Path = Path { mod :: [Name], last :: Name, range :: Range } deriving Show
 
@@ -44,15 +46,6 @@ type instance XMatch (Nuko 'Normal) = Range
 type instance XBlock (Nuko 'Normal) = Range
 type instance XVar (Nuko 'Normal) = Range
 type instance XExt (Nuko 'Normal) = Void
-
-type instance XLetDecl (Nuko 'Normal) = NoExt
-type instance XProgram (Nuko 'Normal) = NoExt
-type instance XTypeDecl (Nuko 'Normal) = NoExt
-
-type instance XTypeSym (Nuko 'Normal) = NoExt
-type instance XTypeProd (Nuko 'Normal) = NoExt
-type instance XTypeSum (Nuko 'Normal) = NoExt
-type instance XImport (Nuko 'Normal) = NoExt
 
 deriving instance Show (Expr (Nuko 'Normal))
 deriving instance Show (Block (Nuko 'Normal))

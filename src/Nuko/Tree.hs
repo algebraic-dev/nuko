@@ -10,3 +10,14 @@ import Nuko.Tree.TopLevel
 
 data Phase = Normal | Renamed | Typed
 data Nuko (p :: Phase)
+
+-- Some default implementations that someday i'll use
+
+type instance XLetDecl (Nuko _) = NoExt
+type instance XProgram (Nuko _) = NoExt
+type instance XTypeDecl (Nuko _) = NoExt
+
+type instance XTypeSym (Nuko _) = NoExt
+type instance XTypeProd (Nuko _) = NoExt
+type instance XTypeSum (Nuko _) = NoExt
+type instance XImport (Nuko _) = NoExt
