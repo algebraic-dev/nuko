@@ -4,7 +4,7 @@ That Program
         [ LetDecl
             { declName = Name
                 { text = "a"
-                , ext = Range
+                , range = Range
                     { start = Pos
                         { line = 0
                         , column = 4
@@ -33,10 +33,11 @@ That Program
             , declRet = Just
                 ( TArrow
                     ( TId
-                        ( Path []
-                            ( Name
+                        ( Path
+                            { mod = []
+                            , last = Name
                                 { text = "Int"
-                                , ext = Range
+                                , range = Range
                                     { start = Pos
                                         { line = 0
                                         , column = 8
@@ -47,8 +48,7 @@ That Program
                                         }
                                     }
                                 }
-                            )
-                            ( Range
+                            , range = Range
                                 { start = Pos
                                     { line = 0
                                     , column = 8
@@ -58,14 +58,14 @@ That Program
                                     , column = 11
                                     }
                                 }
-                            )
+                            }
                         ) NoExt
                     )
                     ( TArrow
                         ( TPoly
                             ( Name
                                 { text = "a"
-                                , ext = Range
+                                , range = Range
                                     { start = Pos
                                         { line = 0
                                         , column = 15
@@ -79,10 +79,11 @@ That Program
                             ) NoExt
                         )
                         ( TId
-                            ( Path []
-                                ( Name
+                            ( Path
+                                { mod = []
+                                , last = Name
                                     { text = "String"
-                                    , ext = Range
+                                    , range = Range
                                         { start = Pos
                                             { line = 0
                                             , column = 20
@@ -93,8 +94,7 @@ That Program
                                             }
                                         }
                                     }
-                                )
-                                ( Range
+                                , range = Range
                                     { start = Pos
                                         { line = 0
                                         , column = 20
@@ -104,7 +104,7 @@ That Program
                                         , column = 26
                                         }
                                     }
-                                )
+                                }
                             ) NoExt
                         )
                         ( Range

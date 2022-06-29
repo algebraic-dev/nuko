@@ -3,7 +3,7 @@ That Program
         [ TypeDecl
             { tyName = Name
                 { text = "Ata"
-                , ext = Range
+                , range = Range
                     { start = Pos
                         { line = 0
                         , column = 5
@@ -17,7 +17,7 @@ That Program
             , tyArgs =
                 [ Name
                     { text = "a"
-                    , ext = Range
+                    , range = Range
                         { start = Pos
                             { line = 0
                             , column = 9
@@ -33,7 +33,7 @@ That Program
                 [
                     ( Name
                         { text = "ata"
-                        , ext = Range
+                        , range = Range
                             { start = Pos
                                 { line = 0
                                 , column = 15
@@ -45,10 +45,11 @@ That Program
                             }
                         }
                     , TId
-                        ( Path []
-                            ( Name
+                        ( Path
+                            { mod = []
+                            , last = Name
                                 { text = "Int"
-                                , ext = Range
+                                , range = Range
                                     { start = Pos
                                         { line = 0
                                         , column = 20
@@ -59,8 +60,7 @@ That Program
                                         }
                                     }
                                 }
-                            )
-                            ( Range
+                            , range = Range
                                 { start = Pos
                                     { line = 0
                                     , column = 20
@@ -70,7 +70,7 @@ That Program
                                     , column = 23
                                     }
                                 }
-                            )
+                            }
                         ) NoExt
                     )
                 ]

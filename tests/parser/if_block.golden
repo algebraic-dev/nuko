@@ -4,7 +4,7 @@ That Program
         [ LetDecl
             { declName = Name
                 { text = "a"
-                , ext = Range
+                , range = Range
                     { start = Pos
                         { line = 0
                         , column = 4
@@ -18,10 +18,11 @@ That Program
             , declArgs = []
             , declBody = If
                 ( Lower
-                    ( Path []
-                        ( Name
+                    ( Path
+                        { mod = []
+                        , last = Name
                             { text = "a"
-                            , ext = Range
+                            , range = Range
                                 { start = Pos
                                     { line = 1
                                     , column = 7
@@ -32,8 +33,7 @@ That Program
                                     }
                                 }
                             }
-                        )
-                        ( Range
+                        , range = Range
                             { start = Pos
                                 { line = 1
                                 , column = 7
@@ -43,7 +43,7 @@ That Program
                                 , column = 8
                                 }
                             }
-                        )
+                        }
                     )
                     ( Range
                         { start = Pos
@@ -58,10 +58,11 @@ That Program
                     )
                 )
                 ( Lower
-                    ( Path []
-                        ( Name
+                    ( Path
+                        { mod = []
+                        , last = Name
                             { text = "b"
-                            , ext = Range
+                            , range = Range
                                 { start = Pos
                                     { line = 2
                                     , column = 9
@@ -72,8 +73,7 @@ That Program
                                     }
                                 }
                             }
-                        )
-                        ( Range
+                        , range = Range
                             { start = Pos
                                 { line = 2
                                 , column = 9
@@ -83,7 +83,7 @@ That Program
                                 , column = 10
                                 }
                             }
-                        )
+                        }
                     )
                     ( Range
                         { start = Pos
@@ -99,10 +99,11 @@ That Program
                 )
                 ( Just
                     ( Lower
-                        ( Path []
-                            ( Name
+                        ( Path
+                            { mod = []
+                            , last = Name
                                 { text = "c"
-                                , ext = Range
+                                , range = Range
                                     { start = Pos
                                         { line = 3
                                         , column = 9
@@ -113,8 +114,7 @@ That Program
                                         }
                                     }
                                 }
-                            )
-                            ( Range
+                            , range = Range
                                 { start = Pos
                                     { line = 3
                                     , column = 9
@@ -124,7 +124,7 @@ That Program
                                     , column = 10
                                     }
                                 }
-                            )
+                            }
                         )
                         ( Range
                             { start = Pos

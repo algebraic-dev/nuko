@@ -1,34 +1,9 @@
-These UnexpectedStr
-    ( Range
-        { start = Pos
-            { line = 18
-            , column = 11
-            }
-        , end = Pos
-            { line = 18
-            , column = 12
-            }
-        }
-    )
-UnexpectedStr
-    ( Range
-        { start = Pos
-            { line = 28
-            , column = 13
-            }
-        , end = Pos
-            { line = 28
-            , column = 14
-            }
-        }
-    )
-
-Program
+That Program
     { typeDecls =
         [ TypeDecl
             { tyName = Name
                 { text = "Range"
-                , ext = Range
+                , range = Range
                     { start = Pos
                         { line = 0
                         , column = 5
@@ -44,7 +19,7 @@ Program
                 [
                     ( Name
                         { text = "line"
-                        , ext = Range
+                        , range = Range
                             { start = Pos
                                 { line = 0
                                 , column = 15
@@ -56,10 +31,11 @@ Program
                             }
                         }
                     , TId
-                        ( Path []
-                            ( Name
+                        ( Path
+                            { mod = []
+                            , last = Name
                                 { text = "Int"
-                                , ext = Range
+                                , range = Range
                                     { start = Pos
                                         { line = 0
                                         , column = 21
@@ -70,8 +46,7 @@ Program
                                         }
                                     }
                                 }
-                            )
-                            ( Range
+                            , range = Range
                                 { start = Pos
                                     { line = 0
                                     , column = 21
@@ -81,7 +56,7 @@ Program
                                     , column = 24
                                     }
                                 }
-                            )
+                            }
                         ) NoExt
                     )
                 ]
@@ -89,7 +64,7 @@ Program
         , TypeDecl
             { tyName = Name
                 { text = "Hole"
-                , ext = Range
+                , range = Range
                     { start = Pos
                         { line = 2
                         , column = 5
@@ -105,7 +80,7 @@ Program
                 (
                     ( Name
                         { text = "Filled"
-                        , ext = Range
+                        , range = Range
                             { start = Pos
                                 { line = 3
                                 , column = 4
@@ -118,10 +93,11 @@ Program
                         }
                     ,
                         [ TId
-                            ( Path []
-                                ( Name
+                            ( Path
+                                { mod = []
+                                , last = Name
                                     { text = "Range"
-                                    , ext = Range
+                                    , range = Range
                                         { start = Pos
                                             { line = 3
                                             , column = 11
@@ -132,8 +108,7 @@ Program
                                             }
                                         }
                                     }
-                                )
-                                ( Range
+                                , range = Range
                                     { start = Pos
                                         { line = 3
                                         , column = 11
@@ -143,14 +118,14 @@ Program
                                         , column = 16
                                         }
                                     }
-                                )
+                                }
                             ) NoExt
                         ]
                     ) :|
                     [
                         ( Name
                             { text = "Empty"
-                            , ext = Range
+                            , range = Range
                                 { start = Pos
                                     { line = 4
                                     , column = 4
@@ -171,7 +146,7 @@ Program
         [ LetDecl
             { declName = Name
                 { text = "isEmpty?"
-                , ext = Range
+                , range = Range
                     { start = Pos
                         { line = 7
                         , column = 4
@@ -186,7 +161,7 @@ Program
                 [
                     ( Name
                         { text = "hole"
-                        , ext = Range
+                        , range = Range
                             { start = Pos
                                 { line = 7
                                 , column = 14
@@ -198,10 +173,11 @@ Program
                             }
                         }
                     , TId
-                        ( Path []
-                            ( Name
+                        ( Path
+                            { mod = []
+                            , last = Name
                                 { text = "Hole"
-                                , ext = Range
+                                , range = Range
                                     { start = Pos
                                         { line = 7
                                         , column = 20
@@ -212,8 +188,7 @@ Program
                                         }
                                     }
                                 }
-                            )
-                            ( Range
+                            , range = Range
                                 { start = Pos
                                     { line = 7
                                     , column = 20
@@ -223,16 +198,17 @@ Program
                                     , column = 24
                                     }
                                 }
-                            )
+                            }
                         ) NoExt
                     )
                 ]
             , declBody = Match
                 ( Lower
-                    ( Path []
-                        ( Name
+                    ( Path
+                        { mod = []
+                        , last = Name
                             { text = "hole"
-                            , ext = Range
+                            , range = Range
                                 { start = Pos
                                     { line = 8
                                     , column = 8
@@ -243,8 +219,7 @@ Program
                                     }
                                 }
                             }
-                        )
-                        ( Range
+                        , range = Range
                             { start = Pos
                                 { line = 8
                                 , column = 8
@@ -254,7 +229,7 @@ Program
                                 , column = 12
                                 }
                             }
-                        )
+                        }
                     )
                     ( Range
                         { start = Pos
@@ -270,10 +245,11 @@ Program
                 )
                 (
                     ( PCons
-                        ( Path []
-                            ( Name
+                        ( Path
+                            { mod = []
+                            , last = Name
                                 { text = "Filled"
-                                , ext = Range
+                                , range = Range
                                     { start = Pos
                                         { line = 9
                                         , column = 4
@@ -284,8 +260,7 @@ Program
                                         }
                                     }
                                 }
-                            )
-                            ( Range
+                            , range = Range
                                 { start = Pos
                                     { line = 9
                                     , column = 4
@@ -295,12 +270,12 @@ Program
                                     , column = 10
                                     }
                                 }
-                            )
+                            }
                         )
                         [ PId
                             ( Name
                                 { text = "range"
-                                , ext = Range
+                                , range = Range
                                     { start = Pos
                                         { line = 9
                                         , column = 11
@@ -325,10 +300,11 @@ Program
                             }
                         )
                     , Upper
-                        ( Path []
-                            ( Name
+                        ( Path
+                            { mod = []
+                            , last = Name
                                 { text = "False"
-                                , ext = Range
+                                , range = Range
                                     { start = Pos
                                         { line = 9
                                         , column = 20
@@ -339,8 +315,7 @@ Program
                                         }
                                     }
                                 }
-                            )
-                            ( Range
+                            , range = Range
                                 { start = Pos
                                     { line = 9
                                     , column = 20
@@ -350,7 +325,7 @@ Program
                                     , column = 25
                                     }
                                 }
-                            )
+                            }
                         )
                         ( Range
                             { start = Pos
@@ -366,10 +341,11 @@ Program
                     ) :|
                     [
                         ( PCons
-                            ( Path []
-                                ( Name
+                            ( Path
+                                { mod = []
+                                , last = Name
                                     { text = "Empty"
-                                    , ext = Range
+                                    , range = Range
                                         { start = Pos
                                             { line = 10
                                             , column = 4
@@ -380,8 +356,7 @@ Program
                                             }
                                         }
                                     }
-                                )
-                                ( Range
+                                , range = Range
                                     { start = Pos
                                         { line = 10
                                         , column = 4
@@ -391,7 +366,7 @@ Program
                                         , column = 9
                                         }
                                     }
-                                )
+                                }
                             ) []
                             ( Range
                                 { start = Pos
@@ -405,10 +380,11 @@ Program
                                 }
                             )
                         , Upper
-                            ( Path []
-                                ( Name
+                            ( Path
+                                { mod = []
+                                , last = Name
                                     { text = "True"
-                                    , ext = Range
+                                    , range = Range
                                         { start = Pos
                                             { line = 10
                                             , column = 20
@@ -419,8 +395,7 @@ Program
                                             }
                                         }
                                     }
-                                )
-                                ( Range
+                                , range = Range
                                     { start = Pos
                                         { line = 10
                                         , column = 20
@@ -430,7 +405,7 @@ Program
                                         , column = 24
                                         }
                                     }
-                                )
+                                }
                             )
                             ( Range
                                 { start = Pos
@@ -459,10 +434,11 @@ Program
                 )
             , declRet = Just
                 ( TId
-                    ( Path []
-                        ( Name
+                    ( Path
+                        { mod = []
+                        , last = Name
                             { text = "Bool"
-                            , ext = Range
+                            , range = Range
                                 { start = Pos
                                     { line = 7
                                     , column = 27
@@ -473,8 +449,7 @@ Program
                                     }
                                 }
                             }
-                        )
-                        ( Range
+                        , range = Range
                             { start = Pos
                                 { line = 7
                                 , column = 27
@@ -484,7 +459,7 @@ Program
                                 , column = 31
                                 }
                             }
-                        )
+                        }
                     ) NoExt
                 )
             , declExt = NoExt
@@ -492,7 +467,7 @@ Program
         , LetDecl
             { declName = Name
                 { text = "isEmpty?"
-                , ext = Range
+                , range = Range
                     { start = Pos
                         { line = 13
                         , column = 4
@@ -506,10 +481,11 @@ Program
             , declArgs = []
             , declBody = Match
                 ( Lower
-                    ( Path []
-                        ( Name
+                    ( Path
+                        { mod = []
+                        , last = Name
                             { text = "hole"
-                            , ext = Range
+                            , range = Range
                                 { start = Pos
                                     { line = 14
                                     , column = 8
@@ -520,8 +496,7 @@ Program
                                     }
                                 }
                             }
-                        )
-                        ( Range
+                        , range = Range
                             { start = Pos
                                 { line = 14
                                 , column = 8
@@ -531,7 +506,7 @@ Program
                                 , column = 12
                                 }
                             }
-                        )
+                        }
                     )
                     ( Range
                         { start = Pos
@@ -547,10 +522,11 @@ Program
                 )
                 (
                     ( PCons
-                        ( Path []
-                            ( Name
+                        ( Path
+                            { mod = []
+                            , last = Name
                                 { text = "Filled"
-                                , ext = Range
+                                , range = Range
                                     { start = Pos
                                         { line = 15
                                         , column = 4
@@ -561,8 +537,7 @@ Program
                                         }
                                     }
                                 }
-                            )
-                            ( Range
+                            , range = Range
                                 { start = Pos
                                     { line = 15
                                     , column = 4
@@ -572,12 +547,12 @@ Program
                                     , column = 10
                                     }
                                 }
-                            )
+                            }
                         )
                         [ PId
                             ( Name
                                 { text = "range"
-                                , ext = Range
+                                , range = Range
                                     { start = Pos
                                         { line = 15
                                         , column = 11
@@ -602,10 +577,11 @@ Program
                             }
                         )
                     , Upper
-                        ( Path []
-                            ( Name
+                        ( Path
+                            { mod = []
+                            , last = Name
                                 { text = "False"
-                                , ext = Range
+                                , range = Range
                                     { start = Pos
                                         { line = 15
                                         , column = 20
@@ -616,8 +592,7 @@ Program
                                         }
                                     }
                                 }
-                            )
-                            ( Range
+                            , range = Range
                                 { start = Pos
                                     { line = 15
                                     , column = 20
@@ -627,7 +602,7 @@ Program
                                     , column = 25
                                     }
                                 }
-                            )
+                            }
                         )
                         ( Range
                             { start = Pos
@@ -643,10 +618,11 @@ Program
                     ) :|
                     [
                         ( PCons
-                            ( Path []
-                                ( Name
+                            ( Path
+                                { mod = []
+                                , last = Name
                                     { text = "Empty"
-                                    , ext = Range
+                                    , range = Range
                                         { start = Pos
                                             { line = 16
                                             , column = 4
@@ -657,8 +633,7 @@ Program
                                             }
                                         }
                                     }
-                                )
-                                ( Range
+                                , range = Range
                                     { start = Pos
                                         { line = 16
                                         , column = 4
@@ -668,7 +643,7 @@ Program
                                         , column = 9
                                         }
                                     }
-                                )
+                                }
                             ) []
                             ( Range
                                 { start = Pos
@@ -682,10 +657,11 @@ Program
                                 }
                             )
                         , Upper
-                            ( Path []
-                                ( Name
+                            ( Path
+                                { mod = []
+                                , last = Name
                                     { text = "True"
-                                    , ext = Range
+                                    , range = Range
                                         { start = Pos
                                             { line = 16
                                             , column = 20
@@ -696,8 +672,7 @@ Program
                                             }
                                         }
                                     }
-                                )
-                                ( Range
+                                , range = Range
                                     { start = Pos
                                         { line = 16
                                         , column = 20
@@ -707,7 +682,7 @@ Program
                                         , column = 24
                                         }
                                     }
-                                )
+                                }
                             )
                             ( Range
                                 { start = Pos
@@ -737,10 +712,11 @@ Program
             , declRet = Just
                 ( TArrow
                     ( TId
-                        ( Path []
-                            ( Name
+                        ( Path
+                            { mod = []
+                            , last = Name
                                 { text = "Hole"
-                                , ext = Range
+                                , range = Range
                                     { start = Pos
                                         { line = 13
                                         , column = 15
@@ -751,8 +727,7 @@ Program
                                         }
                                     }
                                 }
-                            )
-                            ( Range
+                            , range = Range
                                 { start = Pos
                                     { line = 13
                                     , column = 15
@@ -762,14 +737,15 @@ Program
                                     , column = 19
                                     }
                                 }
-                            )
+                            }
                         ) NoExt
                     )
                     ( TId
-                        ( Path []
-                            ( Name
+                        ( Path
+                            { mod = []
+                            , last = Name
                                 { text = "Bool"
-                                , ext = Range
+                                , range = Range
                                     { start = Pos
                                         { line = 13
                                         , column = 23
@@ -780,8 +756,7 @@ Program
                                         }
                                     }
                                 }
-                            )
-                            ( Range
+                            , range = Range
                                 { start = Pos
                                     { line = 13
                                     , column = 23
@@ -791,7 +766,7 @@ Program
                                     , column = 27
                                     }
                                 }
-                            )
+                            }
                         ) NoExt
                     )
                     ( Range
@@ -811,7 +786,7 @@ Program
         , LetDecl
             { declName = Name
                 { text = "isEmpty"
-                , ext = Range
+                , range = Range
                     { start = Pos
                         { line = 18
                         , column = 4
@@ -826,54 +801,55 @@ Program
                 [
                     ( Name
                         { text = "hole"
-                        , ext = Range
+                        , range = Range
                             { start = Pos
                                 { line = 18
-                                , column = 14
+                                , column = 13
                                 }
                             , end = Pos
                                 { line = 18
-                                , column = 18
+                                , column = 17
                                 }
                             }
                         }
                     , TId
-                        ( Path []
-                            ( Name
+                        ( Path
+                            { mod = []
+                            , last = Name
                                 { text = "Hole"
-                                , ext = Range
+                                , range = Range
                                     { start = Pos
                                         { line = 18
-                                        , column = 20
+                                        , column = 19
                                         }
                                     , end = Pos
                                         { line = 18
-                                        , column = 24
+                                        , column = 23
                                         }
                                     }
                                 }
-                            )
-                            ( Range
+                            , range = Range
                                 { start = Pos
                                     { line = 18
-                                    , column = 20
+                                    , column = 19
                                     }
                                 , end = Pos
                                     { line = 18
-                                    , column = 24
+                                    , column = 23
                                     }
                                 }
-                            )
+                            }
                         ) NoExt
                     )
                 ]
             , declBody = If
                 ( App
                     ( Lower
-                        ( Path []
-                            ( Name
+                        ( Path
+                            { mod = []
+                            , last = Name
                                 { text = "isEmpty?"
-                                , ext = Range
+                                , range = Range
                                     { start = Pos
                                         { line = 19
                                         , column = 5
@@ -884,8 +860,7 @@ Program
                                         }
                                     }
                                 }
-                            )
-                            ( Range
+                            , range = Range
                                 { start = Pos
                                     { line = 19
                                     , column = 5
@@ -895,7 +870,7 @@ Program
                                     , column = 13
                                     }
                                 }
-                            )
+                            }
                         )
                         ( Range
                             { start = Pos
@@ -910,10 +885,11 @@ Program
                         )
                     )
                     ( Lower
-                        ( Path []
-                            ( Name
+                        ( Path
+                            { mod = []
+                            , last = Name
                                 { text = "hole"
-                                , ext = Range
+                                , range = Range
                                     { start = Pos
                                         { line = 19
                                         , column = 14
@@ -924,8 +900,7 @@ Program
                                         }
                                     }
                                 }
-                            )
-                            ( Range
+                            , range = Range
                                 { start = Pos
                                     { line = 19
                                     , column = 14
@@ -935,7 +910,7 @@ Program
                                     , column = 18
                                     }
                                 }
-                            )
+                            }
                         )
                         ( Range
                             { start = Pos
@@ -963,10 +938,11 @@ Program
                 )
                 ( App
                     ( Lower
-                        ( Path []
-                            ( Name
+                        ( Path
+                            { mod = []
+                            , last = Name
                                 { text = "print"
-                                , ext = Range
+                                , range = Range
                                     { start = Pos
                                         { line = 20
                                         , column = 9
@@ -977,8 +953,7 @@ Program
                                         }
                                     }
                                 }
-                            )
-                            ( Range
+                            , range = Range
                                 { start = Pos
                                     { line = 20
                                     , column = 9
@@ -988,7 +963,7 @@ Program
                                     , column = 14
                                     }
                                 }
-                            )
+                            }
                         )
                         ( Range
                             { start = Pos
@@ -1032,10 +1007,11 @@ Program
                 ( Just
                     ( App
                         ( Lower
-                            ( Path []
-                                ( Name
+                            ( Path
+                                { mod = []
+                                , last = Name
                                     { text = "print"
-                                    , ext = Range
+                                    , range = Range
                                         { start = Pos
                                             { line = 21
                                             , column = 9
@@ -1046,8 +1022,7 @@ Program
                                             }
                                         }
                                     }
-                                )
-                                ( Range
+                                , range = Range
                                     { start = Pos
                                         { line = 21
                                         , column = 9
@@ -1057,7 +1032,7 @@ Program
                                         , column = 14
                                         }
                                     }
-                                )
+                                }
                             )
                             ( Range
                                 { start = Pos
@@ -1112,32 +1087,32 @@ Program
                 )
             , declRet = Just
                 ( TId
-                    ( Path []
-                        ( Name
+                    ( Path
+                        { mod = []
+                        , last = Name
                             { text = "Unit"
-                            , ext = Range
+                            , range = Range
                                 { start = Pos
                                     { line = 18
-                                    , column = 27
+                                    , column = 26
                                     }
                                 , end = Pos
                                     { line = 18
-                                    , column = 31
+                                    , column = 30
                                     }
                                 }
                             }
-                        )
-                        ( Range
+                        , range = Range
                             { start = Pos
                                 { line = 18
-                                , column = 27
+                                , column = 26
                                 }
                             , end = Pos
                                 { line = 18
-                                , column = 31
+                                , column = 30
                                 }
                             }
-                        )
+                        }
                     ) NoExt
                 )
             , declExt = NoExt
@@ -1145,7 +1120,7 @@ Program
         , LetDecl
             { declName = Name
                 { text = "getLineOr"
-                , ext = Range
+                , range = Range
                     { start = Pos
                         { line = 23
                         , column = 4
@@ -1160,7 +1135,7 @@ Program
                 [
                     ( Name
                         { text = "hole"
-                        , ext = Range
+                        , range = Range
                             { start = Pos
                                 { line = 23
                                 , column = 15
@@ -1172,10 +1147,11 @@ Program
                             }
                         }
                     , TId
-                        ( Path []
-                            ( Name
+                        ( Path
+                            { mod = []
+                            , last = Name
                                 { text = "Hole"
-                                , ext = Range
+                                , range = Range
                                     { start = Pos
                                         { line = 23
                                         , column = 21
@@ -1186,8 +1162,7 @@ Program
                                         }
                                     }
                                 }
-                            )
-                            ( Range
+                            , range = Range
                                 { start = Pos
                                     { line = 23
                                     , column = 21
@@ -1197,13 +1172,13 @@ Program
                                     , column = 25
                                     }
                                 }
-                            )
+                            }
                         ) NoExt
                     )
                 ,
                     ( Name
                         { text = "alt"
-                        , ext = Range
+                        , range = Range
                             { start = Pos
                                 { line = 23
                                 , column = 28
@@ -1215,10 +1190,11 @@ Program
                             }
                         }
                     , TId
-                        ( Path []
-                            ( Name
+                        ( Path
+                            { mod = []
+                            , last = Name
                                 { text = "Int"
-                                , ext = Range
+                                , range = Range
                                     { start = Pos
                                         { line = 23
                                         , column = 33
@@ -1229,8 +1205,7 @@ Program
                                         }
                                     }
                                 }
-                            )
-                            ( Range
+                            , range = Range
                                 { start = Pos
                                     { line = 23
                                     , column = 33
@@ -1240,16 +1215,17 @@ Program
                                     , column = 36
                                     }
                                 }
-                            )
+                            }
                         ) NoExt
                     )
                 ]
             , declBody = Match
                 ( Lower
-                    ( Path []
-                        ( Name
+                    ( Path
+                        { mod = []
+                        , last = Name
                             { text = "hole"
-                            , ext = Range
+                            , range = Range
                                 { start = Pos
                                     { line = 24
                                     , column = 8
@@ -1260,8 +1236,7 @@ Program
                                     }
                                 }
                             }
-                        )
-                        ( Range
+                        , range = Range
                             { start = Pos
                                 { line = 24
                                 , column = 8
@@ -1271,7 +1246,7 @@ Program
                                 , column = 12
                                 }
                             }
-                        )
+                        }
                     )
                     ( Range
                         { start = Pos
@@ -1287,10 +1262,11 @@ Program
                 )
                 (
                     ( PCons
-                        ( Path []
-                            ( Name
+                        ( Path
+                            { mod = []
+                            , last = Name
                                 { text = "Filled"
-                                , ext = Range
+                                , range = Range
                                     { start = Pos
                                         { line = 25
                                         , column = 4
@@ -1301,8 +1277,7 @@ Program
                                         }
                                     }
                                 }
-                            )
-                            ( Range
+                            , range = Range
                                 { start = Pos
                                     { line = 25
                                     , column = 4
@@ -1312,12 +1287,12 @@ Program
                                     , column = 10
                                     }
                                 }
-                            )
+                            }
                         )
                         [ PId
                             ( Name
                                 { text = "range"
-                                , ext = Range
+                                , range = Range
                                     { start = Pos
                                         { line = 25
                                         , column = 11
@@ -1343,10 +1318,11 @@ Program
                         )
                     , Field
                         ( Lower
-                            ( Path []
-                                ( Name
+                            ( Path
+                                { mod = []
+                                , last = Name
                                     { text = "range"
-                                    , ext = Range
+                                    , range = Range
                                         { start = Pos
                                             { line = 25
                                             , column = 20
@@ -1357,8 +1333,7 @@ Program
                                             }
                                         }
                                     }
-                                )
-                                ( Range
+                                , range = Range
                                     { start = Pos
                                         { line = 25
                                         , column = 20
@@ -1368,7 +1343,7 @@ Program
                                         , column = 25
                                         }
                                     }
-                                )
+                                }
                             )
                             ( Range
                                 { start = Pos
@@ -1384,7 +1359,7 @@ Program
                         )
                         ( Name
                             { text = "line"
-                            , ext = Range
+                            , range = Range
                                 { start = Pos
                                     { line = 25
                                     , column = 26
@@ -1410,10 +1385,11 @@ Program
                     ) :|
                     [
                         ( PCons
-                            ( Path []
-                                ( Name
+                            ( Path
+                                { mod = []
+                                , last = Name
                                     { text = "Empty"
-                                    , ext = Range
+                                    , range = Range
                                         { start = Pos
                                             { line = 26
                                             , column = 4
@@ -1424,8 +1400,7 @@ Program
                                             }
                                         }
                                     }
-                                )
-                                ( Range
+                                , range = Range
                                     { start = Pos
                                         { line = 26
                                         , column = 4
@@ -1435,7 +1410,7 @@ Program
                                         , column = 9
                                         }
                                     }
-                                )
+                                }
                             ) []
                             ( Range
                                 { start = Pos
@@ -1449,10 +1424,11 @@ Program
                                 }
                             )
                         , Lower
-                            ( Path []
-                                ( Name
+                            ( Path
+                                { mod = []
+                                , last = Name
                                     { text = "alt"
-                                    , ext = Range
+                                    , range = Range
                                         { start = Pos
                                             { line = 26
                                             , column = 20
@@ -1463,8 +1439,7 @@ Program
                                             }
                                         }
                                     }
-                                )
-                                ( Range
+                                , range = Range
                                     { start = Pos
                                         { line = 26
                                         , column = 20
@@ -1474,7 +1449,7 @@ Program
                                         , column = 23
                                         }
                                     }
-                                )
+                                }
                             )
                             ( Range
                                 { start = Pos
@@ -1503,10 +1478,11 @@ Program
                 )
             , declRet = Just
                 ( TId
-                    ( Path []
-                        ( Name
+                    ( Path
+                        { mod = []
+                        , last = Name
                             { text = "Int"
-                            , ext = Range
+                            , range = Range
                                 { start = Pos
                                     { line = 23
                                     , column = 39
@@ -1517,8 +1493,7 @@ Program
                                     }
                                 }
                             }
-                        )
-                        ( Range
+                        , range = Range
                             { start = Pos
                                 { line = 23
                                 , column = 39
@@ -1528,7 +1503,7 @@ Program
                                 , column = 42
                                 }
                             }
-                        )
+                        }
                     ) NoExt
                 )
             , declExt = NoExt
@@ -1536,7 +1511,7 @@ Program
         , LetDecl
             { declName = Name
                 { text = "sequenced"
-                , ext = Range
+                , range = Range
                     { start = Pos
                         { line = 28
                         , column = 4
@@ -1552,10 +1527,11 @@ Program
                 ( BlBind
                     ( App
                         ( Lower
-                            ( Path []
-                                ( Name
+                            ( Path
+                                { mod = []
+                                , last = Name
                                     { text = "print"
-                                    , ext = Range
+                                    , range = Range
                                         { start = Pos
                                             { line = 29
                                             , column = 2
@@ -1566,8 +1542,7 @@ Program
                                             }
                                         }
                                     }
-                                )
-                                ( Range
+                                , range = Range
                                     { start = Pos
                                         { line = 29
                                         , column = 2
@@ -1577,7 +1552,7 @@ Program
                                         , column = 7
                                         }
                                     }
-                                )
+                                }
                             )
                             ( Range
                                 { start = Pos
@@ -1621,10 +1596,11 @@ Program
                     ( BlBind
                         ( App
                             ( Lower
-                                ( Path []
-                                    ( Name
+                                ( Path
+                                    { mod = []
+                                    , last = Name
                                         { text = "print"
-                                        , ext = Range
+                                        , range = Range
                                             { start = Pos
                                                 { line = 30
                                                 , column = 2
@@ -1635,8 +1611,7 @@ Program
                                                 }
                                             }
                                         }
-                                    )
-                                    ( Range
+                                    , range = Range
                                         { start = Pos
                                             { line = 30
                                             , column = 2
@@ -1646,7 +1621,7 @@ Program
                                             , column = 7
                                             }
                                         }
-                                    )
+                                    }
                                 )
                                 ( Range
                                     { start = Pos
@@ -1690,10 +1665,11 @@ Program
                         ( BlEnd
                             ( App
                                 ( Lower
-                                    ( Path []
-                                        ( Name
+                                    ( Path
+                                        { mod = []
+                                        , last = Name
                                             { text = "print"
-                                            , ext = Range
+                                            , range = Range
                                                 { start = Pos
                                                     { line = 31
                                                     , column = 2
@@ -1704,8 +1680,7 @@ Program
                                                     }
                                                 }
                                             }
-                                        )
-                                        ( Range
+                                        , range = Range
                                             { start = Pos
                                                 { line = 31
                                                 , column = 2
@@ -1715,7 +1690,7 @@ Program
                                                 , column = 7
                                                 }
                                             }
-                                        )
+                                        }
                                     )
                                     ( Range
                                         { start = Pos
@@ -1772,32 +1747,32 @@ Program
                 )
             , declRet = Just
                 ( TId
-                    ( Path []
-                        ( Name
+                    ( Path
+                        { mod = []
+                        , last = Name
                             { text = "Unit"
-                            , ext = Range
+                            , range = Range
                                 { start = Pos
                                     { line = 28
-                                    , column = 16
+                                    , column = 15
                                     }
                                 , end = Pos
                                     { line = 28
-                                    , column = 20
+                                    , column = 19
                                     }
                                 }
                             }
-                        )
-                        ( Range
+                        , range = Range
                             { start = Pos
                                 { line = 28
-                                , column = 16
+                                , column = 15
                                 }
                             , end = Pos
                                 { line = 28
-                                , column = 20
+                                , column = 19
                                 }
                             }
-                        )
+                        }
                     ) NoExt
                 )
             , declExt = NoExt

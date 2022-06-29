@@ -16,7 +16,7 @@ let isEmpty? : Hole -> Bool =
     Filled range => False
     Empty        => True
 
-let isEmpty! (hole: Hole): Unit =
+let isEmpty (hole: Hole): Unit =
   if isEmpty? hole
     then print "It's empty!!"
     else print "Is's not empty.'"
@@ -26,7 +26,7 @@ let getLineOr (hole: Hole) (alt: Int): Int =
     Filled range => range.line
     Empty        => alt
 
-let sequenced!: Unit =
+let sequenced: Unit =
   print "a"
   print "b"
   print "c"
