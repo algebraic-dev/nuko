@@ -8,11 +8,11 @@ import Relude.String.Reexport
 import Relude.String        (Text)
 import Data.Text.Read       (decimal, double)
 import Control.Monad        (when)
+import Nuko.Utils           (flag, terminate)
 
 import Nuko.Syntax.Lexer.Support
 import Nuko.Syntax.Lexer.Tokens
 import Nuko.Syntax.Range
-
 import qualified Control.Monad.Chronicle as Chronicle
 import qualified Control.Monad.State     as State
 import qualified Control.Monad.Except    as Error

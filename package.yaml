@@ -1,10 +1,10 @@
-name:         Nuko
-version:      0.1.0.0
-github:       "felipegchi/Nuko"
-license:      BSD3
-author:       "Felipe G"
-maintainer:   "chiyokuoni@gmail.com"
-copyright:    "2022 Felipe G"
+name: Nuko
+version: 0.1.0.0
+github: "felipegchi/Nuko"
+license: BSD3
+author: "Felipe G"
+maintainer: "chiyokuoni@gmail.com"
+copyright: "2022 Felipe G"
 
 description: <https://github.com/githubuser/Nuko#readme>
 
@@ -26,6 +26,11 @@ default-extensions:
   - FlexibleContexts
   - OverloadedStrings
   - DataKinds
+  - UndecidableInstances
+  - FunctionalDependencies
+  - ConstraintKinds
+  - TemplateHaskell
+  - RankNTypes
 
 ghc-options:
   - -Weverything
@@ -46,11 +51,12 @@ library:
   ghc-options:
     - -Wall
   dependencies:
-  - mtl
-  - bytestring
-  - array
-  - monad-chronicle
-  - these
+    - mtl
+    - bytestring
+    - array
+    - monad-chronicle
+    - these
+    - microlens-platform
 
 executables:
   Nuko-exe:

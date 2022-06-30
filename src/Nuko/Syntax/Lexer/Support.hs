@@ -20,8 +20,6 @@ module Nuko.Syntax.Lexer.Support (
   addToBuffer,
   ghostRange,
   runLexer,
-  flag,
-  terminate,
   flagLocal
 ) where
 
@@ -31,6 +29,7 @@ import Nuko.Syntax.Range        (Pos, Ranged, Range)
 import Data.ByteString.Internal (w2c)
 import Control.Monad.Chronicle  (MonadChronicle, Chronicle)
 import Nuko.Syntax.Error        (SyntaxError(..))
+import Nuko.Utils               (flag)
 
 import qualified Control.Monad.Chronicle as Chronicle
 import qualified Control.Monad.State     as State
@@ -142,11 +141,3 @@ runLexer lex' input =
   first
     (\s -> appEndo s [])
     (Chronicle.runChronicle $ State.evalStateT lex'.getLexer (initialState input))
-
--- Support for error handling
-
-flag :: Chronicle.MonadChronicle (Endo [SyntaxError]) m => SyntaxError -> m ()
-flag err = Chronicle.dictate $ Endo ([err] <>)
-
-terminate :: Chronicle.MonadChronicle (Endo [SyntaxError]) m => SyntaxError -> m a
-terminate err = Chronicle.confess $ Endo ([err] <>)

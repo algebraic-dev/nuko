@@ -2,6 +2,7 @@
 module Nuko.Syntax.Parser where
 
 import Relude
+
 import Nuko.Syntax.Lexer.Support
 import Nuko.Syntax.Lexer.Tokens
 import Nuko.Syntax.Lexer
@@ -9,6 +10,7 @@ import Nuko.Syntax.Range
 import Nuko.Syntax.Range
 import Nuko.Syntax.Tree
 import Nuko.Syntax.Error
+import Nuko.Utils
 import Nuko.Tree
 
 import Data.Text (Text)

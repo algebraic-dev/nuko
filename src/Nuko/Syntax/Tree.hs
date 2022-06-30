@@ -47,6 +47,8 @@ type instance XBlock (Nuko 'Normal) = Range
 type instance XVar (Nuko 'Normal) = Range
 type instance XExt (Nuko 'Normal) = Void
 
+type instance XImport (Nuko 'Normal) = NoExt
+
 deriving instance Show (Expr (Nuko 'Normal))
 deriving instance Show (Block (Nuko 'Normal))
 deriving instance Show (Var (Nuko 'Normal))

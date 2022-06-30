@@ -22,7 +22,11 @@ source-repository head
 
 library
   exposed-modules:
+      Control.Monad.Import
       Nuko.Driver
+      Nuko.Resolver
+      Nuko.Resolver.Error
+      Nuko.Resolver.Support
       Nuko.Resolver.Tree
       Nuko.Syntax.Error
       Nuko.Syntax.Lexer
@@ -34,6 +38,7 @@ library
       Nuko.Tree
       Nuko.Tree.Expr
       Nuko.Tree.TopLevel
+      Nuko.Utils
   other-modules:
       Paths_Nuko
   hs-source-dirs:
@@ -52,11 +57,17 @@ library
       FlexibleContexts
       OverloadedStrings
       DataKinds
+      UndecidableInstances
+      FunctionalDependencies
+      ConstraintKinds
+      TemplateHaskell
+      RankNTypes
   ghc-options: -Weverything -Wno-all-missed-specializations -Wno-implicit-prelude -Wno-missing-deriving-strategies -Wno-missing-kind-signatures -Wno-prepositive-qualified-module -Wno-missing-import-lists -Wno-missing-safe-haskell-mode -Wno-safe -Wno-missing-exported-signatures -Wno-unsafe -Wno-missed-specialisations -Wall
   build-depends:
       array
     , base >=4.16.0.0
     , bytestring
+    , microlens-platform
     , monad-chronicle
     , mtl
     , relude >=1.1.0.0 && <1.2
@@ -83,6 +94,11 @@ executable Nuko-exe
       FlexibleContexts
       OverloadedStrings
       DataKinds
+      UndecidableInstances
+      FunctionalDependencies
+      ConstraintKinds
+      TemplateHaskell
+      RankNTypes
   ghc-options: -Weverything -Wno-all-missed-specializations -Wno-implicit-prelude -Wno-missing-deriving-strategies -Wno-missing-kind-signatures -Wno-prepositive-qualified-module -Wno-missing-import-lists -Wno-missing-safe-haskell-mode -Wno-safe -Wno-missing-exported-signatures -Wno-unsafe -Wno-missed-specialisations -Wall -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       Nuko
@@ -116,6 +132,11 @@ test-suite Nuko-test
       FlexibleContexts
       OverloadedStrings
       DataKinds
+      UndecidableInstances
+      FunctionalDependencies
+      ConstraintKinds
+      TemplateHaskell
+      RankNTypes
       NoImplicitPrelude
       OverloadedStrings
   ghc-options: -Weverything -Wno-all-missed-specializations -Wno-implicit-prelude -Wno-missing-deriving-strategies -Wno-missing-kind-signatures -Wno-prepositive-qualified-module -Wno-missing-import-lists -Wno-missing-safe-haskell-mode -Wno-safe -Wno-missing-exported-signatures -Wno-unsafe -Wno-missed-specialisations -Wall -threaded -rtsopts -with-rtsopts=-N
