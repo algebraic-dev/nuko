@@ -72,6 +72,7 @@ instance HasPosition ReId where
 
 instance HasPosition Path where
   getPos (Path _ _ r) = r
+  getPos (Local r) = r.range
 
 instance HasPosition (Var (Nuko 'Resolved)) where
   getPos (Var _ _ r) = r

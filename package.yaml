@@ -31,6 +31,7 @@ default-extensions:
   - ConstraintKinds
   - TemplateHaskell
   - RankNTypes
+  - DeriveGeneric
 
 ghc-options:
   - -Weverything

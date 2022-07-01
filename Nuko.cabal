@@ -25,9 +25,11 @@ library
       Control.Monad.Import
       Nuko.Driver
       Nuko.Resolver
+      Nuko.Resolver.Environment
       Nuko.Resolver.Error
-      Nuko.Resolver.Support
+      Nuko.Resolver.Occourence
       Nuko.Resolver.Tree
+      Nuko.Resolver.Types
       Nuko.Syntax.Error
       Nuko.Syntax.Lexer
       Nuko.Syntax.Lexer.Support
@@ -62,6 +64,7 @@ library
       ConstraintKinds
       TemplateHaskell
       RankNTypes
+      DeriveGeneric
   ghc-options: -Weverything -Wno-all-missed-specializations -Wno-implicit-prelude -Wno-missing-deriving-strategies -Wno-missing-kind-signatures -Wno-prepositive-qualified-module -Wno-missing-import-lists -Wno-missing-safe-haskell-mode -Wno-safe -Wno-missing-exported-signatures -Wno-unsafe -Wno-missed-specialisations -Wall
   build-depends:
       array
@@ -99,6 +102,7 @@ executable Nuko-exe
       ConstraintKinds
       TemplateHaskell
       RankNTypes
+      DeriveGeneric
   ghc-options: -Weverything -Wno-all-missed-specializations -Wno-implicit-prelude -Wno-missing-deriving-strategies -Wno-missing-kind-signatures -Wno-prepositive-qualified-module -Wno-missing-import-lists -Wno-missing-safe-haskell-mode -Wno-safe -Wno-missing-exported-signatures -Wno-unsafe -Wno-missed-specialisations -Wall -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       Nuko
@@ -137,6 +141,7 @@ test-suite Nuko-test
       ConstraintKinds
       TemplateHaskell
       RankNTypes
+      DeriveGeneric
       NoImplicitPrelude
       OverloadedStrings
   ghc-options: -Weverything -Wno-all-missed-specializations -Wno-implicit-prelude -Wno-missing-deriving-strategies -Wno-missing-kind-signatures -Wno-prepositive-qualified-module -Wno-missing-import-lists -Wno-missing-safe-haskell-mode -Wno-safe -Wno-missing-exported-signatures -Wno-unsafe -Wno-missed-specialisations -Wall -threaded -rtsopts -with-rtsopts=-N
