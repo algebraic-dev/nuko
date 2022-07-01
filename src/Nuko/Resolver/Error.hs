@@ -1,8 +1,7 @@
 module Nuko.Resolver.Error (ResolveError(..), Case(..)) where
 
-import Relude            (Show, Text, NonEmpty)
+import Relude            (Show, Text, HashSet)
 import Nuko.Syntax.Range (Range(..))
-import Nuko.Syntax.Tree  (Name)
 
 data Case = UpperCase | LowerCase
   deriving Show
@@ -14,5 +13,5 @@ data ResolveError
   | CannotFindType Text Text Range
   | CannotFindConstructor Text Text Range
   | IsPrivate Text Range
-  | AmbiguousNames (NonEmpty Text)
+  | AmbiguousNames (HashSet Text)
   deriving Show

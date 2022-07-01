@@ -6,7 +6,7 @@ module Control.Monad.Import (
 import Relude (Monad, Text, Either, StateT, MonadTrans (lift), ReaderT, ExceptT)
 
 data ImportErrorKind
-  = CannotFind Text
+  = CannotFind
   | Cyclic
 
 class (Monad m) => MonadImport r m | m -> r where

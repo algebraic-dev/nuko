@@ -10,11 +10,15 @@ import Relude             (Show, Semigroup((<>)), Void)
 import Data.Text          (Text)
 import Nuko.Tree
 import Nuko.Syntax.Range  (Range, HasPosition(..))
-import Nuko.Syntax.Tree   (Name)
 
-data Path = Path { mod :: Name, last :: Name, range :: Range } deriving Show
+data ReId = ReId { text :: Text, range :: Range } deriving Show
 
-type instance XName (Nuko 'Resolved) = Name
+data Path
+  = Path Text ReId Range
+  | Local ReId
+  deriving Show
+
+type instance XName (Nuko 'Resolved) = ReId
 type instance XPath (Nuko 'Resolved) = Path
 
 type instance XLInt (Nuko 'Resolved) = Range
@@ -62,6 +66,9 @@ deriving instance Show (Program (Nuko 'Resolved))
 deriving instance Show (TypeDeclArg (Nuko 'Resolved))
 deriving instance Show (TypeDecl (Nuko 'Resolved))
 deriving instance Show (LetDecl (Nuko 'Resolved))
+
+instance HasPosition ReId where
+  getPos (ReId _ r) = r
 
 instance HasPosition Path where
   getPos (Path _ _ r) = r
