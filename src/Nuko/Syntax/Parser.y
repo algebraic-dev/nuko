@@ -1,4 +1,8 @@
 {
+
+{-# OPTIONS_GHC -Wno-name-shadowing #-}
+{-# OPTIONS_GHC -Wno-missing-local-signatures #-}
+
 module Nuko.Syntax.Parser where
 
 import Relude

@@ -1,7 +1,3 @@
-
--- | This module is useful for storing occourence of things inside an enviroment
--- So i can use it for local scopes and for tracking opened things inside the 
--- current module
 module Nuko.Resolver.Occourence (
   OccName(..),
   NameKind(..),
@@ -30,7 +26,7 @@ data NameKind
 
 -- | Name that is not qualified
 data OccName = OccName
-  { name :: Text
+  { occName :: Text
   , kind :: NameKind
   } deriving (Eq, Generic, Show)
 
@@ -39,7 +35,7 @@ instance Hashable OccName where
 
 -- | Useful to store things like visibility of an name inside a module
 newtype OccEnv a = OccEnv (HashMap OccName a)
-  deriving newtype (Semigroup, Monoid, Functor)
+  deriving newtype (Semigroup, Monoid, Functor, Show)
 
 lookupEnv :: OccName -> OccEnv a -> Maybe a
 lookupEnv name (OccEnv map) = HashMap.lookup name map

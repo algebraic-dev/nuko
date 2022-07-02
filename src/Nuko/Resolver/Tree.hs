@@ -4,6 +4,7 @@
 -- | This modules instantiates the tree but changed
 --   only a few things like Names and Paths that are
 --   really important for the resolver
+
 module Nuko.Resolver.Tree where
 
 import Relude             (Show, Semigroup((<>)), Void)

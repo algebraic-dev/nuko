@@ -7,7 +7,7 @@ module Nuko.Syntax.Range (
     oneColRange
 ) where
 
-import Prelude (Int, Semigroup(..), Char, Num ((+)), Show)
+import Relude (Int, Semigroup(..), Char, Num ((+)), Show)
 
 import qualified Data.List.NonEmpty as NonEmpty
 

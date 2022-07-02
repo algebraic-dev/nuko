@@ -24,7 +24,7 @@ import Relude.List               (NonEmpty((:|)))
 import Relude.Monoid             (Endo, Semigroup ((<>)))
 import Relude.String             (Text)
 import Relude.Container          (One(one))
-import Relude                    (Foldable (foldr), ($), (<$>), Alternative ((<|>)), Functor ((<$), fmap), ($>), (.), undefined)
+import Relude                    (Foldable (foldr), ($), (<$>), Alternative ((<|>)), Functor ((<$), fmap), ($>), (.))
 
 import Control.Monad.Import      (MonadImport)
 import Control.Monad.Chronicle   (MonadChronicle)
@@ -33,7 +33,6 @@ import Lens.Micro.Platform       (view)
 import qualified Nuko.Resolver.Occourence as Occ
 import qualified Nuko.Syntax.Tree         as Syntax
 import qualified Data.HashMap.Strict as HashMap
-
 
 -- | The main monad for the resolution. It's not necessary
 -- in the type checker because the MonadState LocalNS is only
@@ -47,50 +46,50 @@ type MonadResolver m =
 
 makePath :: ImpPath Nm -> (Text, Range)
 makePath (x :| xs) =
-  foldr (\a (text, range) -> (text <> "." <> a.text, range <> a.range))
+  foldr (\a (info, loc) -> (info <> "." <> a.text, loc <> a.range))
         (x.text, x.range)
         xs
 
 resolveName :: MonadResolver m => NameKind -> Range -> Text -> m Path
-resolveName kind range text = do
-    let name = OccName text kind
+resolveName kind' loc info = do
+    let name = OccName info kind'
     env <- get
-    fromMaybe (terminate (CannotFindInModule (one (name.kind)) Nothing name.name range)) $
-          pure (Local (ReId name.name range))                 <$  lookupEnv name env._currentNamespace._names
-      <|> (\env' -> put env' $> Local (ReId name.name range)) <$> setUsage env name True
-      <|> resolveAmbiguity                                    <$> lookupEnv name env._openedNames
+    fromMaybe (terminate (CannotFindInModule (one (name.kind)) Nothing name.occName loc)) $
+          pure (Local (ReId name.occName loc))                 <$  lookupEnv name env._currentNamespace._names
+      <|> (\env' -> put env' $> Local (ReId name.occName loc)) <$> setUsage env name True
+      <|> resolveAmbiguity                                     <$> lookupEnv name env._openedNames
   where
     resolveAmbiguity :: MonadResolver m => Label -> m Path
     resolveAmbiguity = \case
       (Ambiguous refs other) -> terminate (AmbiguousNames refs other)
-      (Single ref mod')      -> pure (Path mod' (ReId ref range) range)
+      (Single ref mod')      -> pure (Path mod' (ReId ref loc) loc)
 
 findInSpace :: MonadResolver m => NameSpace -> Range -> Text -> NonEmpty NameKind -> m OccName
-findInSpace space range name occs =
+findInSpace space loc name occs =
     case findAltKeyValue (fmap (OccName name) occs) space._names of
-      Just (res, Private) -> terminate (IsPrivate res.kind name range)
+      Just (res, Private) -> terminate (IsPrivate res.kind name loc)
       Just (res, Public)  -> pure res
-      Nothing             -> terminate (CannotFindInModule occs (Just space._modName) name range)
+      Nothing             -> terminate (CannotFindInModule occs (Just space._modName) name loc)
 
 getModule :: MonadResolver m => Range -> Text -> m NameSpace
-getModule range name = do
+getModule loc name = do
   module' <- gets (HashMap.lookup name . _openedModules)
   case module' of
     Just res -> pure res
-    Nothing  -> terminate (CannotFindModule name range)
+    Nothing  -> terminate (CannotFindModule name loc)
 
 resolvePath :: MonadResolver m => NameKind -> XPath Nm -> m (XPath Re)
-resolvePath nameKind (Syntax.Path []  (Name text range) _) = resolveName nameKind range text
-resolvePath nameKind (Syntax.Path (x : xs) (Name text range) range') = do
+resolvePath nameKind (Syntax.Path []  (Name info loc) _) = resolveName nameKind loc info
+resolvePath nameKind (Syntax.Path (x : xs) (Name info loc) loc') = do
   let (path, modRange') = makePath (x :| xs)
   module' <- getModule modRange' path
-  case Occ.lookupEnv (OccName text nameKind) module'._names of
-    Just _  -> pure (Path path (ReId text range) range')
-    Nothing -> terminate (CannotFindInModule (one nameKind) (Just path) text range)
+  case Occ.lookupEnv (OccName info nameKind) module'._names of
+    Just _  -> pure (Path path (ReId info loc) loc')
+    Nothing -> terminate (CannotFindInModule (one nameKind) (Just path) info loc)
 
 addGlobal :: MonadResolver m => Range -> OccName -> Visibility -> m ()
-addGlobal range name vs = do
+addGlobal loc name vs = do
   def <- gets (view (currentNamespace . names))
   case Occ.lookupEnv name  def of
-    Just _  -> terminate (AlreadyExistsName name.name name.kind range)
+    Just _  -> terminate (AlreadyExistsName name.occName name.kind loc)
     Nothing -> addDef name vs

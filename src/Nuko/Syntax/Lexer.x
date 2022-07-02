@@ -1,21 +1,23 @@
 {
 
+{-# OPTIONS_GHC -Wno-name-shadowing #-}
+{-# OPTIONS_GHC -Wno-missing-local-signatures #-}
+{-# OPTIONS_GHC -Wno-missing-export-lists #-}
+{-# OPTIONS_GHC -Wno-monomorphism-restriction #-}
+
 module Nuko.Syntax.Lexer where
 
-import Relude
-import Relude.String.Reexport
+import Relude hiding (undefined)
+import Prelude (undefined)
 
-import Relude.String        (Text)
-import Data.Text.Read       (decimal, double)
-import Control.Monad        (when)
-import Nuko.Utils           (flag, terminate)
+import Data.Text.Read       (decimal)
+import Nuko.Utils           (flag)
 
 import Nuko.Syntax.Lexer.Support
 import Nuko.Syntax.Lexer.Tokens
 import Nuko.Syntax.Range
-import qualified Control.Monad.Chronicle as Chronicle
+
 import qualified Control.Monad.State     as State
-import qualified Control.Monad.Except    as Error
 import qualified Data.ByteString         as ByteString
 
 }
@@ -88,7 +90,7 @@ lexer :-
 <0> "\"         { token TcSlash  }
 <0> "=>"        { layoutKw TcDoubleArrow  }
 
-<0> @not_id     { \t p -> flagLocal (UnexpectedStr) p *> scan }
+<0> @not_id     { \_ p -> flagLocal (UnexpectedStr) p *> scan }
 
 -- Rule for parsing layout
 
@@ -121,7 +123,7 @@ layoutKw t text pos = do
     token t text pos
 
 startLayout _ _ = do
-    popCode
+    _   <- popCode
     ref <- lastLayout
     col <- State.gets (column . currentPos . input)
     if Just col <= ref

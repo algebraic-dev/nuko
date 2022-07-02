@@ -48,8 +48,8 @@ data AlexInput = AlexInput
 -- | "Modifies" the AlexInput and gets the "current" word8/char.
 -- It's a required function to the Alex generated lexer.
 alexGetByte :: AlexInput -> Maybe (Word8, AlexInput)
-alexGetByte input = update <$> ByteString.uncons (inputStream input)
-  where newPos = Range.advancePos (currentPos input)  . w2c
+alexGetByte input' = update <$> ByteString.uncons (inputStream input')
+  where newPos = Range.advancePos (currentPos input')  . w2c
         update (char, rest) = (char, AlexInput (newPos char) char rest)
 
 -- | Function required by the Alex to get the previous character.
@@ -94,7 +94,7 @@ popCode = State.state $ \s ->
 -- Layout manipulation
 
 pushLayout :: Int -> Lexer ()
-pushLayout layout = State.modify $ \s -> s {layout = layout : s.layout}
+pushLayout layout' = State.modify $ \s -> s {layout = layout' : s.layout}
 
 popLayout :: Lexer ()
 popLayout = State.modify $ \s -> s { layout = case s.layout of {_ : xs -> xs; [] -> []} }
@@ -137,7 +137,7 @@ ghostRange t = do
     pure $ Range.Ranged t (Range.Range pos pos)
 
 runLexer :: Lexer a -> ByteString -> These [SyntaxError] a
-runLexer lex' input =
+runLexer lex' input' =
   first
     (`appEndo` [])
-    (Chronicle.runChronicle $ State.evalStateT lex'.getLexer (initialState input))
+    (Chronicle.runChronicle $ State.evalStateT lex'.getLexer (initialState input'))

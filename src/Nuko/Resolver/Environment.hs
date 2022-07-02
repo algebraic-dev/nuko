@@ -20,9 +20,12 @@ module Nuko.Resolver.Environment (
   addDef,
   modName,
   names,
+  newNamespaces,
+  emptyLocalNS
 ) where
 
 import Nuko.Resolver.Occourence (OccEnv (OccEnv), empty, OccName(..), lookupEnv, insertEnv, updateEnvWith)
+import Nuko.Syntax.Range        (Range(..))
 
 import Relude.String            (Text)
 import Relude.Container         (HashSet, HashMap)
@@ -30,15 +33,15 @@ import Relude.Base              (Eq((==)))
 import Relude.Bool              (otherwise, Bool (..), (&&))
 import Relude.Monoid            ((<>))
 import Relude.Applicative       (Applicative(pure))
-import Relude.Monad             (modify, MonadState (get, state), fromMaybe, gets)
-import Relude                   (One (one), (.), snd, fst, Maybe (..), (<$>), ($), filter, Functor (fmap))
+import Relude.Monad             (modify, MonadState, fromMaybe, gets)
+import Relude                   (One (one), (.), snd, fst, Maybe (..), (<$>), ($), filter, Functor (fmap), Show)
 
 import Lens.Micro.Platform      (makeLenses, over, set)
 import Data.List.NonEmpty       (NonEmpty ((:|)), (<|), uncons)
-import Nuko.Syntax.Range        (Range(..))
 
-import qualified Data.HashSet as HashSet
+import qualified Data.HashSet        as HashSet
 import qualified Data.HashMap.Strict as HashMap
+import qualified Nuko.Resolver.Occourence as Occ
 
 data NameSort
   = External Text
@@ -47,16 +50,16 @@ data NameSort
 data Visibility
   = Public
   | Private
-  deriving Eq
+  deriving (Eq, Show)
 
 data NameSpace = NameSpace
   { _modName :: Text
   , _names   :: OccEnv Visibility
-  }
+  } deriving Show
 
 makeLenses ''NameSpace
 
-data Label = Single Text Text | Ambiguous (HashSet Text) (HashSet Text)
+data Label = Single Text Text | Ambiguous (HashSet Text) (HashSet Text) deriving Show
 
 joinLabels :: Label -> Label -> Label
 joinLabels a' b' = case (a', b') of
@@ -78,9 +81,12 @@ data LocalNS = LocalNS
   , _openedModules    :: HashMap Text NameSpace
   , _currentNamespace :: NameSpace
   , _newNamespaces    :: HashMap Text NameSpace
-  }
+  } deriving Show
 
 makeLenses ''LocalNS
+
+emptyLocalNS :: Text -> LocalNS
+emptyLocalNS moduleName = LocalNS Occ.empty (one (Occ.empty)) HashMap.empty (NameSpace moduleName Occ.empty) HashMap.empty
 
 -- Functions to help the localNames because it's a really messy type
 
@@ -88,7 +94,7 @@ scopeLocals :: MonadState LocalNS m => m a -> m a
 scopeLocals action = do
   modify (over localNames (empty <|))
   result <- action
-  scope  <- gets (fst . uncons . _localNames)
+  _      <- gets (fst . uncons . _localNames)
   modify (over localNames (fromMaybe (one empty) . snd . uncons))
   pure result
 

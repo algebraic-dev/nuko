@@ -3,7 +3,8 @@ module Control.Monad.Import (
   MonadImport(..),
 ) where
 
-import Relude (Monad, Text, Either, StateT, MonadTrans (lift), ReaderT, ExceptT)
+import Relude.Monad       (Monad(..), Either, StateT, ReaderT, ExceptT)
+import Relude             (Text, MonadTrans (lift))
 
 data ImportErrorKind
   = CannotFind
@@ -12,6 +13,8 @@ data ImportErrorKind
 class (Monad m) => MonadImport r m | m -> r where
   importIn :: Text -> m (Either ImportErrorKind r)
   addIn    :: Text -> r -> m ()
+
+--  Could not deduce (MonadImport NameSpace (State.StateT LocalNS m))
 
 instance MonadImport e m => MonadImport e (StateT s m) where
   importIn t = lift (importIn t)
