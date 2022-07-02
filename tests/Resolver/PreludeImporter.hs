@@ -1,4 +1,6 @@
-module Resolver.PreludeImporter where
+module Resolver.PreludeImporter (
+  runResolverNull,
+) where
 
 
 import Nuko.Resolver.Environment (NameSpace, LocalNS(..), Label(..), emptyLocalNS)

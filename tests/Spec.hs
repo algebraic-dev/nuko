@@ -1,7 +1,13 @@
-import Relude
-import Data.These
+import Relude             (($), Show, Traversable(sequence, traverse), IO, unlines, FilePath, ConvertUtf8(encodeUtf8), ByteString, (.))
+import Relude.String      (Text)
+import Relude.Monoid      (Semigroup((<>)))
+import Relude.Monad       (Monad((>>=)))
+import Relude.Functor     (fmap, (<$>))
+import Relude.Applicative (Applicative(pure))
 
-import Test.Tasty
+import Data.These ( These(..) )
+
+import Test.Tasty                    (defaultMain, testGroup, TestName, TestTree)
 import Test.Tasty.Golden             (findByExtension, goldenVsString)
 import System.FilePath               (dropExtension, addExtension)
 
@@ -32,41 +38,33 @@ goldenStr file golden str = goldenVsString file golden (pure $ encodeUtf8 str)
 prettyShow :: Show a => a -> Text
 prettyShow item = LazyT.toStrict $ pShowNoColor item
 
-stringifyErr :: Show a => These [a] b -> These Text b
+stringifyErr :: Show a => These [a] b -> These [Text] b
 stringifyErr (That e) = That e
-stringifyErr (This e) = This (unlines $ map prettyShow e)
-stringifyErr (These e f) = These (unlines $ map prettyShow e) f
+stringifyErr (This e) = This (fmap prettyShow e)
+stringifyErr (These e f) = These (fmap prettyShow e) f
+
+runThat :: Show a =>  (b -> Text) ->  (ByteString -> These [a] b) -> FilePath -> IO TestTree
+runThat fn that file = do
+  content <- ByteString.readFile $ addExtension file ".nk"
+  let golden = addExtension file ".golden"
+  pure $ goldenStr file golden $ case that content of
+    That e    -> "That "  <> fn e
+    This e    -> "This "  <> unlines (fmap prettyShow e)
+    These e f -> "These " <> unlines (fmap prettyShow e) <> "\n" <> (fn f)
 
 runFile :: FilePath -> IO TestTree
-runFile file = do
-  content <- ByteString.readFile $ addExtension file ".nk"
-  let golden = addExtension file ".golden"
-  pure $ case runLexer scanUntilEnd content of
-    That e    -> goldenStr file golden ("That " <> unlines (map prettyShow e))
-    This e    -> goldenStr file golden ("This " <> unlines (map prettyShow e))
-    These e f -> goldenStr file golden ("These " <> unlines (map prettyShow e) <> "\n" <> unlines (map prettyShow f))
+runFile = runThat (unlines . fmap prettyShow) (runLexer scanUntilEnd)
 
 runParser :: FilePath -> IO TestTree
-runParser file = do
-  content <- ByteString.readFile $ addExtension file ".nk"
-  let golden = addExtension file ".golden"
-  pure $ case runLexer parseProgram content of
-    That e    -> goldenStr file golden ("That " <> prettyShow e)
-    This e    -> goldenStr file golden ("This " <> unlines (map prettyShow e))
-    These e f -> goldenStr file golden ("These " <> unlines (map prettyShow e) <> "\n" <> prettyShow f)
+runParser = runThat prettyShow (runLexer parseProgram)
 
 runResolver :: FilePath -> IO TestTree
-runResolver file = do
-  content <- ByteString.readFile $ addExtension file ".nk"
-  let golden = addExtension file ".golden"
-  pure $ case stringifyErr (runLexer parseProgram content) >>= \x -> stringifyErr (runResolverNull (resolveProgram x)) of
-    That e    -> goldenStr file golden ("That " <> prettyShow e)
-    This e    -> goldenStr file golden ("This " <> e)
-    These e f -> goldenStr file golden ("These " <> e <> "\n" <> prettyShow f)
+runResolver = runThat prettyShow $ \content -> stringifyErr (runLexer parseProgram content)
+                               >>= \ast     -> stringifyErr (runResolverNull (resolveProgram ast))
 
 runTestPath :: TestName -> FilePath -> (FilePath -> IO TestTree) -> IO TestTree
 runTestPath name path run = do
-  filesNoExt <- map dropExtension <$> findByExtension [".nk"] path
+  filesNoExt <- fmap dropExtension <$> findByExtension [".nk"] path
   tests <- traverse run filesNoExt
   pure (Test.Tasty.testGroup name tests)
 
