@@ -50,7 +50,7 @@ data AlexInput = AlexInput
 alexGetByte :: AlexInput -> Maybe (Word8, AlexInput)
 alexGetByte input = update <$> ByteString.uncons (inputStream input)
   where newPos = Range.advancePos (currentPos input)  . w2c
-        update (char, rest) = (char, (AlexInput (newPos char) char rest))
+        update (char, rest) = (char, AlexInput (newPos char) char rest)
 
 -- | Function required by the Alex to get the previous character.
 alexInputPrevChar :: AlexInput -> Word8
@@ -139,5 +139,5 @@ ghostRange t = do
 runLexer :: Lexer a -> ByteString -> These [SyntaxError] a
 runLexer lex' input =
   first
-    (\s -> appEndo s [])
+    (`appEndo` [])
     (Chronicle.runChronicle $ State.evalStateT lex'.getLexer (initialState input))

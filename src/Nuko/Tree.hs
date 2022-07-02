@@ -2,7 +2,9 @@ module Nuko.Tree (
   module Nuko.Tree.Expr,
   module Nuko.Tree.TopLevel,
   Phase(..),
-  Nuko
+  Nuko,
+  Nm,
+  Re,
 ) where
 
 import Nuko.Tree.Expr
@@ -10,6 +12,9 @@ import Nuko.Tree.TopLevel
 
 data Phase = Normal | Resolved | Typed
 data Nuko (p :: Phase)
+
+type Nm = Nuko 'Normal
+type Re = Nuko 'Resolved
 
 -- Some default implementations that someday i'll use
 

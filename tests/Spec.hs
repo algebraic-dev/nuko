@@ -39,9 +39,9 @@ runFile file = do
   content <- ByteString.readFile $ addExtension file ".nk"
   let golden = addExtension file ".golden"
   pure $ case runLexer scanUntilEnd content of
-    That e    -> goldenStr file golden ("That " <> (unlines $ map prettyShow e))
-    This e    -> goldenStr file golden ("This " <> (unlines $ map prettyShow e))
-    These e f -> goldenStr file golden ("These " <> (unlines $ map prettyShow e) <> "\n" <> (unlines $ map prettyShow f))
+    That e    -> goldenStr file golden ("That " <> unlines (map prettyShow e))
+    This e    -> goldenStr file golden ("This " <> unlines (map prettyShow e))
+    These e f -> goldenStr file golden ("These " <> unlines (map prettyShow e) <> "\n" <> unlines (map prettyShow f))
 
 runParser :: FilePath -> IO TestTree
 runParser file = do
@@ -49,8 +49,8 @@ runParser file = do
   let golden = addExtension file ".golden"
   pure $ case runLexer parseProgram content of
     That e    -> goldenStr file golden ("That " <> prettyShow e)
-    This e    -> goldenStr file golden ("This " <> (unlines $ map prettyShow e))
-    These e f -> goldenStr file golden ("These " <> (unlines $ map prettyShow e) <> "\n" <> (prettyShow f))
+    This e    -> goldenStr file golden ("This " <> unlines (map prettyShow e))
+    These e f -> goldenStr file golden ("These " <> unlines (map prettyShow e) <> "\n" <> prettyShow f)
 
 runTestPath :: TestName -> FilePath -> (FilePath -> IO TestTree) -> IO TestTree
 runTestPath name path run = do

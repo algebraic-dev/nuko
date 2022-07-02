@@ -61,8 +61,8 @@ data Pat x
   | PExt !(XPExt x)
 
 data Var x = Var
-  { pat :: (Pat x)
-  , val :: (Expr x)
+  { pat :: Pat x
+  , val :: Expr x
   , ext :: !(XVar x)
   }
 

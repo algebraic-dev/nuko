@@ -119,12 +119,12 @@ Path(Pred) : PathHelper(Pred) { let (p , f) = $1 in withPosListR p f $ Path p f 
 
 -- Types
 
-TypeAtom :: { Ty (Nuko 'Normal) }
+TypeAtom :: { Ty Nm }
     : Lower        { TPoly $1 NoExt }
     | Path(Upper)  { TId $1 NoExt }
     | '(' Type ')' { $2 }
 
-TypeCon :: { Ty (Nuko 'Normal) }
+TypeCon :: { Ty Nm }
     : Path(Upper) List1(TypeAtom) { withPos $1 $2 $ TCons $1 $2 }
     | TypeCon '->' TypeCon        { withPos $1 $3 $ TArrow $1 $3 }
     | TypeAtom                    { $1 }
@@ -135,13 +135,13 @@ Type
 
 -- Patterns
 
-AtomPat :: { Pat (Nuko 'Normal) }
+AtomPat :: { Pat Nm }
     : '_'                         { PWild $1.position }
     | Lower                       { PId $1 NoExt }
     | Literal                     { PLit $1 NoExt }
     | '(' Pat ')'                 { $2 }
 
-Pat :: { Pat (Nuko 'Normal) }
+Pat :: { Pat Nm }
     : Path(Upper) List(AtomPat) { withPosList $1 $2 $ PCons $1 $2 }
     | Pat ':' Type              { withPos $1 $3     $ PAnn $1 $3 }
     | AtomPat                   { $1 }
@@ -150,23 +150,23 @@ Pat :: { Pat (Nuko 'Normal) }
 
 OptSep : Optional(sep) { () }
 
-Literal :: { Literal (Nuko 'Normal) }
+Literal :: { Literal Nm }
     : int  { LInt (getInt $1) $1.position }
     | str  { LStr (getData $1) $1.position }
 
-Atom :: { Expr (Nuko 'Normal) }
+Atom :: { Expr Nm }
     : PathExpr     { $1 }
     | Literal      { Lit $1 NoExt }
     | '(' Expr ')' { $2 }
 
-App :: { NE.NonEmpty (Expr (Nuko 'Normal)) }
+App :: { NE.NonEmpty (Expr Nm) }
     : Atom App { $1 NE.<| $2 }
     | Atom      { $1 NE.:| [] }
 
-VarExpr :: { Var (Nuko 'Normal) }
+VarExpr :: { Var Nm }
     : let Pat '=' Expr  { withPos $1 $4 $ Var $2 $4 }
 
-BlockExpr :: { Block (Nuko 'Normal) }
+BlockExpr :: { Block Nm }
     : Expr       List1(sep) BlockExpr { BlBind $1 $3 }
     | VarExpr    List1(sep) BlockExpr { BlVar $1 $3 }
     | Expr                            { BlEnd $1 }
@@ -177,7 +177,7 @@ End : end   { ()         }
     | error {% popLayout }
 
 -- Match can be sucessed of a End so.. sometimes it will give an layout error
-ClosedExpr :: { Expr (Nuko 'Normal) }
+ClosedExpr :: { Expr Nm }
     : if ClosedExpr OptSep then ClosedExpr OptSep else ClosedExpr { withPos $1 $8 $ If $2 $5 (Just $8) }
     | Atom App                                                    { withPos $1 $2 $ App $1 $2 }
     | match ClosedExpr with begin SepList1(sep, CaseClause) End   { withPos $1 $5 $ Match $2 $5 }
@@ -185,22 +185,22 @@ ClosedExpr :: { Expr (Nuko 'Normal) }
     | begin BlockExpr End                                         { case $2 of { BlEnd x -> x; _ -> withPos $1 $2 $ Block $2} }
     | Atom                                                        { $1 }
 
-Expr :: { Expr (Nuko 'Normal) }
+Expr :: { Expr Nm }
     : ClosedExpr                                         { $1 }
     | ClosedExpr ':' Type                                { withPos $1 $3 $ Ann $1 $3 }
 
-CaseClause :: { ((Pat (Nuko 'Normal), Expr (Nuko 'Normal))) }
+CaseClause :: { ((Pat Nm, Expr Nm)) }
     : Pat '=>' Expr { ($1, $3) }
 
 -- Top level
 
-ProdClause :: { (Name, Ty (Nuko 'Normal)) }
+ProdClause :: { (Name, Ty Nm) }
     : Lower ':' Type { ($1, $3) }
 
-SumClause :: { (Name, [Ty (Nuko 'Normal)]) }
+SumClause :: { (Name, [Ty Nm]) }
     : '|' Upper List(TypeAtom) { ($2, $3) }
 
-TypeTy :: { TypeDeclArg (Nuko 'Normal) }
+TypeTy :: { TypeDeclArg Nm }
     : '{' SepList(',', ProdClause) '}'  { TypeProd $2 }
     | List1(SumClause)                  { TypeSum $1 }
     | Type                              { TypeSym $1 }
@@ -218,22 +218,21 @@ LetDecl : let Lower List(Binder) Optional(Ret) '=' Expr { LetDecl $2 $3 $6 $4 No
 ImpPath :: { NonEmpty Name }
     : SepList1('.', Upper) { $1 }
 
-ImpDeps :: { ImportDeps (Nuko 'Normal) }
+ImpDeps :: { ImportDeps Nm }
     : Upper as Lower {% terminate (WrongUsageOfCase LowerCase $3.range) }
     | Lower as Upper {% terminate (WrongUsageOfCase UpperCase $3.range) }
-    | Upper as Upper { ImpDepAs (ImpDepUpper $1) $3 }
-    | Lower as Lower { ImpDepAs (ImpDepLower $1) $3 }
-    | Upper          { ImpDep (ImpDepUpper $1) }
-    | Lower          { ImpDep (ImpDepLower $1) }
+    | Upper as Upper { ImportDeps (ImpDepUpper $1) (Just $3) }
+    | Lower as Lower { ImportDeps (ImpDepLower $1) (Just $3) }
+    | Upper          { ImportDeps (ImpDepUpper $1) Nothing }
+    | Lower          { ImportDeps (ImpDepLower $1) Nothing }
 
-Imp :: { ImportTree (Nuko 'Normal) }
-    : ImpPath                                { Imp $1 }
-    | ImpPath '(' SepList1(',', ImpDeps) ')' { ImpList $1 $3 }
-    | ImpPath as Upper                       { ImpAs $1 $3 }
+Imp :: { ImportModifier Nm }
+    : '(' SepList1(',', ImpDeps) ')' { ImpList $2 }
+    | as Upper                       { ImpAs $2 }
 
-ImportDecl : import Imp { Import $2 NoExt }
+ImportDecl : import ImpPath Optional(Imp) { Import $2 $3 NoExt }
 
-Program :: { Program (Nuko 'Normal) }
+Program :: { Program Nm }
     : LetDecl Program    { $2 { letDecls  = $1 : $2.letDecls }  }
     | TypeDecl Program   { $2 { typeDecls = $1 : $2.typeDecls } }
     | ImportDecl Program { $2 { impDecls  = $1 : $2.impDecls }  }

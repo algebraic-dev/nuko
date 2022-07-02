@@ -4,7 +4,7 @@ module Nuko.Tree.TopLevel (
   Program(..),
   TypeDeclArg(..),
   Import(..),
-  ImportTree(..),
+  ImportModifier(..),
   ImportDeps(..),
   ImportDepsKind(..),
   XLetDecl,
@@ -14,6 +14,7 @@ module Nuko.Tree.TopLevel (
   XTypeSum,
   XProgram,
   XImport,
+  ImpPath,
 ) where
 
 import Nuko.Tree.Expr     (Expr, Ty, XName)
@@ -45,18 +46,20 @@ data ImportDepsKind x
   = ImpDepLower (XName x)
   | ImpDepUpper (XName x)
 
-data ImportDeps x
-  = ImpDepAs (ImportDepsKind x) (XName x)
-  | ImpDep   (ImportDepsKind x)
+data ImportDeps x = ImportDeps
+  { name :: ImportDepsKind x
+  , as   :: Maybe (XName x)
+  }
 
-data ImportTree x
-  = ImpAs (ImpPath x) (XName x)
-  | ImpList (ImpPath x) (NonEmpty (ImportDeps x))
-  | Imp (ImpPath x)
+data ImportModifier x
+  = ImpAs (XName x)
+  | ImpList (NonEmpty (ImportDeps x))
+  | ImpStar
 
 data Import x  = Import
-  { modName :: ImportTree x
-  , impExt  :: !(XImport x)
+  { path     :: ImpPath x
+  , modifier :: Maybe (ImportModifier x)
+  , impExt   :: !(XImport x)
   }
 
 data Program x = Program
