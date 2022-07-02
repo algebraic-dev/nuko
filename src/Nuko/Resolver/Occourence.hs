@@ -8,7 +8,8 @@ module Nuko.Resolver.Occourence (
   OccEnv(..),
   lookupEnv,
   insertEnv,
-  updateEnvWith
+  updateEnvWith,
+  empty,
 ) where
 
 import Relude           (Generic, HashMap, Semigroup, Monoid, Functor)
@@ -46,6 +47,9 @@ insertEnv :: OccName -> a -> OccEnv a -> OccEnv a
 insertEnv name val (OccEnv map) = OccEnv (HashMap.insert name val map)
 
 updateEnvWith :: OccName -> (a -> a) -> a -> OccEnv a -> OccEnv a
-updateEnvWith name update cur (OccEnv env) = 
+updateEnvWith name update cur (OccEnv env) =
   let val = maybe cur update (HashMap.lookup name env) in
   OccEnv (HashMap.insert name val env)
+
+empty :: OccEnv a
+empty = OccEnv HashMap.empty
