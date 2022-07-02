@@ -1,0 +1,12 @@
+This AlreadyExistsName "Lul" ConsName
+    ( Range
+        { start = Pos
+            { line = 2
+            , column = 4
+            }
+        , end = Pos
+            { line = 2
+            , column = 7
+            }
+        }
+    )

@@ -32,6 +32,7 @@ default-extensions:
   - TemplateHaskell
   - RankNTypes
   - DeriveGeneric
+  - TupleSections
 
 ghc-options:
   - -Weverything
@@ -70,10 +71,7 @@ executables:
       - -with-rtsopts=-N
     dependencies:
       - Nuko
-      - mtl
       - bytestring
-      - array
-      - monad-chronicle
       - these
 
 tests:
@@ -90,11 +88,12 @@ tests:
       - filepath
       - tasty
       - tasty-golden
-      - tasty-hunit
       - bytestring
       - text
       - these
       - pretty-simple
+      - monad-chronicle
+      - mtl
     default-extensions:
       - NoImplicitPrelude
       - OverloadedStrings

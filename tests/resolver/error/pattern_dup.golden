@@ -1,0 +1,12 @@
+This CannotFindModule "Kek"
+    ( Range
+        { start = Pos
+            { line = 6
+            , column = 8
+            }
+        , end = Pos
+            { line = 6
+            , column = 11
+            }
+        }
+    )

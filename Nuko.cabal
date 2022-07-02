@@ -65,6 +65,7 @@ library
       TemplateHaskell
       RankNTypes
       DeriveGeneric
+      TupleSections
   ghc-options: -Weverything -Wno-all-missed-specializations -Wno-implicit-prelude -Wno-missing-deriving-strategies -Wno-missing-kind-signatures -Wno-prepositive-qualified-module -Wno-missing-import-lists -Wno-missing-safe-haskell-mode -Wno-safe -Wno-missing-exported-signatures -Wno-unsafe -Wno-missed-specialisations -Wall
   build-depends:
       array
@@ -103,14 +104,12 @@ executable Nuko-exe
       TemplateHaskell
       RankNTypes
       DeriveGeneric
+      TupleSections
   ghc-options: -Weverything -Wno-all-missed-specializations -Wno-implicit-prelude -Wno-missing-deriving-strategies -Wno-missing-kind-signatures -Wno-prepositive-qualified-module -Wno-missing-import-lists -Wno-missing-safe-haskell-mode -Wno-safe -Wno-missing-exported-signatures -Wno-unsafe -Wno-missed-specialisations -Wall -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       Nuko
-    , array
     , base >=4.16.0.0
     , bytestring
-    , monad-chronicle
-    , mtl
     , relude >=1.1.0.0 && <1.2
     , these
   default-language: Haskell2010
@@ -119,6 +118,7 @@ test-suite Nuko-test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
+      Resolver.PreludeImporter
       Paths_Nuko
   hs-source-dirs:
       tests
@@ -142,6 +142,7 @@ test-suite Nuko-test
       TemplateHaskell
       RankNTypes
       DeriveGeneric
+      TupleSections
       NoImplicitPrelude
       OverloadedStrings
   ghc-options: -Weverything -Wno-all-missed-specializations -Wno-implicit-prelude -Wno-missing-deriving-strategies -Wno-missing-kind-signatures -Wno-prepositive-qualified-module -Wno-missing-import-lists -Wno-missing-safe-haskell-mode -Wno-safe -Wno-missing-exported-signatures -Wno-unsafe -Wno-missed-specialisations -Wall -threaded -rtsopts -with-rtsopts=-N
@@ -150,11 +151,12 @@ test-suite Nuko-test
     , base >=4.16.0.0
     , bytestring
     , filepath
+    , monad-chronicle
+    , mtl
     , pretty-simple
     , relude >=1.1.0.0 && <1.2
     , tasty
     , tasty-golden
-    , tasty-hunit
     , text
     , these
   default-language: Haskell2010

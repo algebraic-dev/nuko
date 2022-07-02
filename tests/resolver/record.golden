@@ -1,0 +1,168 @@
+That ( Program
+    { typeDecls =
+        [ TypeDecl
+            { tyName = ReId
+                { text = "Ata"
+                , range = Range
+                    { start = Pos
+                        { line = 0
+                        , column = 5
+                        }
+                    , end = Pos
+                        { line = 0
+                        , column = 8
+                        }
+                    }
+                }
+            , tyArgs = []
+            , tyDecl = TypeProd
+                [
+                    ( ReId
+                        { text = "b"
+                        , range = Range
+                            { start = Pos
+                                { line = 1
+                                , column = 2
+                                }
+                            , end = Pos
+                                { line = 1
+                                , column = 3
+                                }
+                            }
+                        }
+                    , TId
+                        ( Path "Prelude"
+                            ( ReId
+                                { text = "Int"
+                                , range = Range
+                                    { start = Pos
+                                        { line = 1
+                                        , column = 5
+                                        }
+                                    , end = Pos
+                                        { line = 1
+                                        , column = 8
+                                        }
+                                    }
+                                }
+                            )
+                            ( Range
+                                { start = Pos
+                                    { line = 1
+                                    , column = 5
+                                    }
+                                , end = Pos
+                                    { line = 1
+                                    , column = 8
+                                    }
+                                }
+                            )
+                        ) NoExt
+                    )
+                ,
+                    ( ReId
+                        { text = "s"
+                        , range = Range
+                            { start = Pos
+                                { line = 2
+                                , column = 2
+                                }
+                            , end = Pos
+                                { line = 2
+                                , column = 3
+                                }
+                            }
+                        }
+                    , TId
+                        ( Path "Prelude"
+                            ( ReId
+                                { text = "String"
+                                , range = Range
+                                    { start = Pos
+                                        { line = 2
+                                        , column = 5
+                                        }
+                                    , end = Pos
+                                        { line = 2
+                                        , column = 11
+                                        }
+                                    }
+                                }
+                            )
+                            ( Range
+                                { start = Pos
+                                    { line = 2
+                                    , column = 5
+                                    }
+                                , end = Pos
+                                    { line = 2
+                                    , column = 11
+                                    }
+                                }
+                            )
+                        ) NoExt
+                    )
+                ]
+            }
+        ]
+    , letDecls = []
+    , impDecls = []
+    , programExt = NoExt
+    }
+, LocalNS
+    { _openedNames = fromList
+        [
+            ( OccName
+                { occName = "Int"
+                , kind = TyName
+                }
+            , Single "Int" "Prelude"
+            )
+        ,
+            ( OccName
+                { occName = "String"
+                , kind = TyName
+                }
+            , Single "String" "Prelude"
+            )
+        ]
+    , _localNames = fromList [] :| []
+    , _openedModules = fromList []
+    , _currentNamespace = NameSpace
+        { _modName = "Main"
+        , _names = fromList
+            [
+                ( OccName
+                    { occName = "Ata"
+                    , kind = TyName
+                    }
+                , Public
+                )
+            ]
+        }
+    , _newNamespaces = fromList
+        [
+            ( "Main.Ata"
+            , NameSpace
+                { _modName = "Main.Ata"
+                , _names = fromList
+                    [
+                        ( OccName
+                            { occName = "b"
+                            , kind = FieldName
+                            }
+                        , Public
+                        )
+                    ,
+                        ( OccName
+                            { occName = "s"
+                            , kind = FieldName
+                            }
+                        , Public
+                        )
+                    ]
+                }
+            )
+        ]
+    }
+)

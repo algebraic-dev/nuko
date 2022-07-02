@@ -1,0 +1,3 @@
+type Kek =
+  | Lul Int
+  | Lul String

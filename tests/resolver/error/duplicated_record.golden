@@ -1,0 +1,12 @@
+This AlreadyExistsName "b" FieldName
+    ( Range
+        { start = Pos
+            { line = 2
+            , column = 2
+            }
+        , end = Pos
+            { line = 2
+            , column = 3
+            }
+        }
+    )

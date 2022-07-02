@@ -3,296 +3,302 @@ That Program
     , letDecls = []
     , impDecls =
         [ Import
-            { modName = Imp
-                ( Name
-                    { text = "A"
+            { path = Name
+                { text = "A"
+                , range = Range
+                    { start = Pos
+                        { line = 0
+                        , column = 7
+                        }
+                    , end = Pos
+                        { line = 0
+                        , column = 8
+                        }
+                    }
+                } :|
+                [ Name
+                    { text = "B"
                     , range = Range
                         { start = Pos
                             { line = 0
-                            , column = 7
+                            , column = 9
                             }
                         , end = Pos
                             { line = 0
-                            , column = 8
-                            }
-                        }
-                    } :|
-                    [ Name
-                        { text = "B"
-                        , range = Range
-                            { start = Pos
-                                { line = 0
-                                , column = 9
-                                }
-                            , end = Pos
-                                { line = 0
-                                , column = 10
-                                }
-                            }
-                        }
-                    , Name
-                        { text = "C"
-                        , range = Range
-                            { start = Pos
-                                { line = 0
-                                , column = 11
-                                }
-                            , end = Pos
-                                { line = 0
-                                , column = 12
-                                }
-                            }
-                        }
-                    ]
-                )
-            , impExt = NoExt
-            }
-        , Import
-            { modName = ImpList
-                ( Name
-                    { text = "A"
-                    , range = Range
-                        { start = Pos
-                            { line = 1
-                            , column = 7
-                            }
-                        , end = Pos
-                            { line = 1
-                            , column = 8
-                            }
-                        }
-                    } :|
-                    [ Name
-                        { text = "B"
-                        , range = Range
-                            { start = Pos
-                                { line = 1
-                                , column = 9
-                                }
-                            , end = Pos
-                                { line = 1
-                                , column = 10
-                                }
-                            }
-                        }
-                    , Name
-                        { text = "C"
-                        , range = Range
-                            { start = Pos
-                                { line = 1
-                                , column = 11
-                                }
-                            , end = Pos
-                                { line = 1
-                                , column = 12
-                                }
-                            }
-                        }
-                    ]
-                )
-                ( ImpDep
-                    ( ImpDepLower
-                        ( Name
-                            { text = "d"
-                            , range = Range
-                                { start = Pos
-                                    { line = 1
-                                    , column = 14
-                                    }
-                                , end = Pos
-                                    { line = 1
-                                    , column = 15
-                                    }
-                                }
-                            }
-                        )
-                    ) :|
-                    [ ImpDep
-                        ( ImpDepLower
-                            ( Name
-                                { text = "e"
-                                , range = Range
-                                    { start = Pos
-                                        { line = 1
-                                        , column = 17
-                                        }
-                                    , end = Pos
-                                        { line = 1
-                                        , column = 18
-                                        }
-                                    }
-                                }
-                            )
-                        )
-                    ]
-                )
-            , impExt = NoExt
-            }
-        , Import
-            { modName = ImpAs
-                ( Name
-                    { text = "A"
-                    , range = Range
-                        { start = Pos
-                            { line = 2
-                            , column = 7
-                            }
-                        , end = Pos
-                            { line = 2
-                            , column = 8
-                            }
-                        }
-                    } :|
-                    [ Name
-                        { text = "B"
-                        , range = Range
-                            { start = Pos
-                                { line = 2
-                                , column = 9
-                                }
-                            , end = Pos
-                                { line = 2
-                                , column = 10
-                                }
-                            }
-                        }
-                    , Name
-                        { text = "C"
-                        , range = Range
-                            { start = Pos
-                                { line = 2
-                                , column = 11
-                                }
-                            , end = Pos
-                                { line = 2
-                                , column = 12
-                                }
-                            }
-                        }
-                    ]
-                )
-                ( Name
-                    { text = "E"
-                    , range = Range
-                        { start = Pos
-                            { line = 2
-                            , column = 16
-                            }
-                        , end = Pos
-                            { line = 2
-                            , column = 17
+                            , column = 10
                             }
                         }
                     }
-                )
+                , Name
+                    { text = "C"
+                    , range = Range
+                        { start = Pos
+                            { line = 0
+                            , column = 11
+                            }
+                        , end = Pos
+                            { line = 0
+                            , column = 12
+                            }
+                        }
+                    }
+                ]
+            , modifier = Nothing
             , impExt = NoExt
             }
         , Import
-            { modName = ImpList
-                ( Name
-                    { text = "A"
+            { path = Name
+                { text = "A"
+                , range = Range
+                    { start = Pos
+                        { line = 1
+                        , column = 7
+                        }
+                    , end = Pos
+                        { line = 1
+                        , column = 8
+                        }
+                    }
+                } :|
+                [ Name
+                    { text = "B"
                     , range = Range
                         { start = Pos
-                            { line = 4
-                            , column = 7
+                            { line = 1
+                            , column = 9
                             }
                         , end = Pos
-                            { line = 4
-                            , column = 8
+                            { line = 1
+                            , column = 10
                             }
                         }
-                    } :|
-                    [ Name
-                        { text = "B"
-                        , range = Range
-                            { start = Pos
-                                { line = 4
-                                , column = 9
-                                }
-                            , end = Pos
-                                { line = 4
-                                , column = 10
-                                }
+                    }
+                , Name
+                    { text = "C"
+                    , range = Range
+                        { start = Pos
+                            { line = 1
+                            , column = 11
+                            }
+                        , end = Pos
+                            { line = 1
+                            , column = 12
                             }
                         }
-                    , Name
-                        { text = "C"
-                        , range = Range
-                            { start = Pos
-                                { line = 4
-                                , column = 11
-                                }
-                            , end = Pos
-                                { line = 4
-                                , column = 12
-                                }
-                            }
-                        }
-                    ]
-                )
-                ( ImpDepAs
-                    ( ImpDepLower
-                        ( Name
-                            { text = "d"
-                            , range = Range
-                                { start = Pos
-                                    { line = 4
-                                    , column = 14
-                                    }
-                                , end = Pos
-                                    { line = 4
-                                    , column = 15
-                                    }
-                                }
-                            }
-                        )
-                    )
-                    ( Name
-                        { text = "d"
-                        , range = Range
-                            { start = Pos
-                                { line = 4
-                                , column = 19
-                                }
-                            , end = Pos
-                                { line = 4
-                                , column = 20
-                                }
-                            }
-                        }
-                    ) :|
-                    [ ImpDepAs
-                        ( ImpDepLower
+                    }
+                ]
+            , modifier = Just
+                ( ImpList
+                    ( ImportDeps
+                        { name = ImpDepLower
                             ( Name
-                                { text = "e"
+                                { text = "d"
                                 , range = Range
                                     { start = Pos
-                                        { line = 4
-                                        , column = 22
+                                        { line = 1
+                                        , column = 14
                                         }
                                     , end = Pos
-                                        { line = 4
-                                        , column = 23
+                                        { line = 1
+                                        , column = 15
                                         }
                                     }
                                 }
                             )
-                        )
-                        ( Name
-                            { text = "e"
-                            , range = Range
-                                { start = Pos
-                                    { line = 4
-                                    , column = 27
+                        , as = Nothing
+                        } :|
+                        [ ImportDeps
+                            { name = ImpDepLower
+                                ( Name
+                                    { text = "e"
+                                    , range = Range
+                                        { start = Pos
+                                            { line = 1
+                                            , column = 17
+                                            }
+                                        , end = Pos
+                                            { line = 1
+                                            , column = 18
+                                            }
+                                        }
                                     }
-                                , end = Pos
-                                    { line = 4
-                                    , column = 28
-                                    }
+                                )
+                            , as = Nothing
+                            }
+                        ]
+                    )
+                )
+            , impExt = NoExt
+            }
+        , Import
+            { path = Name
+                { text = "A"
+                , range = Range
+                    { start = Pos
+                        { line = 2
+                        , column = 7
+                        }
+                    , end = Pos
+                        { line = 2
+                        , column = 8
+                        }
+                    }
+                } :|
+                [ Name
+                    { text = "B"
+                    , range = Range
+                        { start = Pos
+                            { line = 2
+                            , column = 9
+                            }
+                        , end = Pos
+                            { line = 2
+                            , column = 10
+                            }
+                        }
+                    }
+                , Name
+                    { text = "C"
+                    , range = Range
+                        { start = Pos
+                            { line = 2
+                            , column = 11
+                            }
+                        , end = Pos
+                            { line = 2
+                            , column = 12
+                            }
+                        }
+                    }
+                ]
+            , modifier = Just
+                ( ImpAs
+                    ( Name
+                        { text = "E"
+                        , range = Range
+                            { start = Pos
+                                { line = 2
+                                , column = 16
+                                }
+                            , end = Pos
+                                { line = 2
+                                , column = 17
                                 }
                             }
-                        )
-                    ]
+                        }
+                    )
+                )
+            , impExt = NoExt
+            }
+        , Import
+            { path = Name
+                { text = "A"
+                , range = Range
+                    { start = Pos
+                        { line = 4
+                        , column = 7
+                        }
+                    , end = Pos
+                        { line = 4
+                        , column = 8
+                        }
+                    }
+                } :|
+                [ Name
+                    { text = "B"
+                    , range = Range
+                        { start = Pos
+                            { line = 4
+                            , column = 9
+                            }
+                        , end = Pos
+                            { line = 4
+                            , column = 10
+                            }
+                        }
+                    }
+                , Name
+                    { text = "C"
+                    , range = Range
+                        { start = Pos
+                            { line = 4
+                            , column = 11
+                            }
+                        , end = Pos
+                            { line = 4
+                            , column = 12
+                            }
+                        }
+                    }
+                ]
+            , modifier = Just
+                ( ImpList
+                    ( ImportDeps
+                        { name = ImpDepLower
+                            ( Name
+                                { text = "d"
+                                , range = Range
+                                    { start = Pos
+                                        { line = 4
+                                        , column = 14
+                                        }
+                                    , end = Pos
+                                        { line = 4
+                                        , column = 15
+                                        }
+                                    }
+                                }
+                            )
+                        , as = Just
+                            ( Name
+                                { text = "d"
+                                , range = Range
+                                    { start = Pos
+                                        { line = 4
+                                        , column = 19
+                                        }
+                                    , end = Pos
+                                        { line = 4
+                                        , column = 20
+                                        }
+                                    }
+                                }
+                            )
+                        } :|
+                        [ ImportDeps
+                            { name = ImpDepLower
+                                ( Name
+                                    { text = "e"
+                                    , range = Range
+                                        { start = Pos
+                                            { line = 4
+                                            , column = 22
+                                            }
+                                        , end = Pos
+                                            { line = 4
+                                            , column = 23
+                                            }
+                                        }
+                                    }
+                                )
+                            , as = Just
+                                ( Name
+                                    { text = "e"
+                                    , range = Range
+                                        { start = Pos
+                                            { line = 4
+                                            , column = 27
+                                            }
+                                        , end = Pos
+                                            { line = 4
+                                            , column = 28
+                                            }
+                                        }
+                                    }
+                                )
+                            }
+                        ]
+                    )
                 )
             , impExt = NoExt
             }

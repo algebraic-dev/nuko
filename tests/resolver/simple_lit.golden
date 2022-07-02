@@ -1,0 +1,73 @@
+That ( Program
+    { typeDecls = []
+    , letDecls =
+        [ LetDecl
+            { declName = ReId
+                { text = "a"
+                , range = Range
+                    { start = Pos
+                        { line = 0
+                        , column = 4
+                        }
+                    , end = Pos
+                        { line = 0
+                        , column = 5
+                        }
+                    }
+                }
+            , declArgs = []
+            , declBody = Lit
+                ( LInt 2
+                    ( Range
+                        { start = Pos
+                            { line = 0
+                            , column = 8
+                            }
+                        , end = Pos
+                            { line = 0
+                            , column = 9
+                            }
+                        }
+                    )
+                ) NoExt
+            , declRet = Nothing
+            , declExt = NoExt
+            }
+        ]
+    , impDecls = []
+    , programExt = NoExt
+    }
+, LocalNS
+    { _openedNames = fromList
+        [
+            ( OccName
+                { occName = "Int"
+                , kind = TyName
+                }
+            , Single "Int" "Prelude"
+            )
+        ,
+            ( OccName
+                { occName = "String"
+                , kind = TyName
+                }
+            , Single "String" "Prelude"
+            )
+        ]
+    , _localNames = fromList [] :| []
+    , _openedModules = fromList []
+    , _currentNamespace = NameSpace
+        { _modName = "Main"
+        , _names = fromList
+            [
+                ( OccName
+                    { occName = "a"
+                    , kind = VarName
+                    }
+                , Public
+                )
+            ]
+        }
+    , _newNamespaces = fromList []
+    }
+)

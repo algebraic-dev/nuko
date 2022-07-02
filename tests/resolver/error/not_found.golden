@@ -1,0 +1,13 @@
+This CannotFindInModule
+    ( VarName :| [] ) Nothing "d"
+    ( Range
+        { start = Pos
+            { line = 0
+            , column = 26
+            }
+        , end = Pos
+            { line = 0
+            , column = 27
+            }
+        }
+    )
