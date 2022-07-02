@@ -10,9 +10,10 @@ module Nuko.Resolver.Occourence (
   insertEnv,
   updateEnvWith,
   empty,
+  findAltKeyValue,
 ) where
 
-import Relude           (Generic, HashMap, Semigroup, Monoid, Functor)
+import Relude           (Generic, HashMap, Semigroup, Monoid, Functor (fmap), asum, NonEmpty, Show)
 import Relude.Base      (Eq)
 import Relude.String    (Text)
 import Relude.Container (Hashable)
@@ -25,13 +26,13 @@ data NameKind
   | TyName
   | ConsName
   | FieldName
-  deriving (Eq, Generic)
+  deriving (Eq, Generic, Show)
 
 -- | Name that is not qualified
 data OccName = OccName
   { name :: Text
   , kind :: NameKind
-  } deriving (Eq, Generic)
+  } deriving (Eq, Generic, Show)
 
 instance Hashable NameKind where
 instance Hashable OccName where
@@ -53,3 +54,8 @@ updateEnvWith name update cur (OccEnv env) =
 
 empty :: OccEnv a
 empty = OccEnv HashMap.empty
+
+-- Specifics
+
+findAltKeyValue :: NonEmpty OccName -> OccEnv a -> Maybe (OccName, a)
+findAltKeyValue names env = asum (fmap (\name -> fmap (name, ) (lookupEnv name env)) names)

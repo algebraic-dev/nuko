@@ -1,30 +1,42 @@
 module Nuko.Resolver.Types (
   MonadResolver,
-  pathByUnqualifiedName,
-  openItem
+  makePath,
+  resolveName,
+  addGlobal,
+  resolvePath,
+  findInSpace,
 ) where
 
-import Nuko.Resolver.Occourence  (NameKind, OccName (OccName), OccEnv)
-import Nuko.Resolver.Environment (LocalNS(..), NameSpace, Label (..), localNames, openedNames, joinLabels)
-import Nuko.Resolver.Error       (ResolveError (AmbiguousNames))
+import Nuko.Resolver.Occourence  (lookupEnv, OccName(..), NameKind, findAltKeyValue)
+import Nuko.Resolver.Environment (LocalNS(..), NameSpace(..), Label (..), setUsage, Visibility (Private, Public), currentNamespace, names, addDef)
+import Nuko.Resolver.Error       (ResolveError (..))
 import Nuko.Resolver.Tree        (Path (Local, Path), ReId(..))
+import Nuko.Tree.TopLevel        (ImpPath)
 import Nuko.Syntax.Range         (Range(..))
+import Nuko.Syntax.Tree          (Name(..))
 import Nuko.Utils                (terminate)
+import Nuko.Tree (Nm, Re, XPath)
 
 import Relude.Applicative        (Applicative(pure))
-import Relude.Monad              (MonadState (get), Maybe, maybe, modify)
-import Relude.Bool               (Bool (True), when, not)
-import Relude.Functor            ((<$>))
-import Relude                    (Traversable(sequence), Endo, Text, Maybe (Nothing), ($), (<|>))
+import Relude.Monad              (MonadState (get, put), Maybe (..), fromMaybe, gets)
+import Relude.Bool               (Bool (True))
+import Relude.List               (NonEmpty((:|)))
+import Relude.Monoid             (Endo, Semigroup ((<>)))
+import Relude.String             (Text)
+import Relude.Container          (One(one))
+import Relude                    (Foldable (foldr), ($), (<$>), Alternative ((<|>)), Functor ((<$), fmap), ($>), (.), undefined)
 
-import Lens.Micro.Platform       (over)
 import Control.Monad.Import      (MonadImport)
 import Control.Monad.Chronicle   (MonadChronicle)
+import Lens.Micro.Platform       (view)
 
 import qualified Nuko.Resolver.Occourence as Occ
+import qualified Nuko.Syntax.Tree         as Syntax
+import qualified Data.HashMap.Strict as HashMap
+
 
 -- | The main monad for the resolution. It's not necessary
--- in the type checker beacause the MonadState LocalNS is only
+-- in the type checker because the MonadState LocalNS is only
 -- needed for the resolver.
 
 type MonadResolver m =
@@ -33,38 +45,52 @@ type MonadResolver m =
   , MonadChronicle (Endo [ResolveError]) m
   )
 
-pathByUnqualifiedName :: MonadResolver m
-                      => NameKind -> ReId
-                      -> (Maybe Text -> Text -> Range -> ResolveError)
-                      -> m Path
+makePath :: ImpPath Nm -> (Text, Range)
+makePath (x :| xs) =
+  foldr (\a (text, range) -> (text <> "." <> a.text, range <> a.range))
+        (x.text, x.range)
+        xs
 
-pathByUnqualifiedName kind id' err = do
-    localNS <- get
-
-    let localCase  = handleLocal <$> search localNS._localNames
-    let openedCase = handleAmbiguity <$> search localNS._openedNames
-
-    path <- sequence $ localCase <|> openedCase
-    maybe (terminate (err Nothing id'.text id'.range)) pure path
-
+resolveName :: MonadResolver m => NameKind -> Range -> Text -> m Path
+resolveName kind range text = do
+    let name = OccName text kind
+    env <- get
+    fromMaybe (terminate (CannotFindInModule (one (name.kind)) Nothing name.name range)) $
+          pure (Local (ReId name.name range))                 <$  lookupEnv name env._currentNamespace._names
+      <|> (\env' -> put env' $> Local (ReId name.name range)) <$> setUsage env name True
+      <|> resolveAmbiguity                                    <$> lookupEnv name env._openedNames
   where
-    search :: OccEnv a -> Maybe a
-    search = Occ.lookupEnv (OccName id'.text kind)
+    resolveAmbiguity :: MonadResolver m => Label -> m Path
+    resolveAmbiguity = \case
+      (Ambiguous refs other) -> terminate (AmbiguousNames refs other)
+      (Single ref mod')      -> pure (Path mod' (ReId ref range) range)
 
-    setUsed s = Occ.insertEnv (OccName id'.text kind) True s
+findInSpace :: MonadResolver m => NameSpace -> Range -> Text -> NonEmpty NameKind -> m OccName
+findInSpace space range name occs =
+    case findAltKeyValue (fmap (OccName name) occs) space._names of
+      Just (res, Private) -> terminate (IsPrivate res.kind name range)
+      Just (res, Public)  -> pure res
+      Nothing             -> terminate (CannotFindInModule occs (Just space._modName) name range)
 
-    handleLocal :: MonadResolver m => Bool -> m Path
-    handleLocal isUsed = do
-      when (not isUsed) $ modify (over localNames setUsed)
-      pure (Local id')
+getModule :: MonadResolver m => Range -> Text -> m NameSpace
+getModule range name = do
+  module' <- gets (HashMap.lookup name . _openedModules)
+  case module' of
+    Just res -> pure res
+    Nothing  -> terminate (CannotFindModule name range)
 
-    handleAmbiguity :: MonadResolver m => Label -> m Path
-    handleAmbiguity = \case
-      (Single res)       -> pure (Path res id' id'.range)
-      (Ambiguous others) -> terminate (AmbiguousNames others)
+resolvePath :: MonadResolver m => NameKind -> XPath Nm -> m (XPath Re)
+resolvePath nameKind (Syntax.Path []  (Name text range) _) = resolveName nameKind range text
+resolvePath nameKind (Syntax.Path (x : xs) (Name text range) range') = do
+  let (path, modRange') = makePath (x :| xs)
+  module' <- getModule modRange' path
+  case Occ.lookupEnv (OccName text nameKind) module'._names of
+    Just _  -> pure (Path path (ReId text range) range')
+    Nothing -> terminate (CannotFindInModule (one nameKind) (Just path) text range)
 
-openItem :: MonadResolver m => OccName -> Text -> m ()
-openItem item fromModule =
-    modify $ over openedNames (addItem (Single fromModule))
-  where
-    addItem i = (Occ.updateEnvWith item (joinLabels i) i)
+addGlobal :: MonadResolver m => Range -> OccName -> Visibility -> m ()
+addGlobal range name vs = do
+  def <- gets (view (currentNamespace . names))
+  case Occ.lookupEnv name  def of
+    Just _  -> terminate (AlreadyExistsName name.name name.kind range)
+    Nothing -> addDef name vs

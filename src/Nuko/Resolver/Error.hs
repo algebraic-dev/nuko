@@ -1,17 +1,19 @@
 module Nuko.Resolver.Error (ResolveError(..), Case(..)) where
 
-import Relude            (Show, Text, HashSet)
+import Relude            (Show, Text, HashSet, Maybe)
 import Nuko.Syntax.Range (Range(..))
+import Nuko.Resolver.Occourence (NameKind)
+import Data.List.NonEmpty (NonEmpty)
 
 data Case = UpperCase | LowerCase
   deriving Show
 
 data ResolveError
-  = CyclicImport Range
+  = CyclicImport Text Range
   | CannotFindModule Text Range
-  | CannotFindFunction Text Text Range
-  | CannotFindType Text Text Range
-  | CannotFindConstructor Text Text Range
-  | IsPrivate Text Range
-  | AmbiguousNames (HashSet Text)
+  | CannotFindInModule (NonEmpty NameKind) (Maybe Text) Text Range
+  | IsPrivate NameKind Text Range
+  | AmbiguousNames (HashSet Text) (HashSet Text)
+  | AlreadyExistsName Text NameKind Range
+  | AlreadyExistsPat Text Range
   deriving Show
