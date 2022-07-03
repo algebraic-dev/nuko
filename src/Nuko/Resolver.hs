@@ -11,8 +11,8 @@ module Nuko.Resolver (
 
 import Nuko.Tree.TopLevel
 import Nuko.Tree.Expr
-import Nuko.Resolver.Tree
 import Nuko.Resolver.Environment
+import Nuko.Resolver.Tree         (ReId(ReId))
 import Nuko.Resolver.Types        (MonadResolver, makePath, addGlobal, findInSpace, resolvePath, resolveName)
 import Nuko.Resolver.Error        (ResolveError(..))
 import Nuko.Resolver.Occourence   (OccName(..), NameKind (..))
@@ -33,7 +33,7 @@ import Relude                     (traverse_, ($), Traversable (traverse), (.), 
 import Data.HashMap.Strict        (HashMap)
 import Control.Monad.Import       (ImportErrorKind(..), MonadImport (..))
 
-import qualified Data.HashMap.Strict      as HashMap
+import qualified Data.HashMap.Strict as HashMap
 
 -- Init for mutual things.
 
@@ -42,9 +42,12 @@ initLetDecl (LetDecl name' _ _ _ _) = addGlobal name'.range (OccName name'.text 
 
 initTyDecl :: MonadResolver m => TypeDecl Nm -> m ()
 initTyDecl (TypeDecl name' _ decl) = do
-    addGlobal name'.range (OccName name'.text TyName) Public
     curName <- gets (_modName . _currentNamespace)
-    scopeNameSpace (curName <> "." <> name'.text) $ do
+    let moduleName = curName <> "." <> name'.text
+
+    openName (OccName name'.text TyName) moduleName name'.text
+
+    scopeNameSpace moduleName $ do
       -- Adds twice because it will be inside the module
       addGlobal name'.range (OccName name'.text TyName) Public
       initFields decl

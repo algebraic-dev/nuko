@@ -27,19 +27,16 @@
      |   ├Prod
      |   | ├OccName TyName String
      |   | └Single Prelude String
+     |   ├Prod
+     |   | ├OccName ConsName B
+     |   | └Single Main.A B
      |   └Prod
-     |     ├OccName ConsName B
-     |     └Single Main.A B
+     |     ├OccName TyName A
+     |     └Single Main.A A
      ├_localNames: (NonEmpty HashMap)
      ├_openedModules: HashMap
      ├_currentNamespace:
-     | └NameSpace
-     |   ├_modName: Main
-     |   └_names:
-     |     └HashMap
-     |       └Prod
-     |         ├OccName TyName A
-     |         └Public
+     | └NameSpace (_names: HashMap) (_modName: Main)
      └_newNamespaces:
        └HashMap
          └Prod
