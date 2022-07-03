@@ -19,8 +19,8 @@ AssignInEndOfBlock
    │   └LetDecl
    │     ├declName: (Name "a" 0:4-0:5)
    │     ├declArgs: Empty List
-   │     ├declBody: (Lit ∅ (LInt 1:12-1:13 3))
+   │     ├declBody: (Lit NoExt (LInt 1:12-1:13 3))
    │     ├declRet: Nothing
-   │     └declExt: ∅
+   │     └declExt: NoExt
    ├impDecls: Empty List
-   └programExt: ∅
+   └programExt: NoExt

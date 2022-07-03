@@ -10,17 +10,17 @@
    │     │ └Block
    │     │   ├BlBind
    │     │   │ ├Lam
-   │     │   │ │ ├PId ∅ (Name "a" 1:5-1:6)
+   │     │   │ │ ├PId NoExt (Name "a" 1:5-1:6)
    │     │   │ │ ├Lower 1:10-1:11 (Path "b")
    │     │   │ │ └1:4-1:11
    │     │   │ └BlBind
    │     │   │   ├Lam
-   │     │   │   │ ├PId ∅ (Name "b" 2:5-2:6)
+   │     │   │   │ ├PId NoExt (Name "b" 2:5-2:6)
    │     │   │   │ ├Lower 2:10-2:11 (Path "c")
    │     │   │   │ └2:4-2:11
    │     │   │   └BlEnd
    │     │   │     └Lam
-   │     │   │       ├PId ∅ (Name "d" 3:5-3:6)
+   │     │   │       ├PId NoExt (Name "d" 3:5-3:6)
    │     │   │       ├Block
    │     │   │       │ ├BlBind
    │     │   │       │ │ ├Lower 3:10-3:11 (Path "e")
@@ -31,6 +31,6 @@
    │     │   │       └3:4-5:11
    │     │   └1:4-5:11
    │     ├declRet: Nothing
-   │     └declExt: ∅
+   │     └declExt: NoExt
    ├impDecls: Empty List
-   └programExt: ∅
+   └programExt: NoExt

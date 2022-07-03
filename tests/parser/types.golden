@@ -6,16 +6,16 @@
    │   └LetDecl
    │     ├declName: (Name "a" 0:4-0:5)
    │     ├declArgs: Empty List
-   │     ├declBody: (Lit ∅ (LInt 0:29-0:30 2))
+   │     ├declBody: (Lit NoExt (LInt 0:29-0:30 2))
    │     ├declRet:
    │     │ └Just
    │     │   └TArrow
-   │     │     ├TId ∅ (Path "Int")
+   │     │     ├TId NoExt (Path "Int")
    │     │     ├TArrow
-   │     │     │ ├TPoly ∅ (Name "a" 0:15-0:16)
-   │     │     │ ├TId ∅ (Path "String")
+   │     │     │ ├TPoly NoExt (Name "a" 0:15-0:16)
+   │     │     │ ├TId NoExt (Path "String")
    │     │     │ └0:15-0:26
    │     │     └0:8-0:26
-   │     └declExt: ∅
+   │     └declExt: NoExt
    ├impDecls: Empty List
-   └programExt: ∅
+   └programExt: NoExt

@@ -9,10 +9,12 @@
    │     ├declBody:
    │     │ └Block
    │     │   ├BlBind
-   │     │   │ ├Lit ∅ (LInt 1:4-1:5 2)
-   │     │   │ └BlBind (BlEnd (Lit ∅ (LInt 3:4-3:5 4))) (Lit ∅ (LInt 2:4-2:5 3))
+   │     │   │ ├Lit NoExt (LInt 1:4-1:5 2)
+   │     │   │ └BlBind
+   │     │   │   ├Lit NoExt (LInt 2:4-2:5 3)
+   │     │   │   └BlEnd (Lit NoExt (LInt 3:4-3:5 4))
    │     │   └1:4-3:5
    │     ├declRet: Nothing
-   │     └declExt: ∅
+   │     └declExt: NoExt
    ├impDecls: Empty List
-   └programExt: ∅
+   └programExt: NoExt

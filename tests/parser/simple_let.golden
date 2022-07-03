@@ -6,8 +6,8 @@
    │   └LetDecl
    │     ├declName: (Name "a" 0:4-0:5)
    │     ├declArgs: Empty List
-   │     ├declBody: (Lit ∅ (LInt 0:8-0:9 2))
+   │     ├declBody: (Lit NoExt (LInt 0:8-0:9 2))
    │     ├declRet: Nothing
-   │     └declExt: ∅
+   │     └declExt: NoExt
    ├impDecls: Empty List
-   └programExt: ∅
+   └programExt: NoExt

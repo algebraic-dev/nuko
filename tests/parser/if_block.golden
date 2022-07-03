@@ -13,6 +13,6 @@
    │     │   ├Just (Lower 3:9-3:10 (Path "c"))
    │     │   └1:4-3:10
    │     ├declRet: Nothing
-   │     └declExt: ∅
+   │     └declExt: NoExt
    ├impDecls: Empty List
-   └programExt: ∅
+   └programExt: NoExt

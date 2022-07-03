@@ -6,6 +6,7 @@ module Nuko.Resolver (
   resolveProgram,
   resolveLetDecl,
   resolveExpr,
+  initProgram
 ) where
 
 import Nuko.Tree.TopLevel
@@ -27,7 +28,7 @@ import Relude.Monad               (Maybe(..), Either(..), gets, StateT (runState
 import Relude.String              (Text)
 import Relude.Container           (One (one))
 import Relude.List                (NonEmpty ((:|)))
-import Relude                     (traverse_, ($), Traversable (traverse), (.), ($>))
+import Relude                     (traverse_, ($), Traversable (traverse), (.), ($>), fst)
 
 import Data.HashMap.Strict        (HashMap)
 import Control.Monad.Import       (ImportErrorKind(..), MonadImport (..))
@@ -40,7 +41,19 @@ initLetDecl :: MonadResolver m => LetDecl Nm -> m ()
 initLetDecl (LetDecl name' _ _ _ _) = addGlobal name'.range (OccName name'.text VarName) Public
 
 initTyDecl :: MonadResolver m => TypeDecl Nm -> m ()
-initTyDecl (TypeDecl name' _ _) = addGlobal name'.range (OccName name'.text TyName) Public
+initTyDecl (TypeDecl name' _ decl) = do
+    addGlobal name'.range (OccName name'.text TyName) Public
+    curName <- gets (_modName . _currentNamespace)
+    scopeNameSpace (curName <> "." <> name'.text) $ do
+      -- Adds twice because it will be inside the module
+      addGlobal name'.range (OccName name'.text TyName) Public
+      initFields decl
+  where
+    initFields :: MonadResolver m => TypeDeclArg Nm -> m ()
+    initFields = \case
+      TypeSym _       -> pure ()
+      TypeProd fields -> traverse_ (\field -> addGlobal field.range (OccName field.text FieldName) Public) (fmap fst fields)
+      TypeSum fields  -> traverse_ (\field -> addGlobal field.range (OccName field.text ConsName) Public) (fmap fst fields)
 
 initProgram :: MonadResolver m => Program Nm -> m ()
 initProgram (Program tyDecls' letDecls' _ _) = do
@@ -88,22 +101,17 @@ toReId (Name t r) = ReId t r
 
 resolveTypeDecl :: MonadResolver m => TypeDecl Nm -> m (TypeDecl Re)
 resolveTypeDecl (TypeDecl name' args decl) = do
-    curName <- gets (_modName . _currentNamespace)
     -- Creates a namespace for the type and scope it's local type variables.
-    scopeNameSpace (curName <> "." <> name'.text) $ scopeLocals $ do
+    scopeLocals $ do
       traverse_ (\arg -> addLocal arg.range (OccName arg.text TyName)) args
       decl' <- resolveDecl decl
       pure (TypeDecl (toReId name') (fmap toReId args) decl')
   where
     resolveField :: MonadResolver m => (XName Nm, Ty Nm) -> m (ReId, Ty Re)
-    resolveField (fieldName, ty) = do
-      addGlobal fieldName.range (OccName fieldName.text FieldName) Public
-      (toReId fieldName, ) <$> resolveType ty
+    resolveField (fieldName, ty) = (toReId fieldName, ) <$> resolveType ty
 
     resolveSumField :: MonadResolver m => (XName Nm, [Ty Nm]) -> m (ReId, [Ty Re])
-    resolveSumField (fieldName, ty) = do
-      addGlobal fieldName.range (OccName fieldName.text ConsName) Public
-      (toReId fieldName, ) <$> traverse resolveType ty
+    resolveSumField (fieldName, ty) = (toReId fieldName, ) <$> traverse resolveType ty
 
     resolveDecl :: MonadResolver m => TypeDeclArg Nm -> m (TypeDeclArg Re)
     resolveDecl = \case
@@ -176,9 +184,8 @@ resolveLetDecl (LetDecl name' args body ret ext') =
           <*> pure ext'
 
 resolveProgram :: MonadResolver m => Program Nm -> m (Program Re)
-resolveProgram program@(Program tyDecls' letDecls' impDecls' ext') = do
+resolveProgram (Program tyDecls' letDecls' impDecls' ext') = do
   traverse_ resolveImport impDecls'
-  initProgram program
   letDecls'' <- traverse resolveLetDecl letDecls'
   tyDecls''  <- traverse resolveTypeDecl tyDecls'
   pure (Program tyDecls'' letDecls'' [] ext')

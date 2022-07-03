@@ -11,13 +11,13 @@
    │ │         └List
    │ │           ├Prod
    │ │           │ ├ReId b 1:2-1:3
-   │ │           │ └TId ∅ (Path "Prelude.Int" 1:5-1:8)
+   │ │           │ └TId NoExt (Path "Prelude.Int" 1:5-1:8)
    │ │           └Prod
    │ │             ├ReId s 2:2-2:3
-   │ │             └TId ∅ (Path "Prelude.String" 2:5-2:11)
+   │ │             └TId NoExt (Path "Prelude.String" 2:5-2:11)
    │ ├letDecls: Empty List
    │ ├impDecls: Empty List
-   │ └programExt: ∅
+   │ └programExt: NoExt
    └LocalNS
      ├_openedNames:
      │ └HashMap
@@ -34,8 +34,14 @@
      │   ├_modName: Main
      │   └_names:
      │     └HashMap
+     │       ├Prod
+     │       │ ├OccName FieldName b
+     │       │ └Public
+     │       ├Prod
+     │       │ ├OccName TyName Ata
+     │       │ └Public
      │       └Prod
-     │         ├OccName TyName Ata
+     │         ├OccName FieldName s
      │         └Public
      └_newNamespaces:
        └HashMap
@@ -47,6 +53,9 @@
                └HashMap
                  ├Prod
                  │ ├OccName FieldName b
+                 │ └Public
+                 ├Prod
+                 │ ├OccName TyName Ata
                  │ └Public
                  └Prod
                    ├OccName FieldName s

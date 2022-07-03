@@ -10,7 +10,7 @@
    │         └List
    │           └Prod
    │             ├Name "ata" 0:15-0:18
-   │             └TId ∅ (Path "Int")
+   │             └TId NoExt (Path "Int")
    ├letDecls: Empty List
    ├impDecls: Empty List
-   └programExt: ∅
+   └programExt: NoExt

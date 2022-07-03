@@ -8,7 +8,7 @@ import Data.Text        (Text)
 import GHC.Generics     (V1, U1, K1 (K1), type (:+:)(..), type (:*:)(..), Generic (from, Rep), D1, M1 (M1), Constructor (conName), C1, S1, Selector (selName))
 import Data.Text        (length, intercalate)
 
-import Relude           ((.), show, ToText (toText), ($), unwords,Ord ((<)), NonEmpty, Int, Functor (fmap), Foldable (toList), (<$>), Void, otherwise)
+import Relude           ((.), show, ToText (toText), ($), unwords,Ord ((<)), NonEmpty, Int, Functor (fmap), Foldable (toList), Void, otherwise)
 import Relude.Monoid    (Semigroup ((<>)), Monoid (mconcat))
 import Relude.Monad     (Maybe(..), Either(..), maybe, Either (Right))
 import Relude.Bool      (Bool(..))
