@@ -1,0 +1,91 @@
+✓ That
+ └Prod
+   ├Program
+   | ├typeDecls:
+   | | └List
+   | |   └TypeDecl
+   | |     ├tyName: (ReId L 0:5-0:6)
+   | |     ├tyArgs: Empty List
+   | |     └tyDecl:
+   | |       └TypeSum
+   | |         └NonEmpty
+   | |           ├Prod
+   | |           | ├ReId A 1:4-1:5
+   | |           | └List
+   | |           |   ├TId NoExt (Path "Prelude.String" 1:6-1:12)
+   | |           |   └TId NoExt (Path "Prelude.Int" 1:13-1:16)
+   | |           └Prod
+   | |             ├ReId B 2:4-2:5
+   | |             └List
+   | |               ├TId NoExt (Path "Prelude.Int" 2:6-2:9)
+   | |               └TId NoExt (Path "Prelude.String" 2:10-2:16)
+   | ├letDecls:
+   | | └List
+   | |   └LetDecl
+   | |     ├declName: (ReId a 6:4-6:5)
+   | |     ├declArgs:
+   | |     | └List
+   | |     |   └Prod
+   | |     |     ├ReId b 6:7-6:8
+   | |     |     └TId NoExt (Path "Main.L.L" 6:10-6:13)
+   | |     ├declBody: (Lit NoExt (LInt 6:26-6:27 2))
+   | |     ├declRet:
+   | |     | └Just (TId NoExt (Path "Prelude.String" 6:17-6:23))
+   | |     └declExt: NoExt
+   | ├impDecls: Empty List
+   | └programExt: NoExt
+   └LocalNS
+     ├_openedNames:
+     | └HashMap
+     |   ├Prod
+     |   | ├OccName TyName L
+     |   | └Single Main.L L
+     |   ├Prod
+     |   | ├OccName TyName Int
+     |   | └Single Prelude Int
+     |   └Prod
+     |     ├OccName TyName String
+     |     └Single Prelude String
+     ├_localNames: (NonEmpty HashMap)
+     ├_openedModules:
+     | └HashMap
+     |   └Prod
+     |     ├E
+     |     └NameSpace
+     |       ├_modName: Main.L
+     |       └_names:
+     |         └HashMap
+     |           ├Prod
+     |           | ├OccName ConsName A
+     |           | └Public
+     |           ├Prod
+     |           | ├OccName TyName L
+     |           | └Public
+     |           └Prod
+     |             ├OccName ConsName B
+     |             └Public
+     ├_currentNamespace:
+     | └NameSpace
+     |   ├_modName: Main
+     |   └_names:
+     |     └HashMap
+     |       └Prod
+     |         ├OccName VarName a
+     |         └Public
+     └_newNamespaces:
+       └HashMap
+         └Prod
+           ├Main.L
+           └NameSpace
+             ├_modName: Main.L
+             └_names:
+               └HashMap
+                 ├Prod
+                 | ├OccName ConsName A
+                 | └Public
+                 ├Prod
+                 | ├OccName TyName L
+                 | └Public
+                 └Prod
+                   ├OccName ConsName B
+                   └Public

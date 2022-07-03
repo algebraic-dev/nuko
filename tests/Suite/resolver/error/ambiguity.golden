@@ -1,0 +1,8 @@
+✗ This
+"AmbiguousNames
+    ( fromList
+        [ "A"
+        , "D"
+        ]
+    )
+    ( fromList [ "Main.L" ] )"

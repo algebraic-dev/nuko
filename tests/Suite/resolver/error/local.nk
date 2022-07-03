@@ -1,0 +1,12 @@
+
+-- It works because it's not typechecking.
+let print = 42
+let plus  = 42
+
+let local (a : Int) =
+  let b = 3
+  let c = plus a b
+  if c
+    then let e = 4
+         plus e c
+    else e

@@ -1,0 +1,94 @@
+✓ That
+ └Prod
+   ├Program
+   | ├typeDecls: Empty List
+   | ├letDecls:
+   | | └List
+   | |   ├LetDecl
+   | |   | ├declName: (ReId print 2:4-2:9)
+   | |   | ├declArgs: Empty List
+   | |   | ├declBody: (Lit NoExt (LInt 2:12-2:14 42))
+   | |   | ├declRet: Nothing
+   | |   | └declExt: NoExt
+   | |   ├LetDecl
+   | |   | ├declName: (ReId plus 3:4-3:8)
+   | |   | ├declArgs: Empty List
+   | |   | ├declBody: (Lit NoExt (LInt 3:12-3:14 42))
+   | |   | ├declRet: Nothing
+   | |   | └declExt: NoExt
+   | |   └LetDecl
+   | |     ├declName: (ReId local 5:4-5:9)
+   | |     ├declArgs:
+   | |     | └List
+   | |     |   └Prod
+   | |     |     ├ReId a 5:11-5:12
+   | |     |     └TId NoExt (Path "Prelude.Int" 5:15-5:18)
+   | |     ├declBody:
+   | |     | └Block
+   | |     |   ├BlVar
+   | |     |   | ├Var
+   | |     |   | | ├pat: (PId NoExt (ReId b 6:6-6:7))
+   | |     |   | | ├val: (Lit NoExt (LInt 6:10-6:11 3))
+   | |     |   | | └ext: 6:2-6:11
+   | |     |   | └BlVar
+   | |     |   |   ├Var
+   | |     |   |   | ├pat: (PId NoExt (ReId c 7:6-7:7))
+   | |     |   |   | ├val:
+   | |     |   |   | | └App
+   | |     |   |   | |   ├Lower 7:10-7:14 (Local "plus" 7:10-7:14)
+   | |     |   |   | |   ├NonEmpty
+   | |     |   |   | |   | ├Lower 7:15-7:16 (Local "a" 7:15-7:16)
+   | |     |   |   | |   | └Lower 7:17-7:18 (Local "b" 7:17-7:18)
+   | |     |   |   | |   └7:10-7:18
+   | |     |   |   | └ext: 7:2-7:18
+   | |     |   |   └BlEnd
+   | |     |   |     └If
+   | |     |   |       ├Lower 8:5-8:6 (Local "c" 8:5-8:6)
+   | |     |   |       ├Lower 9:9-9:10 (Local "b" 9:9-9:10)
+   | |     |   |       ├Just
+   | |     |   |       | └Block
+   | |     |   |       |   ├BlVar
+   | |     |   |       |   | ├Var
+   | |     |   |       |   | | ├pat: (PId NoExt (ReId d 10:13-10:14))
+   | |     |   |       |   | | ├val: (Lit NoExt (LInt 10:17-10:18 3))
+   | |     |   |       |   | | └ext: 10:9-10:18
+   | |     |   |       |   | └BlEnd
+   | |     |   |       |   |   └App
+   | |     |   |       |   |     ├Lower 11:9-11:13 (Local "plus" 11:9-11:13)
+   | |     |   |       |   |     ├NonEmpty
+   | |     |   |       |   |     | ├Lower 11:14-11:15 (Local "d" 11:14-11:15)
+   | |     |   |       |   |     | └Lit NoExt (LInt 11:16-11:17 4)
+   | |     |   |       |   |     └11:9-11:17
+   | |     |   |       |   └10:9-11:17
+   | |     |   |       └8:2-11:17
+   | |     |   └6:2-11:17
+   | |     ├declRet: Nothing
+   | |     └declExt: NoExt
+   | ├impDecls: Empty List
+   | └programExt: NoExt
+   └LocalNS
+     ├_openedNames:
+     | └HashMap
+     |   ├Prod
+     |   | ├OccName TyName Int
+     |   | └Single Prelude Int
+     |   └Prod
+     |     ├OccName TyName String
+     |     └Single Prelude String
+     ├_localNames: (NonEmpty HashMap)
+     ├_openedModules: HashMap
+     ├_currentNamespace:
+     | └NameSpace
+     |   ├_modName: Main
+     |   └_names:
+     |     └HashMap
+     |       ├Prod
+     |       | ├OccName VarName local
+     |       | └Public
+     |       ├Prod
+     |       | ├OccName VarName plus
+     |       | └Public
+     |       └Prod
+     |         ├OccName VarName print
+     |         └Public
+     └_newNamespaces: HashMap
