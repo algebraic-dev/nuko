@@ -1,0 +1,18 @@
+✓ That
+ └Program
+   ├typeDecls: Empty List
+   ├letDecls:
+   | └List
+   |   └LetDecl
+   |     ├declName: (Name "a" 0:4-0:5)
+   |     ├declArgs: Empty List
+   |     ├declBody:
+   |     | └If
+   |     |   ├Lower 1:7-1:8 (Path "a")
+   |     |   ├Lower 2:9-2:10 (Path "b")
+   |     |   ├Just (Lower 3:9-3:10 (Path "c"))
+   |     |   └1:4-3:10
+   |     ├declRet: Nothing
+   |     └declExt: NoExt
+   ├impDecls: Empty List
+   └programExt: NoExt

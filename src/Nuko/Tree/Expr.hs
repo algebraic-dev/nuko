@@ -40,7 +40,7 @@ import Pretty.Tree (PrettyTree(prettyTree), Tree (..))
 
 data NoExt = NoExt deriving Show
 
-instance PrettyTree NoExt where prettyTree _ = Node "∅" [] []
+instance PrettyTree NoExt where prettyTree _ = Node "NoExt" [] []
 
 -- Abstract Syntax Tree
 

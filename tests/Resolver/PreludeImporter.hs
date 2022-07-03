@@ -1,5 +1,6 @@
+{-# OPTIONS_GHC -Wno-orphans #-}
 module Resolver.PreludeImporter (
-  runResolverNull,
+  resolveEntireProgram,
 ) where
 
 
@@ -7,52 +8,44 @@ import Nuko.Resolver.Environment (NameSpace, LocalNS(..), Label(..), emptyLocalN
 import Nuko.Resolver.Occourence  (NameKind(..), OccName(..), insertEnv)
 import Nuko.Resolver.Error       (ResolveError)
 import Nuko.Resolver.Types       (MonadResolver)
-import Control.Monad.Import      (MonadImport (importIn, addIn), ImportErrorKind (CannotFind))
-import Control.Monad.Chronicle   (MonadChronicle(..))
-import Relude.Monad              (Monad ((>>=)), MonadState (..))
+import Nuko.Tree                 (Program(Program), Nm, Re)
+import Nuko.Resolver             (initProgram, resolveProgram)
+import Control.Monad.Import      (MonadImport (importIn), ImportErrorKind (CannotFind))
+import Relude.Monad              (Monad((>>=)), Maybe(..))
 import Relude.Monoid             (Endo(appEndo))
-import Relude.Functor            (Functor, fmap, (<$>), first)
-import Relude.Applicative        (Applicative(pure, (<*>)))
-import Relude                    (($), Either (..), (.))
+import Relude.Functor            (first)
+import Relude.Applicative        (Applicative(pure))
+import Relude                    (($), Either (..), HashMap, Text, Functor, ReaderT, MonadState)
 import Data.These                (These)
+import Control.Monad.Chronicle   (MonadChronicle)
 
 import qualified Control.Monad.State as State
 import qualified Control.Monad.Chronicle as Chronicle
 import qualified Nuko.Resolver.Occourence as Occ
+import qualified Data.HashMap.Strict as HashMap
+import qualified Control.Monad.Reader as Reader
 
-data TestImport m s = TestImport { runNull :: m s }
+newtype ConstImporter m a = ConstImporter { runImporter :: ReaderT (HashMap Text NameSpace) m a }
+  deriving newtype (Functor, Monad, Applicative, MonadState b, MonadChronicle b)
 
-instance Monad m => Functor (TestImport m) where fmap f (TestImport s) = (TestImport (f <$> s))
+instance Monad m => MonadImport NameSpace (ConstImporter m) where
+  importIn name = ConstImporter $ do
+    r <- Reader.asks (HashMap.lookup name)
+    case r of
+      Just res -> pure (Right res)
+      Nothing  -> pure (Left CannotFind)
 
-instance Monad m => Applicative (TestImport m) where
-  pure s    = TestImport (pure s)
-  (<*>) a b = TestImport ((runNull a) <*> (runNull b))
+runImporterTo :: ConstImporter m a -> (HashMap Text NameSpace) -> m a
+runImporterTo imp map = Reader.runReaderT (runImporter imp) map
 
-instance Monad m => Monad (TestImport m) where (>>=) b a = TestImport ((a <$> (runNull b)) >>= runNull)
+runResolver :: (forall m . MonadResolver m => m a) -> LocalNS -> HashMap Text NameSpace -> These [ResolveError] (a, LocalNS)
+runResolver action localNS predefined = first (`appEndo` []) (Chronicle.runChronicle $ State.runStateT (runImporterTo action predefined) localNS)
 
-instance Monad m => MonadImport NameSpace (TestImport m) where
-  importIn _ = TestImport (pure $ Left CannotFind)
-  addIn _ _  = pure ()
-
-instance MonadState s m => MonadState s (TestImport m) where
-  state = TestImport . state
-
-instance MonadChronicle s m => MonadChronicle s (TestImport m) where
-  dictate     = TestImport . dictate
-  confess     = TestImport . confess
-  absolve a f = TestImport (absolve a (runNull f))
-  retcon  s f = TestImport (retcon s (runNull f))
-  memento f   = TestImport $ memento (runNull f)
-  condemn f   = TestImport $ condemn (runNull f)
-  chronicle f = TestImport $ chronicle f
-
-
-runResolverNull :: (forall m . MonadResolver m => m a) -> These [ResolveError] (a, LocalNS)
-runResolverNull action =
+resolveEntireProgram :: Program Nm -> These [ResolveError] (Program Re, LocalNS)
+resolveEntireProgram tree =
     let localNS  = (emptyLocalNS "Main") { _openedNames = openedLs}
         openedLs = insertEnv (OccName "Int" TyName)    (Single "Int" "Prelude")
                  $ insertEnv (OccName "String" TyName) (Single "String" "Prelude")
-                 $ Occ.empty
-    in first
-       (`appEndo` [])
-       (Chronicle.runChronicle $ State.runStateT (runNull action) localNS)
+                 $ Occ.empty in
+        runResolver (initProgram tree) localNS HashMap.empty
+    >>= \(_, initNS) -> runResolver (resolveProgram tree) initNS (initNS._newNamespaces)

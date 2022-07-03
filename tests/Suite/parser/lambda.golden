@@ -1,0 +1,36 @@
+✓ That
+ └Program
+   ├typeDecls: Empty List
+   ├letDecls:
+   | └List
+   |   └LetDecl
+   |     ├declName: (Name "a" 0:4-0:5)
+   |     ├declArgs: Empty List
+   |     ├declBody:
+   |     | └Block
+   |     |   ├BlBind
+   |     |   | ├Lam
+   |     |   | | ├PId NoExt (Name "a" 1:5-1:6)
+   |     |   | | ├Lower 1:10-1:11 (Path "b")
+   |     |   | | └1:4-1:11
+   |     |   | └BlBind
+   |     |   |   ├Lam
+   |     |   |   | ├PId NoExt (Name "b" 2:5-2:6)
+   |     |   |   | ├Lower 2:10-2:11 (Path "c")
+   |     |   |   | └2:4-2:11
+   |     |   |   └BlEnd
+   |     |   |     └Lam
+   |     |   |       ├PId NoExt (Name "d" 3:5-3:6)
+   |     |   |       ├Block
+   |     |   |       | ├BlBind
+   |     |   |       | | ├Lower 3:10-3:11 (Path "e")
+   |     |   |       | | └BlBind
+   |     |   |       | |   ├Lower 4:10-4:11 (Path "f")
+   |     |   |       | |   └BlEnd (Lower 5:10-5:11 (Path "g"))
+   |     |   |       | └3:10-5:11
+   |     |   |       └3:4-5:11
+   |     |   └1:4-5:11
+   |     ├declRet: Nothing
+   |     └declExt: NoExt
+   ├impDecls: Empty List
+   └programExt: NoExt

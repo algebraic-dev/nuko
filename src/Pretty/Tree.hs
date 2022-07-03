@@ -92,8 +92,8 @@ prettyShow' last ident (Node text f others) =
     ident <> (if last then " └" else " ├") <> (unwords (text : f)) <> "\n" <> mconcat (mapOn others)
   where
     mapOn []       = []
-    mapOn [x]      = [prettyShow' True (ident <> (if last then "  " else " │")) x]
-    mapOn (x : xs) = prettyShow' False (ident <> (if last then "  " else " │")) x : mapOn xs
+    mapOn [x]      = [prettyShow' True (ident <> (if last then "  " else " |")) x]
+    mapOn (x : xs) = prettyShow' False (ident <> (if last then "  " else " |")) x : mapOn xs
 
 instance PrettyTree Int where
   prettyTree a = Node (show a) [] []

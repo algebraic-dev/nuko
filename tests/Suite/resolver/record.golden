@@ -1,0 +1,56 @@
+✓ That
+ └Prod
+   ├Program
+   | ├typeDecls:
+   | | └List
+   | |   └TypeDecl
+   | |     ├tyName: (ReId Ata 0:5-0:8)
+   | |     ├tyArgs: Empty List
+   | |     └tyDecl:
+   | |       └TypeProd
+   | |         └List
+   | |           ├Prod
+   | |           | ├ReId b 1:2-1:3
+   | |           | └TId NoExt (Path "Prelude.Int" 1:5-1:8)
+   | |           └Prod
+   | |             ├ReId s 2:2-2:3
+   | |             └TId NoExt (Path "Prelude.String" 2:5-2:11)
+   | ├letDecls: Empty List
+   | ├impDecls: Empty List
+   | └programExt: NoExt
+   └LocalNS
+     ├_openedNames:
+     | └HashMap
+     |   ├Prod
+     |   | ├OccName TyName Int
+     |   | └Single Prelude Int
+     |   └Prod
+     |     ├OccName TyName String
+     |     └Single Prelude String
+     ├_localNames: (NonEmpty HashMap)
+     ├_openedModules: HashMap
+     ├_currentNamespace:
+     | └NameSpace
+     |   ├_modName: Main
+     |   └_names:
+     |     └HashMap
+     |       └Prod
+     |         ├OccName TyName Ata
+     |         └Public
+     └_newNamespaces:
+       └HashMap
+         └Prod
+           ├Main.Ata
+           └NameSpace
+             ├_modName: Main.Ata
+             └_names:
+               └HashMap
+                 ├Prod
+                 | ├OccName FieldName b
+                 | └Public
+                 ├Prod
+                 | ├OccName TyName Ata
+                 | └Public
+                 └Prod
+                   ├OccName FieldName s
+                   └Public

@@ -20,7 +20,7 @@ import Nuko.Syntax.Parser          (parseProgram)
 
 import Text.Pretty.Simple          (pShowNoColor)
 
-import Resolver.PreludeImporter    (runResolverNull)
+import Resolver.PreludeImporter    (resolveEntireProgram)
 import Pretty.Tree                 (PrettyTree(prettyShowTree))
 
 import qualified Data.ByteString as ByteString
@@ -61,7 +61,7 @@ runParser = runThat prettyShowTree (runLexer parseProgram)
 
 runResolver :: FilePath -> IO TestTree
 runResolver = runThat prettyShowTree $ \content -> stringifyErr (runLexer parseProgram content)
-                                    >>= \ast     -> stringifyErr (runResolverNull (resolveProgram ast))
+                                    >>= \ast    -> stringifyErr (resolveEntireProgram ast)
 
 runTestPath :: TestName -> FilePath -> (FilePath -> IO TestTree) -> IO TestTree
 runTestPath name path run = do
@@ -72,7 +72,7 @@ runTestPath name path run = do
 main :: IO ()
 main = do
   testTree <- sequence
-    [ runTestPath "Lexing" "tests/lexer" runFile
-    , runTestPath "Parsing" "tests/parser" runParser
-    , runTestPath "Parsing" "tests/resolver" runResolver ]
+    [ runTestPath "Lexing" "tests/Suite/lexer" runFile
+    , runTestPath "Parsing" "tests/Suite/parser" runParser
+    , runTestPath "Parsing" "tests/Suite/resolver" runResolver ]
   defaultMain $ Test.Tasty.testGroup "Tests" testTree

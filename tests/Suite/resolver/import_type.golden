@@ -1,0 +1,59 @@
+✓ That
+ └Prod
+   ├Program
+   | ├typeDecls:
+   | | └List
+   | |   └TypeDecl
+   | |     ├tyName: (ReId A 0:5-0:6)
+   | |     ├tyArgs: Empty List
+   | |     └tyDecl:
+   | |       └TypeSum
+   | |         └NonEmpty
+   | |           ├Prod
+   | |           | ├ReId B 1:4-1:5
+   | |           | └Empty List
+   | |           └Prod
+   | |             ├ReId C 2:4-2:5
+   | |             └Empty List
+   | ├letDecls: Empty List
+   | ├impDecls: Empty List
+   | └programExt: NoExt
+   └LocalNS
+     ├_openedNames:
+     | └HashMap
+     |   ├Prod
+     |   | ├OccName TyName Int
+     |   | └Single Prelude Int
+     |   ├Prod
+     |   | ├OccName TyName String
+     |   | └Single Prelude String
+     |   └Prod
+     |     ├OccName ConsName B
+     |     └Single Main.A B
+     ├_localNames: (NonEmpty HashMap)
+     ├_openedModules: HashMap
+     ├_currentNamespace:
+     | └NameSpace
+     |   ├_modName: Main
+     |   └_names:
+     |     └HashMap
+     |       └Prod
+     |         ├OccName TyName A
+     |         └Public
+     └_newNamespaces:
+       └HashMap
+         └Prod
+           ├Main.A
+           └NameSpace
+             ├_modName: Main.A
+             └_names:
+               └HashMap
+                 ├Prod
+                 | ├OccName ConsName B
+                 | └Public
+                 ├Prod
+                 | ├OccName TyName A
+                 | └Public
+                 └Prod
+                   ├OccName ConsName C
+                   └Public

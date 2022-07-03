@@ -1,0 +1,37 @@
+• These
+UnexpectedStr
+    ( Range
+        { start = Pos
+            { line = 1
+            , column = 1
+            }
+        , end = Pos
+            { line = 1
+            , column = 2
+            }
+        }
+    )
+UnexpectedStr
+    ( Range
+        { start = Pos
+            { line = 1
+            , column = 6
+            }
+        , end = Pos
+            { line = 1
+            , column = 7
+            }
+        }
+    )
+
+ └List
+   ├Ranged: 0:0-0:3 TcLet
+   ├Ranged: 0:4-0:5 (TcLowerId a)
+   ├Ranged: 0:6-0:7 TcEqual
+   ├Ranged: 1:1-1:1 TcBegin
+   ├Ranged: 1:2-1:6 (TcLowerId wot_)
+   ├Ranged: 1:7-1:10 (TcLowerId bro)
+   ├Ranged: 2:1-2:1 TcSep
+   ├Ranged: 2:1-2:2 (TcInt 3)
+   ├Ranged: 2:2-2:2 TcEnd
+   └Ranged: 2:2-2:2 TcEOF

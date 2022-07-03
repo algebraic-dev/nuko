@@ -15,12 +15,12 @@ AssignInEndOfBlock
  └Program
    ├typeDecls: Empty List
    ├letDecls:
-   │ └List
-   │   └LetDecl
-   │     ├declName: (Name "a" 0:4-0:5)
-   │     ├declArgs: Empty List
-   │     ├declBody: (Lit NoExt (LInt 1:12-1:13 3))
-   │     ├declRet: Nothing
-   │     └declExt: NoExt
+   | └List
+   |   └LetDecl
+   |     ├declName: (Name "a" 0:4-0:5)
+   |     ├declArgs: Empty List
+   |     ├declBody: (Lit NoExt (LInt 1:12-1:13 3))
+   |     ├declRet: Nothing
+   |     └declExt: NoExt
    ├impDecls: Empty List
    └programExt: NoExt
