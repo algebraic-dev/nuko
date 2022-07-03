@@ -35,9 +35,12 @@ module Nuko.Tree.Expr (
   XPath,
 ) where
 
-import Relude ( Show, Int, Maybe, NonEmpty, Text )
+import Relude      (Show, Int, Maybe, NonEmpty, Text)
+import Pretty.Tree (PrettyTree(prettyTree), Tree (..))
 
 data NoExt = NoExt deriving Show
+
+instance PrettyTree NoExt where prettyTree _ = Node "∅" [] []
 
 -- Abstract Syntax Tree
 

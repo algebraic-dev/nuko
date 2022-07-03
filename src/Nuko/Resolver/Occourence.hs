@@ -11,9 +11,10 @@ module Nuko.Resolver.Occourence (
 
 import Relude           (Generic, HashMap, Semigroup, Monoid, Functor (fmap), asum, NonEmpty, Show)
 import Relude.Base      (Eq)
-import Relude.String    (Text)
+import Relude.String    (Text, show)
 import Relude.Container (Hashable)
 import Relude.Monad     (Maybe, maybe)
+import Pretty.Tree  (PrettyTree(..), Tree (Node))
 
 import qualified Data.HashMap.Strict as HashMap
 
@@ -30,6 +31,10 @@ data OccName = OccName
   , kind :: NameKind
   } deriving (Eq, Generic, Show)
 
+instance PrettyTree NameKind where
+instance PrettyTree OccName where
+  prettyTree t = Node "OccName" [show t.kind, t.occName] []
+
 instance Hashable NameKind where
 instance Hashable OccName where
 
@@ -37,11 +42,14 @@ instance Hashable OccName where
 newtype OccEnv a = OccEnv (HashMap OccName a)
   deriving newtype (Semigroup, Monoid, Functor, Show)
 
+instance PrettyTree a => PrettyTree (OccEnv a) where
+  prettyTree (OccEnv a) = prettyTree a
+
 lookupEnv :: OccName -> OccEnv a -> Maybe a
-lookupEnv name (OccEnv map) = HashMap.lookup name map
+lookupEnv name (OccEnv map') = HashMap.lookup name map'
 
 insertEnv :: OccName -> a -> OccEnv a -> OccEnv a
-insertEnv name val (OccEnv map) = OccEnv (HashMap.insert name val map)
+insertEnv name val (OccEnv map') = OccEnv (HashMap.insert name val map')
 
 updateEnvWith :: OccName -> (a -> a) -> a -> OccEnv a -> OccEnv a
 updateEnvWith name update cur (OccEnv env) =

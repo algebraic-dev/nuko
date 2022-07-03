@@ -2,7 +2,8 @@ module Nuko.Syntax.Lexer.Tokens (
     Token(..)
 ) where
 
-import Relude (Text, Show, Int)
+import Relude (Text, Show, Int, Generic)
+import Pretty.Tree (PrettyTree)
 
 -- | Unit of information that the lexer will use
 -- it does not stores any metadata like position.
@@ -46,4 +47,6 @@ data Token
   | TcSep          -- Separator between two expressions in an indentation block
   | TcEnd          -- The end of an indentation block
   | TcEOF
-  deriving Show
+  deriving (Show, Generic)
+
+instance PrettyTree Token where

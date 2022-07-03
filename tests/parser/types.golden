@@ -1,139 +1,30 @@
-That Program
-    { typeDecls = []
-    , letDecls =
-        [ LetDecl
-            { declName = Name
-                { text = "a"
-                , range = Range
-                    { start = Pos
-                        { line = 0
-                        , column = 4
-                        }
-                    , end = Pos
-                        { line = 0
-                        , column = 5
-                        }
-                    }
-                }
-            , declArgs = []
-            , declBody = Lit
-                ( LInt 2
-                    ( Range
-                        { start = Pos
-                            { line = 0
-                            , column = 29
-                            }
-                        , end = Pos
-                            { line = 0
-                            , column = 30
-                            }
-                        }
-                    )
-                ) NoExt
-            , declRet = Just
-                ( TArrow
-                    ( TId
-                        ( Path
-                            { mod = []
-                            , last = Name
-                                { text = "Int"
-                                , range = Range
-                                    { start = Pos
-                                        { line = 0
-                                        , column = 8
-                                        }
-                                    , end = Pos
-                                        { line = 0
-                                        , column = 11
-                                        }
-                                    }
-                                }
-                            , range = Range
-                                { start = Pos
-                                    { line = 0
-                                    , column = 8
-                                    }
-                                , end = Pos
-                                    { line = 0
-                                    , column = 11
-                                    }
-                                }
-                            }
-                        ) NoExt
-                    )
-                    ( TArrow
-                        ( TPoly
-                            ( Name
-                                { text = "a"
-                                , range = Range
-                                    { start = Pos
-                                        { line = 0
-                                        , column = 15
-                                        }
-                                    , end = Pos
-                                        { line = 0
-                                        , column = 16
-                                        }
-                                    }
-                                }
-                            ) NoExt
-                        )
-                        ( TId
-                            ( Path
-                                { mod = []
-                                , last = Name
-                                    { text = "String"
-                                    , range = Range
-                                        { start = Pos
-                                            { line = 0
-                                            , column = 20
-                                            }
-                                        , end = Pos
-                                            { line = 0
-                                            , column = 26
-                                            }
-                                        }
-                                    }
-                                , range = Range
-                                    { start = Pos
-                                        { line = 0
-                                        , column = 20
-                                        }
-                                    , end = Pos
-                                        { line = 0
-                                        , column = 26
-                                        }
-                                    }
-                                }
-                            ) NoExt
-                        )
-                        ( Range
-                            { start = Pos
-                                { line = 0
-                                , column = 15
-                                }
-                            , end = Pos
-                                { line = 0
-                                , column = 26
-                                }
-                            }
-                        )
-                    )
-                    ( Range
-                        { start = Pos
-                            { line = 0
-                            , column = 8
-                            }
-                        , end = Pos
-                            { line = 0
-                            , column = 26
-                            }
-                        }
-                    )
-                )
-            , declExt = NoExt
-            }
-        ]
-    , impDecls = []
-    , programExt = NoExt
-    }
+✓ That
+ └Program
+   ├typeDecls: Empty List
+   ├letDecls:
+   ┆ └List
+   ┆   └LetDecl
+   ┆     ├declName: (Name "a" 0:4-0:5)
+   ┆     ├declArgs: Empty List
+   ┆     ├declBody:
+   ┆     ┆ └Lit
+   ┆     ┆   ├LInt 0:29-0:30 2
+   ┆     ┆   └∅
+   ┆     ├declRet:
+   ┆     ┆ └Just
+   ┆     ┆   └TArrow
+   ┆     ┆     ├TId
+   ┆     ┆     ┆ ├Path "Int"
+   ┆     ┆     ┆ └∅
+   ┆     ┆     ├TArrow
+   ┆     ┆     ┆ ├TPoly
+   ┆     ┆     ┆ ┆ ├Name "a" 0:15-0:16
+   ┆     ┆     ┆ ┆ └∅
+   ┆     ┆     ┆ ├TId
+   ┆     ┆     ┆ ┆ ├Path "String"
+   ┆     ┆     ┆ ┆ └∅
+   ┆     ┆     ┆ └0:15-0:26
+   ┆     ┆     └0:8-0:26
+   ┆     └declExt: ∅
+   ├impDecls: Empty List
+   └programExt: ∅

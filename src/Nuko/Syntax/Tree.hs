@@ -5,10 +5,12 @@
 --   Yeah.. i use a lot of orphan instances here :P
 module Nuko.Syntax.Tree where
 
-import Relude             ( Show, Semigroup((<>)), Void )
-import Data.Text          ( Text )
 import Nuko.Tree
-import Nuko.Syntax.Range  ( Range, HasPosition(..) )
+import Relude             (Show, Semigroup((<>)), Void, show, Functor (fmap))
+import Data.Text          (Text, intercalate)
+import Nuko.Syntax.Range  (Range, HasPosition(..), toLabel)
+import GHC.Generics       (Generic)
+import Pretty.Tree    (PrettyTree (prettyTree), Tree (Node))
 
 type Normal = Nuko 'Normal
 
@@ -49,20 +51,38 @@ type instance XExt (Nuko 'Normal) = Void
 
 type instance XImport (Nuko 'Normal) = NoExt
 
-deriving instance Show (Expr (Nuko 'Normal))
-deriving instance Show (Block (Nuko 'Normal))
-deriving instance Show (Var (Nuko 'Normal))
-deriving instance Show (Literal (Nuko 'Normal))
-deriving instance Show (Pat (Nuko 'Normal))
-deriving instance Show (Ty (Nuko 'Normal))
-deriving instance Show (Import (Nuko 'Normal))
-deriving instance Show (ImportDepsKind (Nuko 'Normal))
-deriving instance Show (ImportDeps (Nuko 'Normal))
-deriving instance Show (ImportModifier (Nuko 'Normal))
-deriving instance Show (Program (Nuko 'Normal))
-deriving instance Show (TypeDeclArg (Nuko 'Normal))
-deriving instance Show (TypeDecl (Nuko 'Normal))
-deriving instance Show (LetDecl (Nuko 'Normal))
+deriving instance Generic (Expr (Nuko 'Normal))
+deriving instance Generic (Block (Nuko 'Normal))
+deriving instance Generic (Var (Nuko 'Normal))
+deriving instance Generic (Literal (Nuko 'Normal))
+deriving instance Generic (Pat (Nuko 'Normal))
+deriving instance Generic (Ty (Nuko 'Normal))
+deriving instance Generic (Import (Nuko 'Normal))
+deriving instance Generic (ImportDepsKind (Nuko 'Normal))
+deriving instance Generic (ImportDeps (Nuko 'Normal))
+deriving instance Generic (ImportModifier (Nuko 'Normal))
+deriving instance Generic (Program (Nuko 'Normal))
+deriving instance Generic (TypeDeclArg (Nuko 'Normal))
+deriving instance Generic (TypeDecl (Nuko 'Normal))
+deriving instance Generic (LetDecl (Nuko 'Normal))
+
+instance PrettyTree Path  where prettyTree (Path mod' t _) = Node ("Path") [show (intercalate "." (fmap text (mod' <> [t])))] []
+instance PrettyTree Name  where prettyTree (Name a r) = Node ("Name") [show a, toLabel r] []
+
+instance PrettyTree (Expr (Nuko 'Normal)) where
+instance PrettyTree (Block (Nuko 'Normal)) where
+instance PrettyTree (Var (Nuko 'Normal)) where
+instance PrettyTree (Literal (Nuko 'Normal)) where
+instance PrettyTree (Pat (Nuko 'Normal)) where
+instance PrettyTree (Ty (Nuko 'Normal)) where
+instance PrettyTree (Import (Nuko 'Normal)) where
+instance PrettyTree (ImportDepsKind (Nuko 'Normal)) where
+instance PrettyTree (ImportDeps (Nuko 'Normal)) where
+instance PrettyTree (ImportModifier (Nuko 'Normal)) where
+instance PrettyTree (Program (Nuko 'Normal)) where
+instance PrettyTree (TypeDeclArg (Nuko 'Normal)) where
+instance PrettyTree (TypeDecl (Nuko 'Normal)) where
+instance PrettyTree (LetDecl (Nuko 'Normal)) where
 
 instance HasPosition Path where
   getPos (Path _ _ r) = r

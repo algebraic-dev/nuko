@@ -1,159 +1,25 @@
-That Program
-    { typeDecls = []
-    , letDecls =
-        [ LetDecl
-            { declName = Name
-                { text = "a"
-                , range = Range
-                    { start = Pos
-                        { line = 0
-                        , column = 4
-                        }
-                    , end = Pos
-                        { line = 0
-                        , column = 5
-                        }
-                    }
-                }
-            , declArgs = []
-            , declBody = If
-                ( Lower
-                    ( Path
-                        { mod = []
-                        , last = Name
-                            { text = "a"
-                            , range = Range
-                                { start = Pos
-                                    { line = 1
-                                    , column = 7
-                                    }
-                                , end = Pos
-                                    { line = 1
-                                    , column = 8
-                                    }
-                                }
-                            }
-                        , range = Range
-                            { start = Pos
-                                { line = 1
-                                , column = 7
-                                }
-                            , end = Pos
-                                { line = 1
-                                , column = 8
-                                }
-                            }
-                        }
-                    )
-                    ( Range
-                        { start = Pos
-                            { line = 1
-                            , column = 7
-                            }
-                        , end = Pos
-                            { line = 1
-                            , column = 8
-                            }
-                        }
-                    )
-                )
-                ( Lower
-                    ( Path
-                        { mod = []
-                        , last = Name
-                            { text = "b"
-                            , range = Range
-                                { start = Pos
-                                    { line = 2
-                                    , column = 9
-                                    }
-                                , end = Pos
-                                    { line = 2
-                                    , column = 10
-                                    }
-                                }
-                            }
-                        , range = Range
-                            { start = Pos
-                                { line = 2
-                                , column = 9
-                                }
-                            , end = Pos
-                                { line = 2
-                                , column = 10
-                                }
-                            }
-                        }
-                    )
-                    ( Range
-                        { start = Pos
-                            { line = 2
-                            , column = 9
-                            }
-                        , end = Pos
-                            { line = 2
-                            , column = 10
-                            }
-                        }
-                    )
-                )
-                ( Just
-                    ( Lower
-                        ( Path
-                            { mod = []
-                            , last = Name
-                                { text = "c"
-                                , range = Range
-                                    { start = Pos
-                                        { line = 3
-                                        , column = 9
-                                        }
-                                    , end = Pos
-                                        { line = 3
-                                        , column = 10
-                                        }
-                                    }
-                                }
-                            , range = Range
-                                { start = Pos
-                                    { line = 3
-                                    , column = 9
-                                    }
-                                , end = Pos
-                                    { line = 3
-                                    , column = 10
-                                    }
-                                }
-                            }
-                        )
-                        ( Range
-                            { start = Pos
-                                { line = 3
-                                , column = 9
-                                }
-                            , end = Pos
-                                { line = 3
-                                , column = 10
-                                }
-                            }
-                        )
-                    )
-                )
-                ( Range
-                    { start = Pos
-                        { line = 1
-                        , column = 4
-                        }
-                    , end = Pos
-                        { line = 3
-                        , column = 10
-                        }
-                    }
-                )
-            , declRet = Nothing
-            , declExt = NoExt
-            }
-        ]
-    , impDecls = []
-    , programExt = NoExt
-    }
+✓ That
+ └Program
+   ├typeDecls: Empty List
+   ├letDecls:
+   ┆ └List
+   ┆   └LetDecl
+   ┆     ├declName: (Name "a" 0:4-0:5)
+   ┆     ├declArgs: Empty List
+   ┆     ├declBody:
+   ┆     ┆ └If
+   ┆     ┆   ├Lower
+   ┆     ┆   ┆ ├Path "a"
+   ┆     ┆   ┆ └1:7-1:8
+   ┆     ┆   ├Lower
+   ┆     ┆   ┆ ├Path "b"
+   ┆     ┆   ┆ └2:9-2:10
+   ┆     ┆   ├Just
+   ┆     ┆   ┆ └Lower
+   ┆     ┆   ┆   ├Path "c"
+   ┆     ┆   ┆   └3:9-3:10
+   ┆     ┆   └1:4-3:10
+   ┆     ├declRet: Nothing
+   ┆     └declExt: ∅
+   ├impDecls: Empty List
+   └programExt: ∅

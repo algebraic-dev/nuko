@@ -1,88 +1,27 @@
-That Program
-    { typeDecls = []
-    , letDecls =
-        [ LetDecl
-            { declName = Name
-                { text = "a"
-                , range = Range
-                    { start = Pos
-                        { line = 0
-                        , column = 4
-                        }
-                    , end = Pos
-                        { line = 0
-                        , column = 5
-                        }
-                    }
-                }
-            , declArgs = []
-            , declBody = Block
-                ( BlBind
-                    ( Lit
-                        ( LInt 2
-                            ( Range
-                                { start = Pos
-                                    { line = 1
-                                    , column = 4
-                                    }
-                                , end = Pos
-                                    { line = 1
-                                    , column = 5
-                                    }
-                                }
-                            )
-                        ) NoExt
-                    )
-                    ( BlBind
-                        ( Lit
-                            ( LInt 3
-                                ( Range
-                                    { start = Pos
-                                        { line = 2
-                                        , column = 4
-                                        }
-                                    , end = Pos
-                                        { line = 2
-                                        , column = 5
-                                        }
-                                    }
-                                )
-                            ) NoExt
-                        )
-                        ( BlEnd
-                            ( Lit
-                                ( LInt 4
-                                    ( Range
-                                        { start = Pos
-                                            { line = 3
-                                            , column = 4
-                                            }
-                                        , end = Pos
-                                            { line = 3
-                                            , column = 5
-                                            }
-                                        }
-                                    )
-                                ) NoExt
-                            )
-                        )
-                    )
-                )
-                ( Range
-                    { start = Pos
-                        { line = 1
-                        , column = 4
-                        }
-                    , end = Pos
-                        { line = 3
-                        , column = 5
-                        }
-                    }
-                )
-            , declRet = Nothing
-            , declExt = NoExt
-            }
-        ]
-    , impDecls = []
-    , programExt = NoExt
-    }
+✓ That
+ └Program
+   ├typeDecls: Empty List
+   ├letDecls:
+   ┆ └List
+   ┆   └LetDecl
+   ┆     ├declName: (Name "a" 0:4-0:5)
+   ┆     ├declArgs: Empty List
+   ┆     ├declBody:
+   ┆     ┆ └Block
+   ┆     ┆   ├BlBind
+   ┆     ┆   ┆ ├Lit
+   ┆     ┆   ┆ ┆ ├LInt 1:4-1:5 2
+   ┆     ┆   ┆ ┆ └∅
+   ┆     ┆   ┆ └BlBind
+   ┆     ┆   ┆   ├Lit
+   ┆     ┆   ┆   ┆ ├LInt 2:4-2:5 3
+   ┆     ┆   ┆   ┆ └∅
+   ┆     ┆   ┆   └BlEnd
+   ┆     ┆   ┆     └Lit
+   ┆     ┆   ┆       ├LInt 3:4-3:5 4
+   ┆     ┆   ┆       └∅
+   ┆     ┆   └1:4-3:5
+   ┆     ├declRet: Nothing
+   ┆     └declExt: ∅
+   ├impDecls: Empty List
+   └programExt: ∅

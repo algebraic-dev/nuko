@@ -1,91 +1,16 @@
-That Ranged
-    { info = TcLet
-    , position = Range
-        { start = Pos
-            { line = 0
-            , column = 0
-            }
-        , end = Pos
-            { line = 0
-            , column = 3
-            }
-        }
-    }
-Ranged
-    { info = TcLowerId "a"
-    , position = Range
-        { start = Pos
-            { line = 0
-            , column = 4
-            }
-        , end = Pos
-            { line = 0
-            , column = 5
-            }
-        }
-    }
-Ranged
-    { info = TcEqual
-    , position = Range
-        { start = Pos
-            { line = 0
-            , column = 6
-            }
-        , end = Pos
-            { line = 0
-            , column = 7
-            }
-        }
-    }
-Ranged
-    { info = TcBegin
-    , position = Range
-        { start = Pos
-            { line = 0
-            , column = 8
-            }
-        , end = Pos
-            { line = 0
-            , column = 8
-            }
-        }
-    }
-Ranged
-    { info = TcInt 2
-    , position = Range
-        { start = Pos
-            { line = 0
-            , column = 8
-            }
-        , end = Pos
-            { line = 0
-            , column = 9
-            }
-        }
-    }
-Ranged
-    { info = TcEnd
-    , position = Range
-        { start = Pos
-            { line = 0
-            , column = 9
-            }
-        , end = Pos
-            { line = 0
-            , column = 9
-            }
-        }
-    }
-Ranged
-    { info = TcEOF
-    , position = Range
-        { start = Pos
-            { line = 0
-            , column = 9
-            }
-        , end = Pos
-            { line = 0
-            , column = 9
-            }
-        }
-    }
+✓ That
+ └List
+   ├Ranged:  0:0-0:3
+   ┆ └TcLet
+   ├Ranged:  0:4-0:5
+   ┆ └TcLowerId a
+   ├Ranged:  0:6-0:7
+   ┆ └TcEqual
+   ├Ranged:  0:8-0:8
+   ┆ └TcBegin
+   ├Ranged:  0:8-0:9
+   ┆ └TcInt 2
+   ├Ranged:  0:9-0:9
+   ┆ └TcEnd
+   └Ranged:  0:9-0:9
+     └TcEOF

@@ -33,6 +33,10 @@ default-extensions:
   - RankNTypes
   - DeriveGeneric
   - TupleSections
+  - TypeOperators
+  - AllowAmbiguousTypes
+  - DefaultSignatures
+  - UndecidableInstances
 
 ghc-options:
   - -Weverything

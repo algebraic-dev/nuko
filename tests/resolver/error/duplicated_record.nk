@@ -1,4 +1,0 @@
-type Ata = {
-  b: Int,
-  b: String
-}

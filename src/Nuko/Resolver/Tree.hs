@@ -7,12 +7,13 @@
 
 module Nuko.Resolver.Tree where
 
-import Relude             (Show, Semigroup((<>)), Void)
-import Data.Text          (Text)
 import Nuko.Tree
-import Nuko.Syntax.Range  (Range, HasPosition(..))
+import Nuko.Syntax.Range  (Range, HasPosition(..), toLabel)
+import Relude             (Show, Semigroup((<>)), Void, Generic, show)
+import Data.Text          (Text)
+import Pretty.Tree    (PrettyTree (prettyTree), Tree (Node))
 
-data ReId = ReId { text :: Text, range :: Range } deriving Show
+data ReId = ReId { text :: Text, range :: Range } deriving (Show, Generic)
 
 data Path
   = Path Text ReId Range
@@ -53,20 +54,41 @@ type instance XExt (Nuko 'Resolved) = Void
 
 type instance XImport (Nuko 'Resolved) = Void
 
-deriving instance Show (Expr (Nuko 'Resolved))
-deriving instance Show (Block (Nuko 'Resolved))
-deriving instance Show (Var (Nuko 'Resolved))
-deriving instance Show (Literal (Nuko 'Resolved))
-deriving instance Show (Pat (Nuko 'Resolved))
-deriving instance Show (Ty (Nuko 'Resolved))
-deriving instance Show (Import (Nuko 'Resolved))
-deriving instance Show (ImportDepsKind (Nuko 'Resolved))
-deriving instance Show (ImportDeps (Nuko 'Resolved))
-deriving instance Show (ImportModifier (Nuko 'Resolved))
-deriving instance Show (Program (Nuko 'Resolved))
-deriving instance Show (TypeDeclArg (Nuko 'Resolved))
-deriving instance Show (TypeDecl (Nuko 'Resolved))
-deriving instance Show (LetDecl (Nuko 'Resolved))
+deriving instance Generic (Expr (Nuko 'Resolved))
+deriving instance Generic (Block (Nuko 'Resolved))
+deriving instance Generic (Var (Nuko 'Resolved))
+deriving instance Generic (Literal (Nuko 'Resolved))
+deriving instance Generic (Pat (Nuko 'Resolved))
+deriving instance Generic (Ty (Nuko 'Resolved))
+deriving instance Generic (Import (Nuko 'Resolved))
+deriving instance Generic (ImportDepsKind (Nuko 'Resolved))
+deriving instance Generic (ImportDeps (Nuko 'Resolved))
+deriving instance Generic (ImportModifier (Nuko 'Resolved))
+deriving instance Generic (Program (Nuko 'Resolved))
+deriving instance Generic (TypeDeclArg (Nuko 'Resolved))
+deriving instance Generic (TypeDecl (Nuko 'Resolved))
+deriving instance Generic (LetDecl (Nuko 'Resolved))
+
+instance PrettyTree Path  where
+  prettyTree (Path mod' t r) = Node ("Path") [show (mod' <> "." <> t.text), toLabel r] []
+  prettyTree (Local t) = Node ("Local") [show t.text, toLabel t.range] []
+
+instance PrettyTree ReId  where prettyTree a = Node ("ReId") [a.text, toLabel a.range] []
+
+instance PrettyTree (Expr (Nuko 'Resolved)) where
+instance PrettyTree (Block (Nuko 'Resolved)) where
+instance PrettyTree (Var (Nuko 'Resolved)) where
+instance PrettyTree (Literal (Nuko 'Resolved)) where
+instance PrettyTree (Pat (Nuko 'Resolved)) where
+instance PrettyTree (Ty (Nuko 'Resolved)) where
+instance PrettyTree (Import (Nuko 'Resolved)) where
+instance PrettyTree (ImportDepsKind (Nuko 'Resolved)) where
+instance PrettyTree (ImportDeps (Nuko 'Resolved)) where
+instance PrettyTree (ImportModifier (Nuko 'Resolved)) where
+instance PrettyTree (Program (Nuko 'Resolved)) where
+instance PrettyTree (TypeDeclArg (Nuko 'Resolved)) where
+instance PrettyTree (TypeDecl (Nuko 'Resolved)) where
+instance PrettyTree (LetDecl (Nuko 'Resolved)) where
 
 instance HasPosition ReId where
   getPos (ReId _ r) = r

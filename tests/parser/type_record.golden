@@ -1,82 +1,20 @@
-That Program
-    { typeDecls =
-        [ TypeDecl
-            { tyName = Name
-                { text = "Ata"
-                , range = Range
-                    { start = Pos
-                        { line = 0
-                        , column = 5
-                        }
-                    , end = Pos
-                        { line = 0
-                        , column = 8
-                        }
-                    }
-                }
-            , tyArgs =
-                [ Name
-                    { text = "a"
-                    , range = Range
-                        { start = Pos
-                            { line = 0
-                            , column = 9
-                            }
-                        , end = Pos
-                            { line = 0
-                            , column = 10
-                            }
-                        }
-                    }
-                ]
-            , tyDecl = TypeProd
-                [
-                    ( Name
-                        { text = "ata"
-                        , range = Range
-                            { start = Pos
-                                { line = 0
-                                , column = 15
-                                }
-                            , end = Pos
-                                { line = 0
-                                , column = 18
-                                }
-                            }
-                        }
-                    , TId
-                        ( Path
-                            { mod = []
-                            , last = Name
-                                { text = "Int"
-                                , range = Range
-                                    { start = Pos
-                                        { line = 0
-                                        , column = 20
-                                        }
-                                    , end = Pos
-                                        { line = 0
-                                        , column = 23
-                                        }
-                                    }
-                                }
-                            , range = Range
-                                { start = Pos
-                                    { line = 0
-                                    , column = 20
-                                    }
-                                , end = Pos
-                                    { line = 0
-                                    , column = 23
-                                    }
-                                }
-                            }
-                        ) NoExt
-                    )
-                ]
-            }
-        ]
-    , letDecls = []
-    , impDecls = []
-    , programExt = NoExt
-    }
+✓ That
+ └Program
+   ├typeDecls:
+   ┆ └List
+   ┆   └TypeDecl
+   ┆     ├tyName: (Name "Ata" 0:5-0:8)
+   ┆     ├tyArgs:
+   ┆     ┆ └List
+   ┆     ┆   └Name "a" 0:9-0:10
+   ┆     └tyDecl:
+   ┆       └TypeProd
+   ┆         └List
+   ┆           └Prod
+   ┆             ├Name "ata" 0:15-0:18
+   ┆             └TId
+   ┆               ├Path "Int"
+   ┆               └∅
+   ├letDecls: Empty List
+   ├impDecls: Empty List
+   └programExt: ∅

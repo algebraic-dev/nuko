@@ -34,7 +34,7 @@ import Relude.Bool              (otherwise, Bool (..), (&&))
 import Relude.Monoid            ((<>))
 import Relude.Applicative       (Applicative(pure))
 import Relude.Monad             (modify, MonadState, fromMaybe, gets)
-import Relude                   (One (one), (.), snd, fst, Maybe (..), (<$>), ($), filter, Functor (fmap), Show)
+import Relude                   (One (one), (.), snd, fst, Maybe (..), (<$>), ($), filter, Functor (fmap), Show, Generic)
 
 import Lens.Micro.Platform      (makeLenses, over, set)
 import Data.List.NonEmpty       (NonEmpty ((:|)), (<|), uncons)
@@ -42,6 +42,7 @@ import Data.List.NonEmpty       (NonEmpty ((:|)), (<|), uncons)
 import qualified Data.HashSet        as HashSet
 import qualified Data.HashMap.Strict as HashMap
 import qualified Nuko.Resolver.Occourence as Occ
+import Pretty.Tree (PrettyTree)
 
 data NameSort
   = External Text
@@ -50,16 +51,21 @@ data NameSort
 data Visibility
   = Public
   | Private
-  deriving (Eq, Show)
+  deriving (Eq, Show, Generic)
 
 data NameSpace = NameSpace
   { _modName :: Text
   , _names   :: OccEnv Visibility
-  } deriving Show
+  } deriving (Show, Generic)
+
+instance PrettyTree Visibility where
+instance PrettyTree NameSpace where
 
 makeLenses ''NameSpace
 
-data Label = Single Text Text | Ambiguous (HashSet Text) (HashSet Text) deriving Show
+data Label = Single Text Text | Ambiguous (HashSet Text) (HashSet Text) deriving (Show, Generic)
+
+instance PrettyTree Label where
 
 joinLabels :: Label -> Label -> Label
 joinLabels a' b' = case (a', b') of
@@ -81,7 +87,9 @@ data LocalNS = LocalNS
   , _openedModules    :: HashMap Text NameSpace
   , _currentNamespace :: NameSpace
   , _newNamespaces    :: HashMap Text NameSpace
-  } deriving Show
+  } deriving (Show, Generic)
+
+instance PrettyTree LocalNS where
 
 makeLenses ''LocalNS
 

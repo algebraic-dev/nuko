@@ -1,1 +1,5 @@
-(  )
+type A = {
+  a : Int -> Int -> String,
+  b : String,
+  c : Lero a a b
+}

@@ -1,8 +1,0 @@
-type Kek =
-    | Lel Int Kek
-    | Lil Int
-
-let a =
-    match a with
-        Kek.Lel a (Kek.Lil a) => 2
-        b => 3

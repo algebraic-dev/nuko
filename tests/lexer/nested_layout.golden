@@ -1,403 +1,64 @@
-That Ranged
-    { info = TcLet
-    , position = Range
-        { start = Pos
-            { line = 0
-            , column = 0
-            }
-        , end = Pos
-            { line = 0
-            , column = 3
-            }
-        }
-    }
-Ranged
-    { info = TcLowerId "a"
-    , position = Range
-        { start = Pos
-            { line = 0
-            , column = 4
-            }
-        , end = Pos
-            { line = 0
-            , column = 5
-            }
-        }
-    }
-Ranged
-    { info = TcEqual
-    , position = Range
-        { start = Pos
-            { line = 0
-            , column = 6
-            }
-        , end = Pos
-            { line = 0
-            , column = 7
-            }
-        }
-    }
-Ranged
-    { info = TcBegin
-    , position = Range
-        { start = Pos
-            { line = 1
-            , column = 4
-            }
-        , end = Pos
-            { line = 1
-            , column = 4
-            }
-        }
-    }
-Ranged
-    { info = TcLowerId "b"
-    , position = Range
-        { start = Pos
-            { line = 1
-            , column = 4
-            }
-        , end = Pos
-            { line = 1
-            , column = 5
-            }
-        }
-    }
-Ranged
-    { info = TcSep
-    , position = Range
-        { start = Pos
-            { line = 2
-            , column = 4
-            }
-        , end = Pos
-            { line = 2
-            , column = 4
-            }
-        }
-    }
-Ranged
-    { info = TcLet
-    , position = Range
-        { start = Pos
-            { line = 2
-            , column = 4
-            }
-        , end = Pos
-            { line = 2
-            , column = 7
-            }
-        }
-    }
-Ranged
-    { info = TcLowerId "c"
-    , position = Range
-        { start = Pos
-            { line = 2
-            , column = 8
-            }
-        , end = Pos
-            { line = 2
-            , column = 9
-            }
-        }
-    }
-Ranged
-    { info = TcEqual
-    , position = Range
-        { start = Pos
-            { line = 2
-            , column = 10
-            }
-        , end = Pos
-            { line = 2
-            , column = 11
-            }
-        }
-    }
-Ranged
-    { info = TcBegin
-    , position = Range
-        { start = Pos
-            { line = 3
-            , column = 8
-            }
-        , end = Pos
-            { line = 3
-            , column = 8
-            }
-        }
-    }
-Ranged
-    { info = TcLowerId "d"
-    , position = Range
-        { start = Pos
-            { line = 3
-            , column = 8
-            }
-        , end = Pos
-            { line = 3
-            , column = 9
-            }
-        }
-    }
-Ranged
-    { info = TcSep
-    , position = Range
-        { start = Pos
-            { line = 4
-            , column = 8
-            }
-        , end = Pos
-            { line = 4
-            , column = 8
-            }
-        }
-    }
-Ranged
-    { info = TcLowerId "e"
-    , position = Range
-        { start = Pos
-            { line = 4
-            , column = 8
-            }
-        , end = Pos
-            { line = 4
-            , column = 9
-            }
-        }
-    }
-Ranged
-    { info = TcLowerId "f"
-    , position = Range
-        { start = Pos
-            { line = 4
-            , column = 10
-            }
-        , end = Pos
-            { line = 4
-            , column = 11
-            }
-        }
-    }
-Ranged
-    { info = TcLowerId "g"
-    , position = Range
-        { start = Pos
-            { line = 5
-            , column = 9
-            }
-        , end = Pos
-            { line = 5
-            , column = 10
-            }
-        }
-    }
-Ranged
-    { info = TcEnd
-    , position = Range
-        { start = Pos
-            { line = 6
-            , column = 4
-            }
-        , end = Pos
-            { line = 6
-            , column = 4
-            }
-        }
-    }
-Ranged
-    { info = TcSep
-    , position = Range
-        { start = Pos
-            { line = 6
-            , column = 4
-            }
-        , end = Pos
-            { line = 6
-            , column = 4
-            }
-        }
-    }
-Ranged
-    { info = TcLowerId "h"
-    , position = Range
-        { start = Pos
-            { line = 6
-            , column = 4
-            }
-        , end = Pos
-            { line = 6
-            , column = 5
-            }
-        }
-    }
-Ranged
-    { info = TcSep
-    , position = Range
-        { start = Pos
-            { line = 7
-            , column = 4
-            }
-        , end = Pos
-            { line = 7
-            , column = 4
-            }
-        }
-    }
-Ranged
-    { info = TcLet
-    , position = Range
-        { start = Pos
-            { line = 7
-            , column = 4
-            }
-        , end = Pos
-            { line = 7
-            , column = 7
-            }
-        }
-    }
-Ranged
-    { info = TcLowerId "d"
-    , position = Range
-        { start = Pos
-            { line = 7
-            , column = 8
-            }
-        , end = Pos
-            { line = 7
-            , column = 9
-            }
-        }
-    }
-Ranged
-    { info = TcEqual
-    , position = Range
-        { start = Pos
-            { line = 7
-            , column = 10
-            }
-        , end = Pos
-            { line = 7
-            , column = 11
-            }
-        }
-    }
-Ranged
-    { info = TcBegin
-    , position = Range
-        { start = Pos
-            { line = 8
-            , column = 8
-            }
-        , end = Pos
-            { line = 8
-            , column = 8
-            }
-        }
-    }
-Ranged
-    { info = TcLet
-    , position = Range
-        { start = Pos
-            { line = 8
-            , column = 8
-            }
-        , end = Pos
-            { line = 8
-            , column = 11
-            }
-        }
-    }
-Ranged
-    { info = TcLowerId "f"
-    , position = Range
-        { start = Pos
-            { line = 8
-            , column = 12
-            }
-        , end = Pos
-            { line = 8
-            , column = 13
-            }
-        }
-    }
-Ranged
-    { info = TcEqual
-    , position = Range
-        { start = Pos
-            { line = 8
-            , column = 14
-            }
-        , end = Pos
-            { line = 8
-            , column = 15
-            }
-        }
-    }
-Ranged
-    { info = TcBegin
-    , position = Range
-        { start = Pos
-            { line = 8
-            , column = 15
-            }
-        , end = Pos
-            { line = 8
-            , column = 15
-            }
-        }
-    }
-Ranged
-    { info = TcEnd
-    , position = Range
-        { start = Pos
-            { line = 8
-            , column = 15
-            }
-        , end = Pos
-            { line = 8
-            , column = 15
-            }
-        }
-    }
-Ranged
-    { info = TcEnd
-    , position = Range
-        { start = Pos
-            { line = 8
-            , column = 15
-            }
-        , end = Pos
-            { line = 8
-            , column = 15
-            }
-        }
-    }
-Ranged
-    { info = TcEnd
-    , position = Range
-        { start = Pos
-            { line = 8
-            , column = 15
-            }
-        , end = Pos
-            { line = 8
-            , column = 15
-            }
-        }
-    }
-Ranged
-    { info = TcEOF
-    , position = Range
-        { start = Pos
-            { line = 8
-            , column = 15
-            }
-        , end = Pos
-            { line = 8
-            , column = 15
-            }
-        }
-    }
+✓ That
+ └List
+   ├Ranged:  0:0-0:3
+   ┆ └TcLet
+   ├Ranged:  0:4-0:5
+   ┆ └TcLowerId a
+   ├Ranged:  0:6-0:7
+   ┆ └TcEqual
+   ├Ranged:  1:4-1:4
+   ┆ └TcBegin
+   ├Ranged:  1:4-1:5
+   ┆ └TcLowerId b
+   ├Ranged:  2:4-2:4
+   ┆ └TcSep
+   ├Ranged:  2:4-2:7
+   ┆ └TcLet
+   ├Ranged:  2:8-2:9
+   ┆ └TcLowerId c
+   ├Ranged:  2:10-2:11
+   ┆ └TcEqual
+   ├Ranged:  3:8-3:8
+   ┆ └TcBegin
+   ├Ranged:  3:8-3:9
+   ┆ └TcLowerId d
+   ├Ranged:  4:8-4:8
+   ┆ └TcSep
+   ├Ranged:  4:8-4:9
+   ┆ └TcLowerId e
+   ├Ranged:  4:10-4:11
+   ┆ └TcLowerId f
+   ├Ranged:  5:9-5:10
+   ┆ └TcLowerId g
+   ├Ranged:  6:4-6:4
+   ┆ └TcEnd
+   ├Ranged:  6:4-6:4
+   ┆ └TcSep
+   ├Ranged:  6:4-6:5
+   ┆ └TcLowerId h
+   ├Ranged:  7:4-7:4
+   ┆ └TcSep
+   ├Ranged:  7:4-7:7
+   ┆ └TcLet
+   ├Ranged:  7:8-7:9
+   ┆ └TcLowerId d
+   ├Ranged:  7:10-7:11
+   ┆ └TcEqual
+   ├Ranged:  8:8-8:8
+   ┆ └TcBegin
+   ├Ranged:  8:8-8:11
+   ┆ └TcLet
+   ├Ranged:  8:12-8:13
+   ┆ └TcLowerId f
+   ├Ranged:  8:14-8:15
+   ┆ └TcEqual
+   ├Ranged:  8:15-8:15
+   ┆ └TcBegin
+   ├Ranged:  8:15-8:15
+   ┆ └TcEnd
+   ├Ranged:  8:15-8:15
+   ┆ └TcEnd
+   ├Ranged:  8:15-8:15
+   ┆ └TcEnd
+   └Ranged:  8:15-8:15
+     └TcEOF

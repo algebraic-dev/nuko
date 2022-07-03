@@ -4,12 +4,15 @@ module Nuko.Syntax.Range (
     Ranged(..),
     HasPosition(..),
     advancePos,
-    oneColRange
+    oneColRange,
+    toLabel
 ) where
 
-import Relude (Int, Semigroup(..), Char, Num ((+)), Show)
+import Relude (Int, Semigroup(..), Char, Num ((+)), Show, show)
 
 import qualified Data.List.NonEmpty as NonEmpty
+import Pretty.Tree (PrettyTree(..), Tree (..))
+import Data.Text (Text)
 
 data Pos = Pos { line, column :: Int } deriving Show
 
@@ -40,5 +43,14 @@ instance (HasPosition a, HasPosition b) => HasPosition (a, b) where
 instance HasPosition a => HasPosition (NonEmpty.NonEmpty a) where
   getPos x  = getPos (NonEmpty.head x) <> getPos (NonEmpty.last x)
 
+toLabel :: Range -> Text
+toLabel r = show r.start.line <> ":" <> show r.start.column <> "-" <> show r.end.line <> ":" <> show r.end.column
+
 instance HasPosition (Ranged a) where
     getPos (Ranged _ a) = a
+
+instance PrettyTree Range where
+  prettyTree r = Node (toLabel r) [] []
+
+instance PrettyTree a => PrettyTree (Ranged a) where
+  prettyTree r = Node ("Ranged: ") [toLabel r.position] [prettyTree r.info]

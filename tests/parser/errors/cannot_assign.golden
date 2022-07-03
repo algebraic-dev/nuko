@@ -1,4 +1,5 @@
-These AssignInEndOfBlock
+• These
+AssignInEndOfBlock
     ( Range
         { start = Pos
             { line = 1
@@ -11,42 +12,18 @@ These AssignInEndOfBlock
         }
     )
 
-Program
-    { typeDecls = []
-    , letDecls =
-        [ LetDecl
-            { declName = Name
-                { text = "a"
-                , range = Range
-                    { start = Pos
-                        { line = 0
-                        , column = 4
-                        }
-                    , end = Pos
-                        { line = 0
-                        , column = 5
-                        }
-                    }
-                }
-            , declArgs = []
-            , declBody = Lit
-                ( LInt 3
-                    ( Range
-                        { start = Pos
-                            { line = 1
-                            , column = 12
-                            }
-                        , end = Pos
-                            { line = 1
-                            , column = 13
-                            }
-                        }
-                    )
-                ) NoExt
-            , declRet = Nothing
-            , declExt = NoExt
-            }
-        ]
-    , impDecls = []
-    , programExt = NoExt
-    }
+ └Program
+   ├typeDecls: Empty List
+   ├letDecls:
+   ┆ └List
+   ┆   └LetDecl
+   ┆     ├declName: (Name "a" 0:4-0:5)
+   ┆     ├declArgs: Empty List
+   ┆     ├declBody:
+   ┆     ┆ └Lit
+   ┆     ┆   ├LInt 1:12-1:13 3
+   ┆     ┆   └∅
+   ┆     ├declRet: Nothing
+   ┆     └declExt: ∅
+   ├impDecls: Empty List
+   └programExt: ∅

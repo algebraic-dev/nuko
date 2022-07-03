@@ -1,4 +1,5 @@
-This UnexpectedStr
+✗ This
+UnexpectedStr
     ( Range
         { start = Pos
             { line = 2
