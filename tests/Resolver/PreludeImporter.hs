@@ -35,8 +35,8 @@ instance Monad m => MonadImport NameSpace (ConstImporter m) where
       Just res -> pure (Right res)
       Nothing  -> pure (Left CannotFind)
 
-runImporterTo :: ConstImporter m a -> (HashMap Text NameSpace) -> m a
-runImporterTo imp map = Reader.runReaderT (runImporter imp) map
+runImporterTo :: ConstImporter m a -> HashMap Text NameSpace -> m a
+runImporterTo imp = Reader.runReaderT (runImporter imp)
 
 runResolver :: (forall m . MonadResolver m => m a) -> LocalNS -> HashMap Text NameSpace -> These [ResolveError] (a, LocalNS)
 runResolver action localNS predefined = first (`appEndo` []) (Chronicle.runChronicle $ State.runStateT (runImporterTo action predefined) localNS)
@@ -46,6 +46,6 @@ resolveEntireProgram tree =
     let localNS  = (emptyLocalNS "Main") { _openedNames = openedLs}
         openedLs = insertEnv (OccName "Int" TyName)    (Single "Int" "Prelude")
                  $ insertEnv (OccName "String" TyName) (Single "String" "Prelude")
-                 $ Occ.empty in
+                   Occ.empty in
         runResolver (initProgram tree) localNS HashMap.empty
     >>= \(_, initNS) -> runResolver (resolveProgram tree) initNS (initNS._newNamespaces)

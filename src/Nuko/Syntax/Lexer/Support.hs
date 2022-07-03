@@ -20,22 +20,30 @@ module Nuko.Syntax.Lexer.Support (
   addToBuffer,
   ghostRange,
   runLexer,
-  flagLocal
+  flagLocal,
 ) where
 
-import Relude
+import Relude.Monad       (Monad((>>)), Maybe, MonadState, fromMaybe)
+import Relude.Monoid      (Semigroup((<>)), Endo(appEndo))
+import Relude.Applicative (Applicative(pure))
+import Relude.Functor     (Functor(fmap), Bifunctor(first), (<$>))
+import Relude.Bool        (Bool(..) )
+import Relude.String      (Text, ByteString)
+import Relude.List        (NonEmpty(..), uncons, head)
+import Relude             (fst, snd, ($), Int, Word8, (.),  const)
+
 import Data.These               (These)
-import Nuko.Syntax.Range        (Pos, Ranged, Range)
 import Data.ByteString.Internal (w2c)
 import Control.Monad.Chronicle  (MonadChronicle, Chronicle)
+import Nuko.Syntax.Range        (Pos, Ranged, Range)
 import Nuko.Syntax.Error        (SyntaxError(..))
 import Nuko.Utils               (flag)
 
 import qualified Control.Monad.Chronicle as Chronicle
 import qualified Control.Monad.State     as State
-import qualified Nuko.Syntax.Range       as Range
 import qualified Data.List.NonEmpty      as NonEmpty
 import qualified Data.ByteString         as ByteString
+import qualified Nuko.Syntax.Range       as Range
 
 -- | AlexInput is the Data Type used by the Alex inside the
 -- generated code to track the input data.

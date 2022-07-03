@@ -4,7 +4,7 @@ module Nuko.Utils (
 ) where
 
 import Control.Monad.Chronicle (MonadChronicle (dictate, confess))
-import Data.Monoid             (Endo(..), (<>))
+import Relude.Monoid           (Endo(..), (<>))
 import Relude                  (($))
 
 flag :: MonadChronicle (Endo [a]) m => a -> m ()

@@ -6,7 +6,7 @@ module Nuko.Resolver (
   resolveProgram,
   resolveLetDecl,
   resolveExpr,
-  initProgram
+  initProgram,
 ) where
 
 import Nuko.Tree.TopLevel

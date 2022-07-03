@@ -21,7 +21,7 @@ module Nuko.Resolver.Environment (
   modName,
   names,
   newNamespaces,
-  emptyLocalNS
+  emptyLocalNS,
 ) where
 
 import Nuko.Resolver.Occourence (OccEnv (OccEnv), empty, OccName(..), lookupEnv, insertEnv, updateEnvWith)
@@ -38,11 +38,11 @@ import Relude                   (One (one), (.), snd, fst, Maybe (..), (<$>), ($
 
 import Lens.Micro.Platform      (makeLenses, over, set)
 import Data.List.NonEmpty       (NonEmpty ((:|)), (<|), uncons)
+import Pretty.Tree              (PrettyTree)
 
-import qualified Data.HashSet        as HashSet
-import qualified Data.HashMap.Strict as HashMap
+import qualified Data.HashSet             as HashSet
+import qualified Data.HashMap.Strict      as HashMap
 import qualified Nuko.Resolver.Occourence as Occ
-import Pretty.Tree (PrettyTree)
 
 data NameSort
   = External Text
@@ -94,7 +94,7 @@ instance PrettyTree LocalNS where
 makeLenses ''LocalNS
 
 emptyLocalNS :: Text -> LocalNS
-emptyLocalNS moduleName = LocalNS Occ.empty (one (Occ.empty)) HashMap.empty (NameSpace moduleName Occ.empty) HashMap.empty
+emptyLocalNS moduleName = LocalNS Occ.empty (one Occ.empty) HashMap.empty (NameSpace moduleName Occ.empty) HashMap.empty
 
 -- Functions to help the localNames because it's a really messy type
 

@@ -51,7 +51,7 @@ runThat fn that file = do
   pure $ goldenStr file golden $ case that content of
     That e    -> "✓ That\n"  <> fn e
     This e    -> "✗ This\n"  <> unlines (fmap prettyShow e)
-    These e f -> "• These\n" <> unlines (fmap prettyShow e) <> "\n" <> (fn f)
+    These e f -> "• These\n" <> unlines (fmap prettyShow e) <> "\n" <> fn f
 
 runFile :: FilePath -> IO TestTree
 runFile = runThat prettyShowTree (runLexer scanUntilEnd)

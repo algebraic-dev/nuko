@@ -6,11 +6,11 @@
 module Nuko.Syntax.Tree where
 
 import Nuko.Tree
+import Nuko.Syntax.Range  (Range, HasPosition(..), toLabel)
 import Relude             (Show, Semigroup((<>)), Void, show, Functor (fmap))
 import Data.Text          (Text, intercalate)
-import Nuko.Syntax.Range  (Range, HasPosition(..), toLabel)
 import GHC.Generics       (Generic)
-import Pretty.Tree    (PrettyTree (prettyTree), Tree (Node))
+import Pretty.Tree        (PrettyTree (prettyTree), Tree (Node))
 
 type Normal = Nuko 'Normal
 
@@ -66,8 +66,8 @@ deriving instance Generic (TypeDeclArg (Nuko 'Normal))
 deriving instance Generic (TypeDecl (Nuko 'Normal))
 deriving instance Generic (LetDecl (Nuko 'Normal))
 
-instance PrettyTree Path  where prettyTree (Path mod' t _) = Node ("Path") [show (intercalate "." (fmap text (mod' <> [t])))] []
-instance PrettyTree Name  where prettyTree (Name a r) = Node ("Name") [show a, toLabel r] []
+instance PrettyTree Path  where prettyTree (Path mod' t _) = Node "Path" [show (intercalate "." (fmap text (mod' <> [t])))] []
+instance PrettyTree Name  where prettyTree (Name a r) = Node "Name" [show a, toLabel r] []
 
 instance PrettyTree (Expr (Nuko 'Normal)) where
 instance PrettyTree (Block (Nuko 'Normal)) where

@@ -1,9 +1,12 @@
-module Nuko.Resolver.Error (ResolveError(..), Case(..)) where
+module Nuko.Resolver.Error (
+  ResolveError(..),
+  Case(..),
+) where
 
-import Relude            (Show, Text, HashSet, Maybe)
-import Nuko.Syntax.Range (Range(..))
+import Relude                   (Show, Text, HashSet, Maybe)
+import Nuko.Syntax.Range        (Range(..))
 import Nuko.Resolver.Occourence (NameKind)
-import Data.List.NonEmpty (NonEmpty)
+import Data.List.NonEmpty       (NonEmpty)
 
 data Case = UpperCase | LowerCase
   deriving Show

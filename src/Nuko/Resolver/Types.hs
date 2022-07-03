@@ -81,11 +81,11 @@ getModule loc name = do
 resolvePath :: MonadResolver m => NameKind -> XPath Nm -> m (XPath Re)
 resolvePath nameKind (Syntax.Path []  (Name info loc) _) = resolveName nameKind loc info
 resolvePath nameKind (Syntax.Path (x : xs) (Name info loc) loc') = do
-  let (path, modRange') = makePath (x :| xs)
-  module' <- getModule modRange' path
+  let (aliasedPath, modRange') = makePath (x :| xs)
+  module' <- getModule modRange' aliasedPath
   case Occ.lookupEnv (OccName info nameKind) module'._names of
-    Just _  -> pure (Path path (ReId info loc) loc')
-    Nothing -> terminate (CannotFindInModule (one nameKind) (Just path) info loc)
+    Just _  -> pure (Path module'._modName (ReId info loc) loc')
+    Nothing -> terminate (CannotFindInModule (one nameKind) (Just module'._modName) info loc)
 
 addGlobal :: MonadResolver m => Range -> OccName -> Visibility -> m ()
 addGlobal loc name vs = do

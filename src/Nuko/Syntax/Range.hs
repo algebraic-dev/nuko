@@ -1,24 +1,30 @@
 module Nuko.Syntax.Range (
-    Pos(..),
-    Range(..),
-    Ranged(..),
     HasPosition(..),
-    advancePos,
+    Ranged(..),
+    Range(..),
+    Pos(..),
     oneColRange,
+    advancePos,
     toLabel
 ) where
 
-import Relude (Int, Semigroup(..), Char, Num ((+)), Show, show, ($))
+import Relude        (Int, Semigroup(..), Char, Num ((+)), Show, show, ($))
+import Pretty.Tree   (PrettyTree(..), Tree (..), inlineTree)
+import Relude.String (Text)
 
 import qualified Data.List.NonEmpty as NonEmpty
-import Pretty.Tree (PrettyTree(..), Tree (..), inlineTree)
-import Data.Text (Text)
 
 data Pos = Pos { line, column :: Int } deriving Show
 
-data Range = Range { start, end :: Pos } deriving Show
+data Range = Range
+  { start
+  , end :: Pos }
+  deriving Show
 
-data Ranged a = Ranged { info :: a, position :: Range } deriving Show
+data Ranged a = Ranged
+  { info :: a
+  , position :: Range }
+  deriving Show
 
 instance Semigroup Range where
   (Range s _) <> (Range _ e) = Range s e
@@ -54,5 +60,5 @@ instance PrettyTree Range where
 
 instance PrettyTree a => PrettyTree (Ranged a) where
   prettyTree r =
-    let (Node n m e) = inlineTree $ Node ("Ranged:") [] [prettyTree r.info] in
+    let (Node n m e) = inlineTree $ Node "Ranged:" [] [prettyTree r.info] in
     Node n (toLabel r.position : m) e

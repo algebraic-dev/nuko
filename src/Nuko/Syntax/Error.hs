@@ -1,4 +1,7 @@
-module Nuko.Syntax.Error (SyntaxError(..), Case(..)) where
+module Nuko.Syntax.Error (
+  SyntaxError(..),
+  Case(..),
+) where
 
 import Relude (Show)
 import Nuko.Syntax.Range ( Ranged, Range, Pos )

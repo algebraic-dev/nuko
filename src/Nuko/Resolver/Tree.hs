@@ -11,7 +11,7 @@ import Nuko.Tree
 import Nuko.Syntax.Range  (Range, HasPosition(..), toLabel)
 import Relude             (Show, Semigroup((<>)), Void, Generic, show)
 import Data.Text          (Text)
-import Pretty.Tree    (PrettyTree (prettyTree), Tree (Node))
+import Pretty.Tree        (PrettyTree (prettyTree), Tree (Node))
 
 data ReId = ReId { text :: Text, range :: Range } deriving (Show, Generic)
 
@@ -70,10 +70,10 @@ deriving instance Generic (TypeDecl (Nuko 'Resolved))
 deriving instance Generic (LetDecl (Nuko 'Resolved))
 
 instance PrettyTree Path  where
-  prettyTree (Path mod' t r) = Node ("Path") [show (mod' <> "." <> t.text), toLabel r] []
-  prettyTree (Local t) = Node ("Local") [show t.text, toLabel t.range] []
+  prettyTree (Path mod' t r) = Node "Path" [show (mod' <> "." <> t.text), toLabel r] []
+  prettyTree (Local t) = Node "Local" [show t.text, toLabel t.range] []
 
-instance PrettyTree ReId  where prettyTree a = Node ("ReId") [a.text, toLabel a.range] []
+instance PrettyTree ReId  where prettyTree a = Node "ReId" [a.text, toLabel a.range] []
 
 instance PrettyTree (Expr (Nuko 'Resolved)) where
 instance PrettyTree (Block (Nuko 'Resolved)) where

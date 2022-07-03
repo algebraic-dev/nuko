@@ -14,7 +14,7 @@ import Relude.Base      (Eq)
 import Relude.String    (Text, show)
 import Relude.Container (Hashable)
 import Relude.Monad     (Maybe, maybe)
-import Pretty.Tree  (PrettyTree(..), Tree (Node))
+import Pretty.Tree      (PrettyTree(..), Tree (Node))
 
 import qualified Data.HashMap.Strict as HashMap
 

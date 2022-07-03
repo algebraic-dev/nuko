@@ -4,9 +4,8 @@ module Pretty.Tree (
   inlineTree,
 ) where
 
-import Data.Text        (Text)
 import GHC.Generics     (V1, U1, K1 (K1), type (:+:)(..), type (:*:)(..), Generic (from, Rep), D1, M1 (M1), Constructor (conName), C1, S1, Selector (selName))
-import Data.Text        (length, intercalate)
+import Data.Text        (length, intercalate, Text)
 
 import Relude           ((.), show, ToText (toText), ($), unwords,Ord ((<)), NonEmpty, Int, Functor (fmap), Foldable (toList), Void, otherwise)
 import Relude.Monoid    (Semigroup ((<>)), Monoid (mconcat))
@@ -17,7 +16,7 @@ import Relude.Foldable  (sum)
 import Relude.List      (map)
 
 import qualified Data.HashMap.Strict as HashMap
-import qualified Data.HashSet as HashSet
+import qualified Data.HashSet        as HashSet
 
 data Tree = Node Text [Text] [Tree]
 
@@ -27,7 +26,7 @@ inlineTree tree@(Node a [] c) =
   where
     canInline :: [Text] -> [Tree] -> Maybe [Text]
     canInline f (Node a' [] [] : xs) = canInline (a' : f) xs
-    canInline f (Node a' c' [] : xs) = canInline (("(" <> intercalate " " (a' : c') <> ")") : f) xs
+    canInline f (Node a' c' [] : xs) = canInline (("(" <> unwords (a' : c') <> ")") : f) xs
     canInline f []                   = Just f
     canInline _ _                    = Nothing
 
@@ -74,7 +73,7 @@ instance (Selector f, GPrettyTree g) => GPrettyTree (S1 f g) where
       (":", n)              -> n
       (name, Node a' [] []) -> Node name [a'] []
       (name, Node a' other [])
-        | sum (map length other) < 30 -> Node name ["(" <> intercalate " " (a' : other) <> ")"] []
+        | sum (map length other) < 30 -> Node name ["(" <> unwords (a' : other) <> ")"] []
         | otherwise                   -> Node name [] [Node a' other []]
       (name, other) -> Node name [] [other]
 
@@ -89,7 +88,7 @@ class PrettyTree a where
 
 prettyShow' :: Bool -> Text -> Tree -> Text
 prettyShow' last ident (Node text f others) =
-    ident <> (if last then " └" else " ├") <> (unwords (text : f)) <> "\n" <> mconcat (mapOn others)
+    ident <> (if last then " └" else " ├") <> unwords (text : f) <> "\n" <> mconcat (mapOn others)
   where
     mapOn []       = []
     mapOn [x]      = [prettyShow' True (ident <> (if last then "  " else " |")) x]
@@ -102,11 +101,11 @@ instance PrettyTree Text where
   prettyTree a = Node a [] []
 
 instance (PrettyTree a, PrettyTree b) => PrettyTree (a, b) where
-  prettyTree (a, b) = Node ("Prod") [] [prettyTree a, prettyTree b]
+  prettyTree (a, b) = Node "Prod" [] [prettyTree a, prettyTree b]
 
 instance (PrettyTree a, PrettyTree b) => PrettyTree (Either a b) where
-  prettyTree (Left a) = Node ("Left") [] [prettyTree a]
-  prettyTree (Right a) = Node ("Right") [] [prettyTree a]
+  prettyTree (Left a) = Node "Left" [] [prettyTree a]
+  prettyTree (Right a) = Node "Right" [] [prettyTree a]
 
 instance (PrettyTree a, PrettyTree b) => PrettyTree (HashMap a b) where
   prettyTree a = Node "HashMap" [] (map prettyTree $ HashMap.toList a)
@@ -118,15 +117,15 @@ instance PrettyTree Bool where
   prettyTree a = Node (show a) [] []
 
 instance PrettyTree a => PrettyTree [a] where
-  prettyTree [] = Node ("Empty List") [] []
-  prettyTree a  = inlineTree $ Node ("List") [] (map prettyTree a)
+  prettyTree [] = Node "Empty List" [] []
+  prettyTree a  = inlineTree $ Node "List" [] (map prettyTree a)
 
 instance PrettyTree a => PrettyTree (NonEmpty a) where
   prettyTree a = inlineTree $ Node "NonEmpty" [] (toList $ fmap prettyTree a)
 
 instance PrettyTree a => PrettyTree (Maybe a) where
-  prettyTree (Just a) = inlineTree $ Node ("Just") [] [prettyTree a]
-  prettyTree Nothing  = Node ("Nothing") [] []
+  prettyTree (Just a) = inlineTree $ Node "Just" [] [prettyTree a]
+  prettyTree Nothing  = Node "Nothing" [] []
 
 instance PrettyTree Void where
   prettyTree a = Node (show a) [] []
