@@ -2,17 +2,17 @@
  └Program
    ├typeDecls: Empty List
    ├letDecls:
-   ┆ └List
-   ┆   └LetDecl
-   ┆     ├declName: (Name "a" 0:4-0:5)
-   ┆     ├declArgs: Empty List
-   ┆     ├declBody:
-   ┆     ┆ └Block
-   ┆     ┆   ├BlBind
-   ┆     ┆   ┆ ├Lit ∅ (LInt 1:4-1:5 2)
-   ┆     ┆   ┆ └BlBind (BlEnd (Lit ∅ (LInt 3:4-3:5 4))) (Lit ∅ (LInt 2:4-2:5 3))
-   ┆     ┆   └1:4-3:5
-   ┆     ├declRet: Nothing
-   ┆     └declExt: ∅
+   │ └List
+   │   └LetDecl
+   │     ├declName: (Name "a" 0:4-0:5)
+   │     ├declArgs: Empty List
+   │     ├declBody:
+   │     │ └Block
+   │     │   ├BlBind
+   │     │   │ ├Lit ∅ (LInt 1:4-1:5 2)
+   │     │   │ └BlBind (BlEnd (Lit ∅ (LInt 3:4-3:5 4))) (Lit ∅ (LInt 2:4-2:5 3))
+   │     │   └1:4-3:5
+   │     ├declRet: Nothing
+   │     └declExt: ∅
    ├impDecls: Empty List
    └programExt: ∅

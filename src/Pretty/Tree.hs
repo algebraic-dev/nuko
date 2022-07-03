@@ -23,11 +23,11 @@ data Tree = Node Text [Text] [Tree]
 
 inlineTree :: Tree -> Tree
 inlineTree tree@(Node a [] c) =
-    maybe tree (\f -> if sum (map length f) < 80 then Node a f [] else tree) (canInline [] c)
+    maybe tree (\f -> if sum (map length f) < 60 then Node a f [] else tree) (canInline [] c)
   where
     canInline :: [Text] -> [Tree] -> Maybe [Text]
     canInline f (Node a' [] [] : xs) = canInline (a' : f) xs
-    canInline f (Node a' c  [] : xs) = canInline (("(" <> intercalate " " (a' : c) <> ")") : f) xs
+    canInline f (Node a' c' [] : xs) = canInline (("(" <> intercalate " " (a' : c') <> ")") : f) xs
     canInline f []                   = Just f
     canInline _ _                    = Nothing
 
@@ -92,8 +92,8 @@ prettyShow' last ident (Node text f others) =
     ident <> (if last then " └" else " ├") <> (unwords (text : f)) <> "\n" <> mconcat (mapOn others)
   where
     mapOn []       = []
-    mapOn [x]      = [prettyShow' True (ident <> (if last then "  " else " ┆")) x]
-    mapOn (x : xs) = prettyShow' False (ident <> (if last then "  " else " ┆")) x : mapOn xs
+    mapOn [x]      = [prettyShow' True (ident <> (if last then "  " else " │")) x]
+    mapOn (x : xs) = prettyShow' False (ident <> (if last then "  " else " │")) x : mapOn xs
 
 instance PrettyTree Int where
   prettyTree a = Node (show a) [] []

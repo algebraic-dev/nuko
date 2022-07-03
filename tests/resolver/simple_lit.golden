@@ -1,34 +1,34 @@
 ✓ That
  └Prod
    ├Program
-   ┆ ├typeDecls: Empty List
-   ┆ ├letDecls:
-   ┆ ┆ └List
-   ┆ ┆   └LetDecl
-   ┆ ┆     ├declName: (ReId a 0:4-0:5)
-   ┆ ┆     ├declArgs: Empty List
-   ┆ ┆     ├declBody: (Lit ∅ (LInt 0:8-0:9 2))
-   ┆ ┆     ├declRet: Nothing
-   ┆ ┆     └declExt: ∅
-   ┆ ├impDecls: Empty List
-   ┆ └programExt: ∅
+   │ ├typeDecls: Empty List
+   │ ├letDecls:
+   │ │ └List
+   │ │   └LetDecl
+   │ │     ├declName: (ReId a 0:4-0:5)
+   │ │     ├declArgs: Empty List
+   │ │     ├declBody: (Lit ∅ (LInt 0:8-0:9 2))
+   │ │     ├declRet: Nothing
+   │ │     └declExt: ∅
+   │ ├impDecls: Empty List
+   │ └programExt: ∅
    └LocalNS
      ├_openedNames:
-     ┆ └HashMap
-     ┆   ├Prod
-     ┆   ┆ ├OccName TyName Int
-     ┆   ┆ └Single Prelude Int
-     ┆   └Prod
-     ┆     ├OccName TyName String
-     ┆     └Single Prelude String
+     │ └HashMap
+     │   ├Prod
+     │   │ ├OccName TyName Int
+     │   │ └Single Prelude Int
+     │   └Prod
+     │     ├OccName TyName String
+     │     └Single Prelude String
      ├_localNames: (NonEmpty HashMap)
      ├_openedModules: HashMap
      ├_currentNamespace:
-     ┆ └NameSpace
-     ┆   ├_modName: Main
-     ┆   └_names:
-     ┆     └HashMap
-     ┆       └Prod
-     ┆         ├OccName VarName a
-     ┆         └Public
+     │ └NameSpace
+     │   ├_modName: Main
+     │   └_names:
+     │     └HashMap
+     │       └Prod
+     │         ├OccName VarName a
+     │         └Public
      └_newNamespaces: HashMap
