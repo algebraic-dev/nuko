@@ -1,24 +1,13 @@
 ✓ That
  └List
-   ├Ranged:  0:0-0:3
-   ┆ └TcLet
-   ├Ranged:  0:4-0:5
-   ┆ └TcLowerId a
-   ├Ranged:  0:6-0:7
-   ┆ └TcEqual
-   ├Ranged:  1:4-1:4
-   ┆ └TcBegin
-   ├Ranged:  1:4-1:5
-   ┆ └TcLowerId b
-   ├Ranged:  2:4-2:4
-   ┆ └TcSep
-   ├Ranged:  2:4-2:5
-   ┆ └TcLowerId c
-   ├Ranged:  3:4-3:4
-   ┆ └TcSep
-   ├Ranged:  3:4-3:5
-   ┆ └TcLowerId d
-   ├Ranged:  3:5-3:5
-   ┆ └TcEnd
-   └Ranged:  3:5-3:5
-     └TcEOF
+   ├Ranged: 0:0-0:3 TcLet
+   ├Ranged: 0:4-0:5 (TcLowerId a)
+   ├Ranged: 0:6-0:7 TcEqual
+   ├Ranged: 1:4-1:4 TcBegin
+   ├Ranged: 1:4-1:5 (TcLowerId b)
+   ├Ranged: 2:4-2:4 TcSep
+   ├Ranged: 2:4-2:5 (TcLowerId c)
+   ├Ranged: 3:4-3:4 TcSep
+   ├Ranged: 3:4-3:5 (TcLowerId d)
+   ├Ranged: 3:5-3:5 TcEnd
+   └Ranged: 3:5-3:5 TcEOF

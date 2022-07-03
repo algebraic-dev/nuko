@@ -1,28 +1,15 @@
 ✓ That
  └List
-   ├Ranged:  0:0-0:4
-   ┆ └TcType
-   ├Ranged:  0:5-0:6
-   ┆ └TcLowerId a
-   ├Ranged:  0:7-0:8
-   ┆ └TcEqual
-   ├Ranged:  0:9-0:10
-   ┆ └TcLBracket
-   ├Ranged:  1:4-1:6
-   ┆ └TcLowerId be
-   ├Ranged:  1:7-1:8
-   ┆ └TcColon
-   ├Ranged:  1:9-1:12
-   ┆ └TcUpperId Int
-   ├Ranged:  1:12-1:13
-   ┆ └TcComma
-   ├Ranged:  2:4-2:6
-   ┆ └TcLowerId ce
-   ├Ranged:  2:7-2:8
-   ┆ └TcColon
-   ├Ranged:  2:9-2:15
-   ┆ └TcUpperId String
-   ├Ranged:  3:0-3:1
-   ┆ └TcRBracket
-   └Ranged:  3:1-3:1
-     └TcEOF
+   ├Ranged: 0:0-0:4 TcType
+   ├Ranged: 0:5-0:6 (TcLowerId a)
+   ├Ranged: 0:7-0:8 TcEqual
+   ├Ranged: 0:9-0:10 TcLBracket
+   ├Ranged: 1:4-1:6 (TcLowerId be)
+   ├Ranged: 1:7-1:8 TcColon
+   ├Ranged: 1:9-1:12 (TcUpperId Int)
+   ├Ranged: 1:12-1:13 TcComma
+   ├Ranged: 2:4-2:6 (TcLowerId ce)
+   ├Ranged: 2:7-2:8 TcColon
+   ├Ranged: 2:9-2:15 (TcUpperId String)
+   ├Ranged: 3:0-3:1 TcRBracket
+   └Ranged: 3:1-3:1 TcEOF

@@ -8,16 +8,9 @@
    ┆     ├declArgs: Empty List
    ┆     ├declBody:
    ┆     ┆ └If
-   ┆     ┆   ├Lower
-   ┆     ┆   ┆ ├Path "a"
-   ┆     ┆   ┆ └1:7-1:8
-   ┆     ┆   ├Lower
-   ┆     ┆   ┆ ├Path "b"
-   ┆     ┆   ┆ └2:9-2:10
-   ┆     ┆   ├Just
-   ┆     ┆   ┆ └Lower
-   ┆     ┆   ┆   ├Path "c"
-   ┆     ┆   ┆   └3:9-3:10
+   ┆     ┆   ├Lower 1:7-1:8 (Path "a")
+   ┆     ┆   ├Lower 2:9-2:10 (Path "b")
+   ┆     ┆   ├Just (Lower 3:9-3:10 (Path "c"))
    ┆     ┆   └1:4-3:10
    ┆     ├declRet: Nothing
    ┆     └declExt: ∅

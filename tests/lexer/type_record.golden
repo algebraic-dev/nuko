@@ -1,22 +1,12 @@
 ✓ That
  └List
-   ├Ranged:  0:0-0:4
-   ┆ └TcType
-   ├Ranged:  0:5-0:8
-   ┆ └TcUpperId Ata
-   ├Ranged:  0:9-0:10
-   ┆ └TcLowerId a
-   ├Ranged:  0:11-0:12
-   ┆ └TcEqual
-   ├Ranged:  0:13-0:14
-   ┆ └TcLBracket
-   ├Ranged:  0:15-0:18
-   ┆ └TcLowerId ata
-   ├Ranged:  0:18-0:19
-   ┆ └TcColon
-   ├Ranged:  0:20-0:23
-   ┆ └TcUpperId Int
-   ├Ranged:  0:24-0:25
-   ┆ └TcRBracket
-   └Ranged:  0:25-0:25
-     └TcEOF
+   ├Ranged: 0:0-0:4 TcType
+   ├Ranged: 0:5-0:8 (TcUpperId Ata)
+   ├Ranged: 0:9-0:10 (TcLowerId a)
+   ├Ranged: 0:11-0:12 TcEqual
+   ├Ranged: 0:13-0:14 TcLBracket
+   ├Ranged: 0:15-0:18 (TcLowerId ata)
+   ├Ranged: 0:18-0:19 TcColon
+   ├Ranged: 0:20-0:23 (TcUpperId Int)
+   ├Ranged: 0:24-0:25 TcRBracket
+   └Ranged: 0:25-0:25 TcEOF

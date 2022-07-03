@@ -6,67 +6,32 @@
    ┆ └List
    ┆   ├Import
    ┆   ┆ ├path:
-   ┆   ┆ ┆ └NonEmpty
-   ┆   ┆ ┆   ├Name "A" 0:7-0:8
-   ┆   ┆ ┆   ├Name "B" 0:9-0:10
-   ┆   ┆ ┆   └Name "C" 0:11-0:12
+   ┆   ┆ ┆ └NonEmpty (Name "C" 0:11-0:12) (Name "B" 0:9-0:10) (Name "A" 0:7-0:8)
    ┆   ┆ ├modifier: Nothing
    ┆   ┆ └impExt: ∅
    ┆   ├Import
    ┆   ┆ ├path:
-   ┆   ┆ ┆ └NonEmpty
-   ┆   ┆ ┆   ├Name "A" 1:7-1:8
-   ┆   ┆ ┆   ├Name "B" 1:9-1:10
-   ┆   ┆ ┆   └Name "C" 1:11-1:12
+   ┆   ┆ ┆ └NonEmpty (Name "C" 1:11-1:12) (Name "B" 1:9-1:10) (Name "A" 1:7-1:8)
    ┆   ┆ ├modifier:
    ┆   ┆ ┆ └Just
    ┆   ┆ ┆   └ImpList
    ┆   ┆ ┆     └NonEmpty
-   ┆   ┆ ┆       ├ImportDeps
-   ┆   ┆ ┆       ┆ ├name:
-   ┆   ┆ ┆       ┆ ┆ └ImpDepLower
-   ┆   ┆ ┆       ┆ ┆   └Name "d" 1:14-1:15
-   ┆   ┆ ┆       ┆ └as: Nothing
-   ┆   ┆ ┆       └ImportDeps
-   ┆   ┆ ┆         ├name:
-   ┆   ┆ ┆         ┆ └ImpDepLower
-   ┆   ┆ ┆         ┆   └Name "e" 1:17-1:18
-   ┆   ┆ ┆         └as: Nothing
+   ┆   ┆ ┆       ├ImportDeps (as: Nothing) (name: (ImpDepLower (Name "d" 1:14-1:15)))
+   ┆   ┆ ┆       └ImportDeps (as: Nothing) (name: (ImpDepLower (Name "e" 1:17-1:18)))
    ┆   ┆ └impExt: ∅
    ┆   ├Import
    ┆   ┆ ├path:
-   ┆   ┆ ┆ └NonEmpty
-   ┆   ┆ ┆   ├Name "A" 2:7-2:8
-   ┆   ┆ ┆   ├Name "B" 2:9-2:10
-   ┆   ┆ ┆   └Name "C" 2:11-2:12
-   ┆   ┆ ├modifier:
-   ┆   ┆ ┆ └Just
-   ┆   ┆ ┆   └ImpAs
-   ┆   ┆ ┆     └Name "E" 2:16-2:17
+   ┆   ┆ ┆ └NonEmpty (Name "C" 2:11-2:12) (Name "B" 2:9-2:10) (Name "A" 2:7-2:8)
+   ┆   ┆ ├modifier: (Just (ImpAs (Name "E" 2:16-2:17)))
    ┆   ┆ └impExt: ∅
    ┆   └Import
    ┆     ├path:
-   ┆     ┆ └NonEmpty
-   ┆     ┆   ├Name "A" 4:7-4:8
-   ┆     ┆   ├Name "B" 4:9-4:10
-   ┆     ┆   └Name "C" 4:11-4:12
+   ┆     ┆ └NonEmpty (Name "C" 4:11-4:12) (Name "B" 4:9-4:10) (Name "A" 4:7-4:8)
    ┆     ├modifier:
    ┆     ┆ └Just
    ┆     ┆   └ImpList
    ┆     ┆     └NonEmpty
-   ┆     ┆       ├ImportDeps
-   ┆     ┆       ┆ ├name:
-   ┆     ┆       ┆ ┆ └ImpDepLower
-   ┆     ┆       ┆ ┆   └Name "d" 4:14-4:15
-   ┆     ┆       ┆ └as:
-   ┆     ┆       ┆   └Just
-   ┆     ┆       ┆     └Name "d" 4:19-4:20
-   ┆     ┆       └ImportDeps
-   ┆     ┆         ├name:
-   ┆     ┆         ┆ └ImpDepLower
-   ┆     ┆         ┆   └Name "e" 4:22-4:23
-   ┆     ┆         └as:
-   ┆     ┆           └Just
-   ┆     ┆             └Name "e" 4:27-4:28
+   ┆     ┆       ├ImportDeps (as: (Just (Name "d" 4:19-4:20))) (name: (ImpDepLower (Name "d" 4:14-4:15)))
+   ┆     ┆       └ImportDeps (as: (Just (Name "e" 4:27-4:28))) (name: (ImpDepLower (Name "e" 4:22-4:23)))
    ┆     └impExt: ∅
    └programExt: ∅

@@ -8,10 +8,10 @@ module Nuko.Syntax.Range (
     toLabel
 ) where
 
-import Relude (Int, Semigroup(..), Char, Num ((+)), Show, show)
+import Relude (Int, Semigroup(..), Char, Num ((+)), Show, show, ($))
 
 import qualified Data.List.NonEmpty as NonEmpty
-import Pretty.Tree (PrettyTree(..), Tree (..))
+import Pretty.Tree (PrettyTree(..), Tree (..), inlineTree)
 import Data.Text (Text)
 
 data Pos = Pos { line, column :: Int } deriving Show
@@ -53,4 +53,6 @@ instance PrettyTree Range where
   prettyTree r = Node (toLabel r) [] []
 
 instance PrettyTree a => PrettyTree (Ranged a) where
-  prettyTree r = Node ("Ranged: ") [toLabel r.position] [prettyTree r.info]
+  prettyTree r =
+    let (Node n m e) = inlineTree $ Node ("Ranged:") [] [prettyTree r.info] in
+    Node n (toLabel r.position : m) e

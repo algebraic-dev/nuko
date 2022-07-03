@@ -1,292 +1,147 @@
 ✓ That
  └List
-   ├Ranged:  0:0-0:4
-   ┆ └TcType
-   ├Ranged:  0:5-0:10
-   ┆ └TcUpperId Range
-   ├Ranged:  0:11-0:12
-   ┆ └TcEqual
-   ├Ranged:  0:13-0:14
-   ┆ └TcLBracket
-   ├Ranged:  0:15-0:19
-   ┆ └TcLowerId line
-   ├Ranged:  0:19-0:20
-   ┆ └TcColon
-   ├Ranged:  0:21-0:24
-   ┆ └TcUpperId Int
-   ├Ranged:  0:25-0:26
-   ┆ └TcRBracket
-   ├Ranged:  2:0-2:4
-   ┆ └TcType
-   ├Ranged:  2:5-2:9
-   ┆ └TcUpperId Hole
-   ├Ranged:  2:10-2:11
-   ┆ └TcEqual
-   ├Ranged:  3:2-3:3
-   ┆ └TcPipe
-   ├Ranged:  3:4-3:10
-   ┆ └TcUpperId Filled
-   ├Ranged:  3:11-3:16
-   ┆ └TcUpperId Range
-   ├Ranged:  4:2-4:3
-   ┆ └TcPipe
-   ├Ranged:  4:4-4:9
-   ┆ └TcUpperId Empty
-   ├Ranged:  7:0-7:3
-   ┆ └TcLet
-   ├Ranged:  7:4-7:12
-   ┆ └TcLowerId isEmpty?
-   ├Ranged:  7:13-7:14
-   ┆ └TcLPar
-   ├Ranged:  7:14-7:18
-   ┆ └TcLowerId hole
-   ├Ranged:  7:18-7:19
-   ┆ └TcColon
-   ├Ranged:  7:20-7:24
-   ┆ └TcUpperId Hole
-   ├Ranged:  7:24-7:25
-   ┆ └TcRPar
-   ├Ranged:  7:25-7:26
-   ┆ └TcColon
-   ├Ranged:  7:27-7:31
-   ┆ └TcUpperId Bool
-   ├Ranged:  7:32-7:33
-   ┆ └TcEqual
-   ├Ranged:  8:2-8:2
-   ┆ └TcBegin
-   ├Ranged:  8:2-8:7
-   ┆ └TcMatch
-   ├Ranged:  8:8-8:12
-   ┆ └TcLowerId hole
-   ├Ranged:  8:13-8:17
-   ┆ └TcWith
-   ├Ranged:  9:4-9:4
-   ┆ └TcBegin
-   ├Ranged:  9:4-9:10
-   ┆ └TcUpperId Filled
-   ├Ranged:  9:11-9:16
-   ┆ └TcLowerId range
-   ├Ranged:  9:17-9:19
-   ┆ └TcDoubleArrow
-   ├Ranged:  9:20-9:20
-   ┆ └TcBegin
-   ├Ranged:  9:20-9:25
-   ┆ └TcUpperId False
-   ├Ranged:  10:4-10:4
-   ┆ └TcEnd
-   ├Ranged:  10:4-10:4
-   ┆ └TcSep
-   ├Ranged:  10:4-10:9
-   ┆ └TcUpperId Empty
-   ├Ranged:  10:17-10:19
-   ┆ └TcDoubleArrow
-   ├Ranged:  10:20-10:20
-   ┆ └TcBegin
-   ├Ranged:  10:20-10:24
-   ┆ └TcUpperId True
-   ├Ranged:  12:0-12:0
-   ┆ └TcEnd
-   ├Ranged:  12:0-12:0
-   ┆ └TcEnd
-   ├Ranged:  12:0-12:0
-   ┆ └TcEnd
-   ├Ranged:  13:0-13:3
-   ┆ └TcLet
-   ├Ranged:  13:4-13:12
-   ┆ └TcLowerId isEmpty?
-   ├Ranged:  13:13-13:14
-   ┆ └TcColon
-   ├Ranged:  13:15-13:19
-   ┆ └TcUpperId Hole
-   ├Ranged:  13:20-13:22
-   ┆ └TcArrow
-   ├Ranged:  13:23-13:27
-   ┆ └TcUpperId Bool
-   ├Ranged:  13:28-13:29
-   ┆ └TcEqual
-   ├Ranged:  13:30-13:30
-   ┆ └TcBegin
-   ├Ranged:  13:30-13:35
-   ┆ └TcMatch
-   ├Ranged:  14:2-14:2
-   ┆ └TcEnd
-   ├Ranged:  14:2-14:8
-   ┆ └TcUpperId Filled
-   ├Ranged:  14:9-14:14
-   ┆ └TcLowerId range
-   ├Ranged:  14:15-14:17
-   ┆ └TcDoubleArrow
-   ├Ranged:  14:18-14:18
-   ┆ └TcBegin
-   ├Ranged:  14:18-14:23
-   ┆ └TcUpperId False
-   ├Ranged:  15:2-15:2
-   ┆ └TcEnd
-   ├Ranged:  15:2-15:7
-   ┆ └TcUpperId Empty
-   ├Ranged:  15:15-15:17
-   ┆ └TcDoubleArrow
-   ├Ranged:  15:18-15:18
-   ┆ └TcBegin
-   ├Ranged:  15:18-15:22
-   ┆ └TcUpperId True
-   ├Ranged:  17:0-17:0
-   ┆ └TcEnd
-   ├Ranged:  17:0-17:3
-   ┆ └TcLet
-   ├Ranged:  17:4-17:11
-   ┆ └TcLowerId isEmpty
-   ├Ranged:  17:12-17:13
-   ┆ └TcLPar
-   ├Ranged:  17:13-17:17
-   ┆ └TcLowerId hole
-   ├Ranged:  17:17-17:18
-   ┆ └TcColon
-   ├Ranged:  17:19-17:23
-   ┆ └TcUpperId Hole
-   ├Ranged:  17:23-17:24
-   ┆ └TcRPar
-   ├Ranged:  17:25-17:26
-   ┆ └TcColon
-   ├Ranged:  17:27-17:31
-   ┆ └TcUpperId
-   ├Ranged:  17:32-17:33
-   ┆ └TcEqual
-   ├Ranged:  18:2-18:2
-   ┆ └TcBegin
-   ├Ranged:  18:2-18:4
-   ┆ └TcIf
-   ├Ranged:  18:5-18:5
-   ┆ └TcBegin
-   ├Ranged:  18:5-18:13
-   ┆ └TcLowerId isEmpty?
-   ├Ranged:  18:14-18:18
-   ┆ └TcLowerId hole
-   ├Ranged:  19:4-19:4
-   ┆ └TcEnd
-   ├Ranged:  19:4-19:8
-   ┆ └TcThen
-   ├Ranged:  19:9-19:9
-   ┆ └TcBegin
-   ├Ranged:  19:9-19:14
-   ┆ └TcLowerId print
-   ├Ranged:  19:15-19:29
-   ┆ └TcStr It's empty?!
-   ├Ranged:  20:4-20:4
-   ┆ └TcEnd
-   ├Ranged:  20:4-20:8
-   ┆ └TcElse
-   ├Ranged:  20:9-20:9
-   ┆ └TcBegin
-   ├Ranged:  20:9-20:14
-   ┆ └TcLowerId print
-   ├Ranged:  20:15-20:33
-   ┆ └TcStr Is's not empty.'
-   ├Ranged:  22:0-22:0
-   ┆ └TcEnd
-   ├Ranged:  22:0-22:0
-   ┆ └TcEnd
-   ├Ranged:  22:0-22:3
-   ┆ └TcLet
-   ├Ranged:  22:4-22:13
-   ┆ └TcLowerId getLineOr
-   ├Ranged:  22:14-22:15
-   ┆ └TcLPar
-   ├Ranged:  22:15-22:19
-   ┆ └TcLowerId hole
-   ├Ranged:  22:19-22:20
-   ┆ └TcColon
-   ├Ranged:  22:21-22:25
-   ┆ └TcUpperId Hole
-   ├Ranged:  22:25-22:26
-   ┆ └TcRPar
-   ├Ranged:  22:27-22:28
-   ┆ └TcLPar
-   ├Ranged:  22:28-22:31
-   ┆ └TcLowerId alt
-   ├Ranged:  22:31-22:32
-   ┆ └TcColon
-   ├Ranged:  22:33-22:36
-   ┆ └TcUpperId Int
-   ├Ranged:  22:36-22:37
-   ┆ └TcRPar
-   ├Ranged:  22:37-22:38
-   ┆ └TcColon
-   ├Ranged:  22:39-22:42
-   ┆ └TcUpperId Int
-   ├Ranged:  22:43-22:44
-   ┆ └TcEqual
-   ├Ranged:  23:2-23:2
-   ┆ └TcBegin
-   ├Ranged:  23:2-23:7
-   ┆ └TcMatch
-   ├Ranged:  23:8-23:12
-   ┆ └TcLowerId hole
-   ├Ranged:  23:13-23:17
-   ┆ └TcWith
-   ├Ranged:  24:4-24:4
-   ┆ └TcBegin
-   ├Ranged:  24:4-24:10
-   ┆ └TcUpperId Filled
-   ├Ranged:  24:11-24:16
-   ┆ └TcLowerId range
-   ├Ranged:  24:17-24:19
-   ┆ └TcDoubleArrow
-   ├Ranged:  24:20-24:20
-   ┆ └TcBegin
-   ├Ranged:  24:20-24:25
-   ┆ └TcLowerId range
-   ├Ranged:  24:25-24:26
-   ┆ └TcDot
-   ├Ranged:  24:26-24:30
-   ┆ └TcLowerId line
-   ├Ranged:  25:4-25:4
-   ┆ └TcEnd
-   ├Ranged:  25:4-25:4
-   ┆ └TcSep
-   ├Ranged:  25:4-25:9
-   ┆ └TcUpperId Empty
-   ├Ranged:  25:17-25:19
-   ┆ └TcDoubleArrow
-   ├Ranged:  25:20-25:20
-   ┆ └TcBegin
-   ├Ranged:  25:20-25:23
-   ┆ └TcLowerId alt
-   ├Ranged:  27:0-27:0
-   ┆ └TcEnd
-   ├Ranged:  27:0-27:0
-   ┆ └TcEnd
-   ├Ranged:  27:0-27:0
-   ┆ └TcEnd
-   ├Ranged:  27:0-27:3
-   ┆ └TcLet
-   ├Ranged:  27:4-27:13
-   ┆ └TcLowerId sequenced
-   ├Ranged:  27:13-27:14
-   ┆ └TcColon
-   ├Ranged:  27:15-27:19
-   ┆ └TcUpperId
-   ├Ranged:  27:20-27:21
-   ┆ └TcEqual
-   ├Ranged:  28:2-28:2
-   ┆ └TcBegin
-   ├Ranged:  28:2-28:7
-   ┆ └TcLowerId print
-   ├Ranged:  28:8-28:11
-   ┆ └TcStr a
-   ├Ranged:  29:2-29:2
-   ┆ └TcSep
-   ├Ranged:  29:2-29:7
-   ┆ └TcLowerId print
-   ├Ranged:  29:8-29:11
-   ┆ └TcStr b
-   ├Ranged:  30:2-30:2
-   ┆ └TcSep
-   ├Ranged:  30:2-30:7
-   ┆ └TcLowerId print
-   ├Ranged:  30:8-30:11
-   ┆ └TcStr c
-   ├Ranged:  30:11-30:11
-   ┆ └TcEnd
-   └Ranged:  30:11-30:11
-     └TcEOF
+   ├Ranged: 0:0-0:4 TcType
+   ├Ranged: 0:5-0:10 (TcUpperId Range)
+   ├Ranged: 0:11-0:12 TcEqual
+   ├Ranged: 0:13-0:14 TcLBracket
+   ├Ranged: 0:15-0:19 (TcLowerId line)
+   ├Ranged: 0:19-0:20 TcColon
+   ├Ranged: 0:21-0:24 (TcUpperId Int)
+   ├Ranged: 0:25-0:26 TcRBracket
+   ├Ranged: 2:0-2:4 TcType
+   ├Ranged: 2:5-2:9 (TcUpperId Hole)
+   ├Ranged: 2:10-2:11 TcEqual
+   ├Ranged: 3:2-3:3 TcPipe
+   ├Ranged: 3:4-3:10 (TcUpperId Filled)
+   ├Ranged: 3:11-3:16 (TcUpperId Range)
+   ├Ranged: 4:2-4:3 TcPipe
+   ├Ranged: 4:4-4:9 (TcUpperId Empty)
+   ├Ranged: 7:0-7:3 TcLet
+   ├Ranged: 7:4-7:12 (TcLowerId isEmpty?)
+   ├Ranged: 7:13-7:14 TcLPar
+   ├Ranged: 7:14-7:18 (TcLowerId hole)
+   ├Ranged: 7:18-7:19 TcColon
+   ├Ranged: 7:20-7:24 (TcUpperId Hole)
+   ├Ranged: 7:24-7:25 TcRPar
+   ├Ranged: 7:25-7:26 TcColon
+   ├Ranged: 7:27-7:31 (TcUpperId Bool)
+   ├Ranged: 7:32-7:33 TcEqual
+   ├Ranged: 8:2-8:2 TcBegin
+   ├Ranged: 8:2-8:7 TcMatch
+   ├Ranged: 8:8-8:12 (TcLowerId hole)
+   ├Ranged: 8:13-8:17 TcWith
+   ├Ranged: 9:4-9:4 TcBegin
+   ├Ranged: 9:4-9:10 (TcUpperId Filled)
+   ├Ranged: 9:11-9:16 (TcLowerId range)
+   ├Ranged: 9:17-9:19 TcDoubleArrow
+   ├Ranged: 9:20-9:20 TcBegin
+   ├Ranged: 9:20-9:25 (TcUpperId False)
+   ├Ranged: 10:4-10:4 TcEnd
+   ├Ranged: 10:4-10:4 TcSep
+   ├Ranged: 10:4-10:9 (TcUpperId Empty)
+   ├Ranged: 10:17-10:19 TcDoubleArrow
+   ├Ranged: 10:20-10:20 TcBegin
+   ├Ranged: 10:20-10:24 (TcUpperId True)
+   ├Ranged: 12:0-12:0 TcEnd
+   ├Ranged: 12:0-12:0 TcEnd
+   ├Ranged: 12:0-12:0 TcEnd
+   ├Ranged: 13:0-13:3 TcLet
+   ├Ranged: 13:4-13:12 (TcLowerId isEmpty?)
+   ├Ranged: 13:13-13:14 TcColon
+   ├Ranged: 13:15-13:19 (TcUpperId Hole)
+   ├Ranged: 13:20-13:22 TcArrow
+   ├Ranged: 13:23-13:27 (TcUpperId Bool)
+   ├Ranged: 13:28-13:29 TcEqual
+   ├Ranged: 13:30-13:30 TcBegin
+   ├Ranged: 13:30-13:35 TcMatch
+   ├Ranged: 14:2-14:2 TcEnd
+   ├Ranged: 14:2-14:8 (TcUpperId Filled)
+   ├Ranged: 14:9-14:14 (TcLowerId range)
+   ├Ranged: 14:15-14:17 TcDoubleArrow
+   ├Ranged: 14:18-14:18 TcBegin
+   ├Ranged: 14:18-14:23 (TcUpperId False)
+   ├Ranged: 15:2-15:2 TcEnd
+   ├Ranged: 15:2-15:7 (TcUpperId Empty)
+   ├Ranged: 15:15-15:17 TcDoubleArrow
+   ├Ranged: 15:18-15:18 TcBegin
+   ├Ranged: 15:18-15:22 (TcUpperId True)
+   ├Ranged: 17:0-17:0 TcEnd
+   ├Ranged: 17:0-17:3 TcLet
+   ├Ranged: 17:4-17:11 (TcLowerId isEmpty)
+   ├Ranged: 17:12-17:13 TcLPar
+   ├Ranged: 17:13-17:17 (TcLowerId hole)
+   ├Ranged: 17:17-17:18 TcColon
+   ├Ranged: 17:19-17:23 (TcUpperId Hole)
+   ├Ranged: 17:23-17:24 TcRPar
+   ├Ranged: 17:25-17:26 TcColon
+   ├Ranged: 17:27-17:31 TcUpperId
+   ├Ranged: 17:32-17:33 TcEqual
+   ├Ranged: 18:2-18:2 TcBegin
+   ├Ranged: 18:2-18:4 TcIf
+   ├Ranged: 18:5-18:5 TcBegin
+   ├Ranged: 18:5-18:13 (TcLowerId isEmpty?)
+   ├Ranged: 18:14-18:18 (TcLowerId hole)
+   ├Ranged: 19:4-19:4 TcEnd
+   ├Ranged: 19:4-19:8 TcThen
+   ├Ranged: 19:9-19:9 TcBegin
+   ├Ranged: 19:9-19:14 (TcLowerId print)
+   ├Ranged: 19:15-19:29 (TcStr It's empty?!)
+   ├Ranged: 20:4-20:4 TcEnd
+   ├Ranged: 20:4-20:8 TcElse
+   ├Ranged: 20:9-20:9 TcBegin
+   ├Ranged: 20:9-20:14 (TcLowerId print)
+   ├Ranged: 20:15-20:33 (TcStr Is's not empty.')
+   ├Ranged: 22:0-22:0 TcEnd
+   ├Ranged: 22:0-22:0 TcEnd
+   ├Ranged: 22:0-22:3 TcLet
+   ├Ranged: 22:4-22:13 (TcLowerId getLineOr)
+   ├Ranged: 22:14-22:15 TcLPar
+   ├Ranged: 22:15-22:19 (TcLowerId hole)
+   ├Ranged: 22:19-22:20 TcColon
+   ├Ranged: 22:21-22:25 (TcUpperId Hole)
+   ├Ranged: 22:25-22:26 TcRPar
+   ├Ranged: 22:27-22:28 TcLPar
+   ├Ranged: 22:28-22:31 (TcLowerId alt)
+   ├Ranged: 22:31-22:32 TcColon
+   ├Ranged: 22:33-22:36 (TcUpperId Int)
+   ├Ranged: 22:36-22:37 TcRPar
+   ├Ranged: 22:37-22:38 TcColon
+   ├Ranged: 22:39-22:42 (TcUpperId Int)
+   ├Ranged: 22:43-22:44 TcEqual
+   ├Ranged: 23:2-23:2 TcBegin
+   ├Ranged: 23:2-23:7 TcMatch
+   ├Ranged: 23:8-23:12 (TcLowerId hole)
+   ├Ranged: 23:13-23:17 TcWith
+   ├Ranged: 24:4-24:4 TcBegin
+   ├Ranged: 24:4-24:10 (TcUpperId Filled)
+   ├Ranged: 24:11-24:16 (TcLowerId range)
+   ├Ranged: 24:17-24:19 TcDoubleArrow
+   ├Ranged: 24:20-24:20 TcBegin
+   ├Ranged: 24:20-24:25 (TcLowerId range)
+   ├Ranged: 24:25-24:26 TcDot
+   ├Ranged: 24:26-24:30 (TcLowerId line)
+   ├Ranged: 25:4-25:4 TcEnd
+   ├Ranged: 25:4-25:4 TcSep
+   ├Ranged: 25:4-25:9 (TcUpperId Empty)
+   ├Ranged: 25:17-25:19 TcDoubleArrow
+   ├Ranged: 25:20-25:20 TcBegin
+   ├Ranged: 25:20-25:23 (TcLowerId alt)
+   ├Ranged: 27:0-27:0 TcEnd
+   ├Ranged: 27:0-27:0 TcEnd
+   ├Ranged: 27:0-27:0 TcEnd
+   ├Ranged: 27:0-27:3 TcLet
+   ├Ranged: 27:4-27:13 (TcLowerId sequenced)
+   ├Ranged: 27:13-27:14 TcColon
+   ├Ranged: 27:15-27:19 TcUpperId
+   ├Ranged: 27:20-27:21 TcEqual
+   ├Ranged: 28:2-28:2 TcBegin
+   ├Ranged: 28:2-28:7 (TcLowerId print)
+   ├Ranged: 28:8-28:11 (TcStr a)
+   ├Ranged: 29:2-29:2 TcSep
+   ├Ranged: 29:2-29:7 (TcLowerId print)
+   ├Ranged: 29:8-29:11 (TcStr b)
+   ├Ranged: 30:2-30:2 TcSep
+   ├Ranged: 30:2-30:7 (TcLowerId print)
+   ├Ranged: 30:8-30:11 (TcStr c)
+   ├Ranged: 30:11-30:11 TcEnd
+   └Ranged: 30:11-30:11 TcEOF

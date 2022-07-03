@@ -11,14 +11,10 @@
    ┆ ┆         └List
    ┆ ┆           ├Prod
    ┆ ┆           ┆ ├ReId b 1:2-1:3
-   ┆ ┆           ┆ └TId
-   ┆ ┆           ┆   ├Path "Prelude.Int" 1:5-1:8
-   ┆ ┆           ┆   └∅
+   ┆ ┆           ┆ └TId ∅ (Path "Prelude.Int" 1:5-1:8)
    ┆ ┆           └Prod
    ┆ ┆             ├ReId s 2:2-2:3
-   ┆ ┆             └TId
-   ┆ ┆               ├Path "Prelude.String" 2:5-2:11
-   ┆ ┆               └∅
+   ┆ ┆             └TId ∅ (Path "Prelude.String" 2:5-2:11)
    ┆ ├letDecls: Empty List
    ┆ ├impDecls: Empty List
    ┆ └programExt: ∅

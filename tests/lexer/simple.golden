@@ -1,22 +1,12 @@
 ✓ That
  └List
-   ├Ranged:  0:0-0:1
-   ┆ └TcLowerId a
-   ├Ranged:  0:2-0:3
-   ┆ └TcLowerId b
-   ├Ranged:  0:4-0:5
-   ┆ └TcLowerId c
-   ├Ranged:  0:6-0:7
-   ┆ └TcInt 1
-   ├Ranged:  0:8-0:9
-   ┆ └TcInt 2
-   ├Ranged:  0:10-0:11
-   ┆ └TcInt 3
-   ├Ranged:  0:12-0:17
-   ┆ └TcStr abc
-   ├Ranged:  0:18-0:19
-   ┆ └TcLowerId a
-   ├Ranged:  0:20-0:21
-   ┆ └TcLowerId b
-   └Ranged:  0:21-0:21
-     └TcEOF
+   ├Ranged: 0:0-0:1 (TcLowerId a)
+   ├Ranged: 0:2-0:3 (TcLowerId b)
+   ├Ranged: 0:4-0:5 (TcLowerId c)
+   ├Ranged: 0:6-0:7 (TcInt 1)
+   ├Ranged: 0:8-0:9 (TcInt 2)
+   ├Ranged: 0:10-0:11 (TcInt 3)
+   ├Ranged: 0:12-0:17 (TcStr abc)
+   ├Ranged: 0:18-0:19 (TcLowerId a)
+   ├Ranged: 0:20-0:21 (TcLowerId b)
+   └Ranged: 0:21-0:21 TcEOF

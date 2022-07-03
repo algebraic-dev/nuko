@@ -1,16 +1,9 @@
 ✓ That
  └List
-   ├Ranged:  0:0-0:3
-   ┆ └TcLet
-   ├Ranged:  0:4-0:5
-   ┆ └TcLowerId a
-   ├Ranged:  0:6-0:7
-   ┆ └TcEqual
-   ├Ranged:  0:8-0:8
-   ┆ └TcBegin
-   ├Ranged:  0:8-0:9
-   ┆ └TcInt 2
-   ├Ranged:  0:9-0:9
-   ┆ └TcEnd
-   └Ranged:  0:9-0:9
-     └TcEOF
+   ├Ranged: 0:0-0:3 TcLet
+   ├Ranged: 0:4-0:5 (TcLowerId a)
+   ├Ranged: 0:6-0:7 TcEqual
+   ├Ranged: 0:8-0:8 TcBegin
+   ├Ranged: 0:8-0:9 (TcInt 2)
+   ├Ranged: 0:9-0:9 TcEnd
+   └Ranged: 0:9-0:9 TcEOF

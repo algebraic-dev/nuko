@@ -1,6 +1,7 @@
 module Pretty.Tree (
   PrettyTree(..),
   Tree(..),
+  inlineTree,
 ) where
 
 import Data.Text        (Text)
@@ -26,6 +27,7 @@ inlineTree tree@(Node a [] c) =
   where
     canInline :: [Text] -> [Tree] -> Maybe [Text]
     canInline f (Node a' [] [] : xs) = canInline (a' : f) xs
+    canInline f (Node a' c  [] : xs) = canInline (("(" <> intercalate " " (a' : c) <> ")") : f) xs
     canInline f []                   = Just f
     canInline _ _                    = Nothing
 

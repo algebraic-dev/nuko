@@ -1,60 +1,31 @@
 ✓ That
  └List
-   ├Ranged:  0:0-0:3
-   ┆ └TcLet
-   ├Ranged:  0:4-0:5
-   ┆ └TcLowerId a
-   ├Ranged:  0:6-0:7
-   ┆ └TcEqual
-   ├Ranged:  1:4-1:4
-   ┆ └TcBegin
-   ├Ranged:  1:4-1:6
-   ┆ └TcIf
-   ├Ranged:  1:7-1:7
-   ┆ └TcBegin
-   ├Ranged:  1:7-1:8
-   ┆ └TcLowerId a
-   ├Ranged:  2:7-2:7
-   ┆ └TcSep
-   ├Ranged:  2:7-2:8
-   ┆ └TcLowerId b
-   ├Ranged:  3:4-3:4
-   ┆ └TcEnd
-   ├Ranged:  3:4-3:4
-   ┆ └TcSep
-   ├Ranged:  3:4-3:8
-   ┆ └TcThen
-   ├Ranged:  3:9-3:9
-   ┆ └TcBegin
-   ├Ranged:  3:9-3:10
-   ┆ └TcLowerId c
-   ├Ranged:  4:11-4:12
-   ┆ └TcLowerId d
-   ├Ranged:  5:9-5:9
-   ┆ └TcSep
-   ├Ranged:  5:9-5:10
-   ┆ └TcLowerId e
-   ├Ranged:  6:4-6:4
-   ┆ └TcEnd
-   ├Ranged:  6:4-6:4
-   ┆ └TcSep
-   ├Ranged:  6:4-6:8
-   ┆ └TcElse
-   ├Ranged:  7:5-7:5
-   ┆ └TcBegin
-   ├Ranged:  7:5-7:6
-   ┆ └TcLowerId f
-   ├Ranged:  8:5-8:5
-   ┆ └TcSep
-   ├Ranged:  8:5-8:6
-   ┆ └TcLowerId g
-   ├Ranged:  9:5-9:5
-   ┆ └TcSep
-   ├Ranged:  9:5-9:6
-   ┆ └TcLowerId h
-   ├Ranged:  9:6-9:6
-   ┆ └TcEnd
-   ├Ranged:  9:6-9:6
-   ┆ └TcEnd
-   └Ranged:  9:6-9:6
-     └TcEOF
+   ├Ranged: 0:0-0:3 TcLet
+   ├Ranged: 0:4-0:5 (TcLowerId a)
+   ├Ranged: 0:6-0:7 TcEqual
+   ├Ranged: 1:4-1:4 TcBegin
+   ├Ranged: 1:4-1:6 TcIf
+   ├Ranged: 1:7-1:7 TcBegin
+   ├Ranged: 1:7-1:8 (TcLowerId a)
+   ├Ranged: 2:7-2:7 TcSep
+   ├Ranged: 2:7-2:8 (TcLowerId b)
+   ├Ranged: 3:4-3:4 TcEnd
+   ├Ranged: 3:4-3:4 TcSep
+   ├Ranged: 3:4-3:8 TcThen
+   ├Ranged: 3:9-3:9 TcBegin
+   ├Ranged: 3:9-3:10 (TcLowerId c)
+   ├Ranged: 4:11-4:12 (TcLowerId d)
+   ├Ranged: 5:9-5:9 TcSep
+   ├Ranged: 5:9-5:10 (TcLowerId e)
+   ├Ranged: 6:4-6:4 TcEnd
+   ├Ranged: 6:4-6:4 TcSep
+   ├Ranged: 6:4-6:8 TcElse
+   ├Ranged: 7:5-7:5 TcBegin
+   ├Ranged: 7:5-7:6 (TcLowerId f)
+   ├Ranged: 8:5-8:5 TcSep
+   ├Ranged: 8:5-8:6 (TcLowerId g)
+   ├Ranged: 9:5-9:5 TcSep
+   ├Ranged: 9:5-9:6 (TcLowerId h)
+   ├Ranged: 9:6-9:6 TcEnd
+   ├Ranged: 9:6-9:6 TcEnd
+   └Ranged: 9:6-9:6 TcEOF
