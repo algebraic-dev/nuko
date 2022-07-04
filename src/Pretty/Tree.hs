@@ -5,7 +5,7 @@ module Pretty.Tree (
 ) where
 
 import GHC.Generics     (V1, U1, K1 (K1), type (:+:)(..), type (:*:)(..), Generic (from, Rep), D1, M1 (M1), Constructor (conName), C1, S1, Selector (selName))
-import Data.Text        (length, intercalate, Text)
+import Data.Text        (length, Text)
 
 import Relude           ((.), show, ToText (toText), ($), unwords,Ord ((<)), NonEmpty, Int, Functor (fmap), Foldable (toList), Void, otherwise)
 import Relude.Monoid    (Semigroup ((<>)), Monoid (mconcat))

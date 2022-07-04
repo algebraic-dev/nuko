@@ -40,6 +40,14 @@ library
       Nuko.Tree
       Nuko.Tree.Expr
       Nuko.Tree.TopLevel
+      Nuko.Typer.Env
+      Nuko.Typer.Error
+      Nuko.Typer.Infer
+      Nuko.Typer.Infer.Expr
+      Nuko.Typer.Infer.Lit
+      Nuko.Typer.Infer.Type
+      Nuko.Typer.Types
+      Nuko.Typer.Unify
       Nuko.Utils
       Pretty.Tree
   other-modules:
@@ -71,11 +79,13 @@ library
       AllowAmbiguousTypes
       DefaultSignatures
       UndecidableInstances
+      GADTs
   ghc-options: -Weverything -Wno-all-missed-specializations -Wno-implicit-prelude -Wno-missing-deriving-strategies -Wno-missing-kind-signatures -Wno-prepositive-qualified-module -Wno-missing-import-lists -Wno-missing-safe-haskell-mode -Wno-safe -Wno-missing-exported-signatures -Wno-unsafe -Wno-missed-specialisations -Wall
   build-depends:
       array
     , base >=4.16.0.0
     , bytestring
+    , containers
     , microlens-platform
     , monad-chronicle
     , mtl
@@ -114,6 +124,7 @@ executable Nuko-exe
       AllowAmbiguousTypes
       DefaultSignatures
       UndecidableInstances
+      GADTs
   ghc-options: -Weverything -Wno-all-missed-specializations -Wno-implicit-prelude -Wno-missing-deriving-strategies -Wno-missing-kind-signatures -Wno-prepositive-qualified-module -Wno-missing-import-lists -Wno-missing-safe-haskell-mode -Wno-safe -Wno-missing-exported-signatures -Wno-unsafe -Wno-missed-specialisations -Wall -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       Nuko
@@ -156,6 +167,7 @@ test-suite Nuko-test
       AllowAmbiguousTypes
       DefaultSignatures
       UndecidableInstances
+      GADTs
       NoImplicitPrelude
       OverloadedStrings
   ghc-options: -Weverything -Wno-all-missed-specializations -Wno-implicit-prelude -Wno-missing-deriving-strategies -Wno-missing-kind-signatures -Wno-prepositive-qualified-module -Wno-missing-import-lists -Wno-missing-safe-haskell-mode -Wno-safe -Wno-missing-exported-signatures -Wno-unsafe -Wno-missed-specialisations -Wall -threaded -rtsopts -with-rtsopts=-N

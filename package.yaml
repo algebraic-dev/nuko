@@ -37,7 +37,8 @@ default-extensions:
   - AllowAmbiguousTypes
   - DefaultSignatures
   - UndecidableInstances
-
+  - GADTs
+  
 ghc-options:
   - -Weverything
   - -Wno-all-missed-specializations
@@ -63,6 +64,7 @@ library:
     - monad-chronicle
     - these
     - microlens-platform
+    - containers
 
 executables:
   Nuko-exe:

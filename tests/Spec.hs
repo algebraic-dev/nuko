@@ -1,4 +1,4 @@
-import Relude                      (($), Show, Traversable(sequence, traverse), IO, unlines, FilePath, ConvertUtf8(encodeUtf8), ByteString, (.))
+import Relude                      (id, ($), Show, Traversable(sequence, traverse), IO, unlines, FilePath, ConvertUtf8(encodeUtf8), ByteString, (.), fst, Bool (..))
 import Relude.String               (Text)
 import Relude.Monoid               (Semigroup((<>)))
 import Relude.Monad                (Monad((>>=)))
@@ -11,6 +11,7 @@ import Test.Tasty                  (defaultMain, testGroup, TestName, TestTree)
 import Test.Tasty.Golden           (findByExtension, goldenVsString)
 import System.FilePath             (dropExtension, addExtension)
 
+import Nuko.Tree
 import Nuko.Resolver               (resolveProgram)
 import Nuko.Syntax.Lexer.Support   (runLexer, Lexer)
 import Nuko.Syntax.Lexer           (scan)
@@ -22,6 +23,8 @@ import Text.Pretty.Simple          (pShowNoColor)
 
 import Resolver.PreludeImporter    (resolveEntireProgram)
 import Pretty.Tree                 (PrettyTree(prettyShowTree))
+import Nuko.Typer.Infer
+import Nuko.Typer.Types
 
 import qualified Data.ByteString as ByteString
 import qualified Data.Text.Lazy as LazyT
@@ -63,6 +66,15 @@ runResolver :: FilePath -> IO TestTree
 runResolver = runThat prettyShowTree $ \content -> stringifyErr (runLexer parseProgram content)
                                     >>= \ast    -> stringifyErr (resolveEntireProgram ast)
 
+runTyper :: FilePath -> IO TestTree
+runTyper = runThat id $ \content ->
+  let res = stringifyErr (runLexer parseProgram content)
+        >>= \ast -> fst <$> stringifyErr (resolveEntireProgram ast)
+        >>= \tree -> case tree.letDecls of
+                      [(LetDecl _ _ body _ _)] -> printTy <$> stringifyErr (typecheckExpr body)
+                      _                        -> That "No body!"
+  in res
+
 runTestPath :: TestName -> FilePath -> (FilePath -> IO TestTree) -> IO TestTree
 runTestPath name path run = do
   filesNoExt <- fmap dropExtension <$> findByExtension [".nk"] path
@@ -74,5 +86,6 @@ main = do
   testTree <- sequence
     [ runTestPath "Lexing" "tests/Suite/lexer" runFile
     , runTestPath "Parsing" "tests/Suite/parser" runParser
-    , runTestPath "Parsing" "tests/Suite/resolver" runResolver ]
+    , runTestPath "Resolver" "tests/Suite/resolver" runResolver
+    , runTestPath "Typer" "tests/Suite/typer" runTyper ]
   defaultMain $ Test.Tasty.testGroup "Tests" testTree

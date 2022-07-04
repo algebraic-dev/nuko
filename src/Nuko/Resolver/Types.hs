@@ -32,7 +32,7 @@ import Lens.Micro.Platform       (view)
 
 import qualified Nuko.Resolver.Occourence as Occ
 import qualified Nuko.Syntax.Tree         as Syntax
-import qualified Data.HashMap.Strict as HashMap
+import qualified Data.HashMap.Strict      as HashMap
 
 -- | The main monad for the resolution. It's not necessary
 -- in the type checker because the MonadState LocalNS is only

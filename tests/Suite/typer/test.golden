@@ -1,0 +1,16 @@
+✗ This
+"UnexpectedToken
+    ( Ranged
+        { info = TcArrow
+        , position = Range
+            { start = Pos
+                { line = 0
+                , column = 11
+                }
+            , end = Pos
+                { line = 0
+                , column = 13
+                }
+            }
+        }
+    )"
