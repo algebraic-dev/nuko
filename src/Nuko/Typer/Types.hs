@@ -1,111 +1,101 @@
 module Nuko.Typer.Types (
-  TTy(..),
-  Hole(..),
   TKind(..),
-  KiScheme(..),
-  TyHole,
-  Name,
-  Lvl,
+  Hole(..),
   Virtual,
+  TTy(..),
+  KiHole,
   Normal,
+  TyHole,
+  PType,
+  Int,
   If,
-  evaluate,
-  removeHole,
-  printTy
+  printTy,
+  printKind,
 ) where
 
-import Relude.String       (Text, ToString(toString))
 import Relude.Container    (IntMap)
 import Relude.Applicative  (Applicative(pure))
+import Relude.Lifted       (IORef, readIORef)
 import Relude.Bool         (Bool(..))
-import Relude.Monad        (MonadIO(..), fromMaybe)
+import Relude.Monad        (fromMaybe, MonadIO)
 import Relude.Monoid       (Semigroup((<>)))
 import Relude.Numeric      (Int)
-import Relude              (error, ($), show, (.))
+import Relude              (show, Text, MonadIO (liftIO))
 
-import GHC.IO              (unsafePerformIO)
-import Data.IORef          (IORef, readIORef, writeIORef)
-import Text.Show           (Show (show))
+import qualified Data.IntMap.Strict as IntMap
+import Nuko.Resolver.Tree (Path)
 
-import qualified Data.IntMap.Strict  as IntMap
-
-type Lvl = Int
-
-type Name = Text
-
-type TyHole a = IORef (Hole (TTy a))
-
+type TyHole = IORef (Hole (TTy Virtual))
 type KiHole = IORef (Hole TKind)
-
-data Hole ty
-  = Empty Name Lvl
-  | Filled ty
-
--- Useful type aliases to add some context to these things
-
-type Virtual = 'True
-type Normal  = 'False
-
-data KiScheme = KiScheme Int TKind
-
-data TKind where
-  KiStar  :: TKind
-  KiVar   :: Int    -> TKind
-  KiFun   :: TKind  -> TKind -> TKind
-  KiHole  :: KiHole -> TKind
 
 type family If (v :: Bool) a b where
   If 'True  a _ = a
   If 'False _ b = b
 
-data TTy (v :: Bool) where
-  TyForall  :: Name -> (If a (TTy a -> TTy a) (TTy a)) -> TTy a
-  TyHole    :: TyHole 'True                            -> TTy a
-  TyVar     :: Lvl                                     -> TTy a
-  TyIdent   :: Text -> Text                            -> TTy a
-  TyFun     :: TTy a -> TTy a                          -> TTy a
+data Hole ty where
+  Empty       :: Text -> Int        -> Hole ty
+  Filled      :: ty                 -> Hole ty
 
-printTy :: TTy Virtual -> Text
+-- Useful type aliases to add some context to these things
+
+type Virtual = 'True
+
+type Normal  = 'False
+
+type PType = (TTy Virtual, TKind)
+
+data TKind where
+  KiStar  :: TKind
+  KiFun   :: TKind  -> TKind -> TKind
+  KiHole  :: KiHole -> TKind
+
+data TTy (v :: Bool) where
+  TyForall  :: Text -> (If a (TTy a -> TTy a) (TTy a)) -> TTy a
+  TyHole    :: TyHole                                  -> TTy a
+  TyVar     :: Int                                     -> TTy a
+  TyIdent   :: Path                                    -> TTy a
+  TyFun     :: TTy a -> TTy a                          -> TTy a
+  TyApp     :: TTy a -> TTy a                          -> TTy a
+
+printTy :: MonadIO m => TTy Virtual -> m Text
 printTy =
     helper IntMap.empty
   where
-    helper :: IntMap Name -> TTy Virtual -> Text
+    helper :: MonadIO m => IntMap Text -> TTy Virtual -> m Text
     helper ctx = \case
-      TyIdent a b -> a <> "." <> b
-      TyVar lvl -> fromMaybe ("[No " <> Relude.show lvl <> "]") (IntMap.lookup lvl ctx)
-      TyFun a b -> "(" <> (helper ctx a) <> " -> " <> (helper ctx b) <> ")"
-      TyForall n f ->
-        let res = helper (IntMap.insert (IntMap.size ctx) n ctx) (f (TyVar (IntMap.size ctx))) in
-        "(forall " <> n <> ". " <> res <> ")"
-      TyHole hole -> unsafePerformIO $ do
-        content <- readIORef hole
+      TyIdent a   -> pure (show a)
+      TyVar int   -> pure (fromMaybe ("[No " <> Relude.show int <> "]") (IntMap.lookup int ctx))
+      TyFun a b   -> do
+        resA <- helper ctx a
+        resB <- helper ctx b
+        pure ("(" <> resA <> " -> " <> resB <> ")")
+      TyForall n f -> do
+        res <- helper (IntMap.insert (IntMap.size ctx) n ctx) (f (TyVar (IntMap.size ctx)))
+        pure ("(forall " <> n <> ". " <> res <> ")")
+      TyHole hole -> do
+        content <- liftIO (readIORef hole)
         case content of
-          Empty n r -> pure ("^" <> n <> "." <> Relude.show r)
-          Filled a  -> pure ("~" <> helper ctx a)
+          Empty n r     -> pure ("^" <> n <> "." <> Relude.show r)
+          Filled a      -> do
+            filledRes <- helper ctx a
+            pure ("~" <> filledRes)
+      TyApp a b -> do
+        resA <- helper ctx a
+        resB <- helper ctx b
+        pure ("(" <> resA <> " " <> resB <> ")")
 
-instance Show (TTy Virtual) where
-  show = toString . printTy
-
-evaluate :: IntMap (TTy Virtual) -> TTy Normal -> TTy Virtual
-evaluate env = \case
-  TyIdent a b      -> TyIdent a b
-  TyHole hole      -> TyHole hole
-  TyVar x          -> fromMaybe (error "Boop") (IntMap.lookup x env)
-  TyForall name ty -> TyForall name (\x -> evaluate (IntMap.insert (IntMap.size env) x env) ty)
-  TyFun from to    -> TyFun (evaluate env from) (evaluate env to)
-
-removeHole :: MonadIO m => TTy Virtual -> m (TTy Virtual)
-removeHole = \case
-    TyHole hole -> smash hole
-    a           -> pure a
-  where
-    smash :: MonadIO m => TyHole Virtual -> m (TTy Virtual)
-    smash hole = do
-      inside <- liftIO (readIORef hole)
-      case inside of
-        Filled (TyHole hole') -> do
-          result <- smash hole'
-          liftIO (writeIORef hole (Filled result))
-          pure result
-        Filled a -> pure a
-        _        -> pure (TyHole hole)
+printKind :: MonadIO m => TKind -> m Text
+printKind = \case
+  KiStar    -> pure "*"
+  KiFun f t -> do
+    resF <- printKind f
+    resT <- printKind t
+    pure ("(" <> resF <> " -> " <> resT <> ")")
+  KiHole hole -> do
+    content <- readIORef hole
+    case content of
+      Empty n r     ->
+        pure ("^" <> n <> "." <> Relude.show r)
+      Filled a      -> do
+        resA <- printKind a
+        pure ("~" <> resA)

@@ -1,18 +1,14 @@
 module Nuko.Typer.Error (
-  ErrCause(..),
   TypeError(..),
 ) where
 
-import Nuko.Typer.Types (TTy, Virtual)
-import Text.Show (Show)
+import Data.Text (Text)
 
-data ErrCause
-  = CannotUnify
-  | OccoursCheck (TTy Virtual) (TTy Virtual)
-  | EscapingScope (TTy Virtual)
-  | NotAFunction (TTy Virtual)
-  deriving Show
-
-data TypeError = TypeError { cause :: ErrCause }  
-  deriving Show
+data TypeError
+  = CannotUnify Text Text
+  | OccoursCheck
+  | OccoursCheckKind Text
+  | EscapingScope
+  | NotAFunction
+  | NameResolution Text
 
