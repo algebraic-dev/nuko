@@ -16,7 +16,7 @@ data ResolveError
   | CannotFindModule Text Range
   | CannotFindInModule (NonEmpty NameKind) (Maybe Text) Text Range
   | IsPrivate NameKind Text Range
-  | AmbiguousNames (HashSet Text) (HashSet Text)
+  | AmbiguousNames (HashSet (Text, Text))
   | AlreadyExistsName Text NameKind Range
   | AlreadyExistsPat Text Range
   deriving Show

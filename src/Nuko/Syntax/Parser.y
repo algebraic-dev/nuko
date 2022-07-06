@@ -129,9 +129,9 @@ TypeAtom :: { Ty Nm }
     | '(' Type ')' { $2 }
 
 TypeCon :: { Ty Nm }
-    : Path(Upper) List1(TypeAtom) { withPos $1 $2 $ TCons $1 $2 }
-    | TypeCon '->' TypeCon        { withPos $1 $3 $ TArrow $1 $3 }
+    : TypeAtom List1(TypeAtom)    { withPos $1 $2 $ TApp $1 $2 }
     | TypeAtom                    { $1 }
+    | TypeCon '->' TypeCon        { withPos $1 $3 $ TArrow $1 $3 }
 
 Type
     : TypeCon                    { $1 }

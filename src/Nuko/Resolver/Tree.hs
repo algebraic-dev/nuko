@@ -136,6 +136,6 @@ instance HasPosition (Ty (Nuko 'Resolved)) where
   getPos = \case
     TId n _       -> getPos n
     TPoly n _     -> getPos n
-    TCons _ _ r   -> r
+    TApp  _ _ r   -> r
     TArrow _ _ r  -> r
     TForall _ _ r -> r

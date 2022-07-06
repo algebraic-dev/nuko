@@ -15,7 +15,7 @@ import Nuko.Tree.TopLevel        (ImpPath)
 import Nuko.Syntax.Range         (Range(..))
 import Nuko.Syntax.Tree          (Name(..))
 import Nuko.Utils                (terminate)
-import Nuko.Tree (Nm, Re, XPath)
+import Nuko.Tree                 (Nm, Re, XPath)
 
 import Relude.Applicative        (Applicative(pure))
 import Relude.Monad              (MonadState (get, put), Maybe (..), fromMaybe, gets)
@@ -61,8 +61,8 @@ resolveName kind' loc info = do
   where
     resolveAmbiguity :: MonadResolver m => Label -> m Path
     resolveAmbiguity = \case
-      (Ambiguous refs other) -> terminate (AmbiguousNames refs other)
-      (Single ref mod')      -> pure (Path mod' (ReId ref loc) loc)
+      (Ambiguous refs)  -> terminate (AmbiguousNames refs)
+      (Single ref mod') -> pure (Path mod' (ReId ref loc) loc)
 
 findInSpace :: MonadResolver m => NameSpace -> Range -> Text -> NonEmpty NameKind -> m OccName
 findInSpace space loc name occs =

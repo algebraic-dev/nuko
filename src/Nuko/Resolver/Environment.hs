@@ -63,23 +63,29 @@ instance PrettyTree NameSpace where
 
 makeLenses ''NameSpace
 
-data Label = Single Text Text | Ambiguous (HashSet Text) (HashSet Text) deriving (Show, Generic)
+data Label
+   = Single Text Text
+   | Ambiguous (HashSet (Text, Text))
+   deriving (Show, Generic)
 
 instance PrettyTree Label where
 
 joinLabels :: Label -> Label -> Label
 joinLabels a' b' = case (a', b') of
-  (Single r a, Ambiguous rf b)    -> Ambiguous (HashSet.insert r rf) (HashSet.insert a b)
-  (Ambiguous rf b, Single r a)    -> Ambiguous (HashSet.insert r rf) (HashSet.insert a b)
-  (Ambiguous r a, Ambiguous r' b) -> Ambiguous (r <> r') (a <> b)
+  (Single r a, Ambiguous rf)  -> Ambiguous (HashSet.insert (r, a) rf)
+  (Ambiguous rf, Single r a)  -> Ambiguous (HashSet.insert (r, a) rf)
+  (Ambiguous r, Ambiguous r') -> Ambiguous (r <> r')
   (Single r a, Single r' b)
     | a == b && r == r' -> Single r a
-    | otherwise         -> Ambiguous (HashSet.fromList [r, r']) (HashSet.fromList [a,b])
+    | otherwise         -> Ambiguous (HashSet.fromList [(r, a), (r', b)])
 
 -- | LocalScope describes a single scope that stores if it's used
 -- and where it's the defined.
 
 type LocalScope = OccEnv (NonEmpty (Range, Bool))
+
+-- _localNames is dumb, i should change it to MonadReader with warning creator at
+-- the end.
 
 data LocalNS = LocalNS
   { _openedNames      :: OccEnv Label

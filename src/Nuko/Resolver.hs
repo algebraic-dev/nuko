@@ -126,7 +126,7 @@ resolveType :: MonadResolver m => Ty Nm -> m (Ty Re)
 resolveType = \case
   TId path' ext'                -> TId    <$> resolvePath TyName path' <*> pure ext'
   TPoly (Name t r) ext'         -> TId    <$> resolveName TyName r t <*> pure ext'
-  TCons path' ty ext'           -> TCons  <$> resolvePath TyName path' <*> traverse resolveType ty <*> pure ext'
+  TApp ty' ty ext'              -> TApp   <$> resolveType ty' <*> traverse resolveType ty <*> pure ext'
   TArrow from to ext'           -> TArrow <$> resolveType from <*> resolveType to <*> pure ext'
   TForall binder ty ext'        -> scopeLocals $ do
     addLocal binder.range (OccName binder.text TyName)

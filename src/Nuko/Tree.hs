@@ -5,6 +5,7 @@ module Nuko.Tree (
   Nuko,
   Nm,
   Re,
+  Tc,
 ) where
 
 import Nuko.Tree.Expr
@@ -15,6 +16,7 @@ data Nuko (p :: Phase)
 
 type Nm = Nuko 'Normal
 type Re = Nuko 'Resolved
+type Tc = Nuko 'Typed
 
 -- Some default implementations that someday i'll use
 
