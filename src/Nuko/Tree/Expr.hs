@@ -47,7 +47,7 @@ instance PrettyTree NoExt where prettyTree _ = Node "NoExt" [] []
 data Ty x
   = TId (XPath x) !(XTId x)
   | TPoly (XName x) !(XTPoly x)
-  | TCons (XPath x) (NonEmpty (Ty x)) !(XTCons x)
+  | TApp (Ty x) (NonEmpty (Ty x)) !(XTCons x)
   | TArrow  (Ty x) (Ty x) !(XTArrow x)
   | TForall (XName x) (Ty x) !(XTForall x)
 
