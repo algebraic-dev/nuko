@@ -6,7 +6,7 @@ import Data.List          (findIndex, (!!))
 import Relude.Lifted (newIORef)
 import Control.Monad (foldM)
 
-import Relude             (MonadTrans (lift), NonEmpty ((:|)), Eq ((==)))
+import Relude             (MonadTrans (lift), NonEmpty ((:|)), Eq ((==)), MonadReader (ask), fst, Semigroup ((<>)), show, ($))
 import Relude.Monad       (asks, ReaderT, MonadReader (local), Maybe (..))
 import Relude.String      (Text)
 import Relude.Functor     ((<$>))
@@ -22,9 +22,9 @@ import Nuko.Resolver.Tree (ReId(text))
 
 import qualified Control.Monad.Reader as Reader
 
-inferTy :: MonadTyper m => Ty Re -> m PType
-inferTy ast =
-    Reader.runReaderT (go ast) []
+inferTy :: MonadTyper m => Ty Re -> [(Text, TKind)] -> m PType
+inferTy ast poly =
+    Reader.runReaderT (go ast) poly
   where
     go :: MonadTyper m => Ty Re -> ReaderT ([(Text, TKind)]) m PType
     go = \case
@@ -34,11 +34,12 @@ inferTy ast =
         pure (vty, kind)
       TPoly name _ -> do
         result <- asks (findIndex (\(k, _) -> k == name.text))
+        rere <- ask
         case result of
           Just idx -> do
             (_, kind) <- asks (!! idx) -- It's safe because we already found it
             pure (TyVar idx, kind)
-          Nothing   -> terminate (NameResolution name.text)
+          Nothing   -> terminate (NameResolution $ name.text <> "|" <> (show (fst <$> rere)))
       TApp ty (x :| xs) _  -> do
         res <- go ty
         foldM (\(tyRes, tyKind) arg -> do
