@@ -12,7 +12,7 @@ module Nuko.Resolver (
 import Nuko.Tree.TopLevel
 import Nuko.Tree.Expr
 import Nuko.Resolver.Environment
-import Nuko.Resolver.Tree         (ReId(ReId))
+import Nuko.Resolver.Tree         (ReId(ReId), Path (..))
 import Nuko.Resolver.Types        (MonadResolver, makePath, addGlobal, findInSpace, resolvePath, resolveName)
 import Nuko.Resolver.Error        (ResolveError(..))
 import Nuko.Resolver.Occourence   (OccName(..), NameKind (..))
@@ -28,12 +28,14 @@ import Relude.Monad               (Maybe(..), Either(..), gets, StateT (runState
 import Relude.String              (Text)
 import Relude.Container           (One (one))
 import Relude.List                (NonEmpty ((:|)))
-import Relude                     (traverse_, ($), Traversable (traverse), (.), ($>), fst)
+import Relude                     (traverse_, ($), Traversable (traverse), (.), ($>), fst, when, Ord ((>)), for_)
 
 import Data.HashMap.Strict        (HashMap)
 import Control.Monad.Import       (ImportErrorKind(..), MonadImport (..))
 
 import qualified Data.HashMap.Strict as HashMap
+import Data.List.NonEmpty (groupAllWith)
+import qualified Data.List.NonEmpty as NonEmpty
 
 -- Init for mutual things.
 
@@ -106,6 +108,13 @@ resolveTypeDecl :: MonadResolver m => TypeDecl Nm -> m (TypeDecl Re)
 resolveTypeDecl (TypeDecl name' args decl) = do
     -- Creates a namespace for the type and scope it's local type variables.
     scopeLocals $ do
+
+      -- Checking for duplicated
+      let grouped = groupAllWith (\a -> a.text) args
+      for_ grouped $ \group ->
+        when (NonEmpty.length group > 1)
+             (terminate (ConflictingTypes ((\n -> (n.text, n.range)) <$> group)))
+
       traverse_ (\arg -> addLocal arg.range (OccName arg.text TyName)) args
       decl' <- resolveDecl decl
       pure (TypeDecl (toReId name') (fmap toReId args) decl')
@@ -124,8 +133,12 @@ resolveTypeDecl (TypeDecl name' args decl) = do
 
 resolveType :: MonadResolver m => Ty Nm -> m (Ty Re)
 resolveType = \case
+  TPoly (Name t r) ext'         -> do
+    res <- resolveName TyName r t 
+    case res of
+      Local res' -> pure (TPoly res' ext')
+      _          -> pure (TId res ext') -- Probably impossible
   TId path' ext'                -> TId    <$> resolvePath TyName path' <*> pure ext'
-  TPoly (Name t r) ext'         -> TId    <$> resolveName TyName r t <*> pure ext'
   TApp ty' ty ext'              -> TApp   <$> resolveType ty' <*> traverse resolveType ty <*> pure ext'
   TArrow from to ext'           -> TArrow <$> resolveType from <*> resolveType to <*> pure ext'
   TForall binder ty ext'        -> scopeLocals $ do
@@ -183,7 +196,7 @@ resolveLetDecl (LetDecl name' args body ret ext') =
       LetDecl (toReId name')
           <$> traverse (\(name'', ty) -> ((,) (toReId name'') <$> resolveType ty) <* addLocal name''.range (OccName name''.text VarName)) args
           <*> resolveExpr body
-          <*> traverse resolveType ret
+          <*> resolveType ret
           <*> pure ext'
 
 resolveProgram :: MonadResolver m => Program Nm -> m (Program Re)
