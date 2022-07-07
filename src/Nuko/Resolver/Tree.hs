@@ -20,54 +20,55 @@ data Path
   | Local ReId
   deriving Show
 
-type instance XName (Nuko 'Resolved) = ReId
-type instance XPath (Nuko 'Resolved) = Path
+type instance XName Re = ReId
+type instance XPath Re = Path
+type instance XTy Re   = Ty Re
 
-type instance XLInt (Nuko 'Resolved) = Range
-type instance XLStr (Nuko 'Resolved) = Range
+type instance XLInt Re = Range
+type instance XLStr Re = Range
 
-type instance XTId (Nuko 'Resolved) = NoExt
-type instance XTPoly (Nuko 'Resolved) = NoExt
-type instance XTCons (Nuko 'Resolved) = Range
-type instance XTArrow (Nuko 'Resolved) = Range
-type instance XTForall (Nuko 'Resolved) = Range
+type instance XTId Re = NoExt
+type instance XTPoly Re = NoExt
+type instance XTCons Re = Range
+type instance XTArrow Re = Range
+type instance XTForall Re = Range
 
-type instance XPWild (Nuko 'Resolved) = Range
-type instance XPId (Nuko 'Resolved) = NoExt
-type instance XPLit (Nuko 'Resolved) = NoExt
-type instance XPAnn (Nuko 'Resolved) = Range
-type instance XPCons (Nuko 'Resolved) = Range
-type instance XPExt (Nuko 'Resolved) = Void
+type instance XPWild Re = Range
+type instance XPId Re = NoExt
+type instance XPLit Re = NoExt
+type instance XPAnn Re = Range
+type instance XPCons Re = Range
+type instance XPExt Re = Void
 
-type instance XLit (Nuko 'Resolved) = NoExt
-type instance XLam (Nuko 'Resolved) = Range
-type instance XAnn (Nuko 'Resolved) = Range
-type instance XApp (Nuko 'Resolved) = Range
-type instance XLower (Nuko 'Resolved) = Range
-type instance XUpper (Nuko 'Resolved) = Range
-type instance XField (Nuko 'Resolved) = Range
-type instance XIf (Nuko 'Resolved) = Range
-type instance XMatch (Nuko 'Resolved) = Range
-type instance XBlock (Nuko 'Resolved) = Range
-type instance XVar (Nuko 'Resolved) = Range
-type instance XExt (Nuko 'Resolved) = Void
+type instance XLit Re = NoExt
+type instance XLam Re = Range
+type instance XAnn Re = Range
+type instance XApp Re = Range
+type instance XLower Re = Range
+type instance XUpper Re = Range
+type instance XField Re = Range
+type instance XIf Re = Range
+type instance XMatch Re = Range
+type instance XBlock Re = Range
+type instance XVar Re = Range
+type instance XExt Re = Void
 
-type instance XImport (Nuko 'Resolved) = Void
+type instance XImport Re = Void
 
-deriving instance Generic (Expr (Nuko 'Resolved))
-deriving instance Generic (Block (Nuko 'Resolved))
-deriving instance Generic (Var (Nuko 'Resolved))
-deriving instance Generic (Literal (Nuko 'Resolved))
-deriving instance Generic (Pat (Nuko 'Resolved))
-deriving instance Generic (Ty (Nuko 'Resolved))
-deriving instance Generic (Import (Nuko 'Resolved))
-deriving instance Generic (ImportDepsKind (Nuko 'Resolved))
-deriving instance Generic (ImportDeps (Nuko 'Resolved))
-deriving instance Generic (ImportModifier (Nuko 'Resolved))
-deriving instance Generic (Program (Nuko 'Resolved))
-deriving instance Generic (TypeDeclArg (Nuko 'Resolved))
-deriving instance Generic (TypeDecl (Nuko 'Resolved))
-deriving instance Generic (LetDecl (Nuko 'Resolved))
+deriving instance Generic (Expr Re)
+deriving instance Generic (Block Re)
+deriving instance Generic (Var Re)
+deriving instance Generic (Literal Re)
+deriving instance Generic (Pat Re)
+deriving instance Generic (Ty Re)
+deriving instance Generic (Import Re)
+deriving instance Generic (ImportDepsKind Re)
+deriving instance Generic (ImportDeps Re)
+deriving instance Generic (ImportModifier Re)
+deriving instance Generic (Program Re)
+deriving instance Generic (TypeDeclArg Re)
+deriving instance Generic (TypeDecl Re)
+deriving instance Generic (LetDecl Re)
 
 instance PrettyTree Path  where
   prettyTree (Path mod' t r) = Node "Path" [show (mod' <> "." <> t.text), toLabel r] []
@@ -75,20 +76,20 @@ instance PrettyTree Path  where
 
 instance PrettyTree ReId  where prettyTree a = Node "ReId" [a.text, toLabel a.range] []
 
-instance PrettyTree (Expr (Nuko 'Resolved)) where
-instance PrettyTree (Block (Nuko 'Resolved)) where
-instance PrettyTree (Var (Nuko 'Resolved)) where
-instance PrettyTree (Literal (Nuko 'Resolved)) where
-instance PrettyTree (Pat (Nuko 'Resolved)) where
-instance PrettyTree (Ty (Nuko 'Resolved)) where
-instance PrettyTree (Import (Nuko 'Resolved)) where
-instance PrettyTree (ImportDepsKind (Nuko 'Resolved)) where
-instance PrettyTree (ImportDeps (Nuko 'Resolved)) where
-instance PrettyTree (ImportModifier (Nuko 'Resolved)) where
-instance PrettyTree (Program (Nuko 'Resolved)) where
-instance PrettyTree (TypeDeclArg (Nuko 'Resolved)) where
-instance PrettyTree (TypeDecl (Nuko 'Resolved)) where
-instance PrettyTree (LetDecl (Nuko 'Resolved)) where
+instance PrettyTree (Expr Re) where
+instance PrettyTree (Block Re) where
+instance PrettyTree (Var Re) where
+instance PrettyTree (Literal Re) where
+instance PrettyTree (Pat Re) where
+instance PrettyTree (Ty Re) where
+instance PrettyTree (Import Re) where
+instance PrettyTree (ImportDepsKind Re) where
+instance PrettyTree (ImportDeps Re) where
+instance PrettyTree (ImportModifier Re) where
+instance PrettyTree (Program Re) where
+instance PrettyTree (TypeDeclArg Re) where
+instance PrettyTree (TypeDecl Re) where
+instance PrettyTree (LetDecl Re) where
 
 instance HasPosition ReId where
   getPos (ReId _ r) = r
@@ -97,15 +98,15 @@ instance HasPosition Path where
   getPos (Path _ _ r) = r
   getPos (Local r) = r.range
 
-instance HasPosition (Var (Nuko 'Resolved)) where
+instance HasPosition (Var Re) where
   getPos (Var _ _ r) = r
 
-instance HasPosition (Literal (Nuko 'Resolved)) where
+instance HasPosition (Literal Re) where
   getPos = \case
     LStr _ r -> r
     LInt _ r -> r
 
-instance HasPosition (Pat (Nuko 'Resolved)) where
+instance HasPosition (Pat Re) where
   getPos = \case
     PWild r     -> r
     PCons _ _ r -> r
@@ -113,7 +114,7 @@ instance HasPosition (Pat (Nuko 'Resolved)) where
     PAnn _ _ r  -> r
     PId n _     -> getPos n
 
-instance HasPosition (Expr (Nuko 'Resolved)) where
+instance HasPosition (Expr Re) where
   getPos = \case
     Lit t _ -> getPos t
     Lam _ _ r -> r
@@ -126,13 +127,13 @@ instance HasPosition (Expr (Nuko 'Resolved)) where
     Block _  r -> r
     Ann _ _ r  -> r
 
-instance HasPosition (Block (Nuko 'Resolved)) where
+instance HasPosition (Block Re) where
   getPos = \case
     BlBind x r           -> getPos x <> getPos r
     BlVar (Var _ _ r1) r -> r1 <> getPos r
     BlEnd x              -> getPos x
 
-instance HasPosition (Ty (Nuko 'Resolved)) where
+instance HasPosition (Ty Re) where
   getPos = \case
     TId n _       -> getPos n
     TPoly n _     -> getPos n

@@ -215,7 +215,7 @@ Ret : ':' Type { $2 }
 
 Binder : '(' Lower ':' Type ')' { ($2, $4) }
 
-LetDecl : let Lower List(Binder) Optional(Ret) '=' Expr { LetDecl $2 $3 $6 $4 NoExt }
+LetDecl : let Lower List(Binder) Ret '=' Expr { LetDecl $2 $3 $6 $4 NoExt }
 
 -- Import declaration
 

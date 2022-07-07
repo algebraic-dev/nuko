@@ -17,22 +17,22 @@ module Nuko.Tree.TopLevel (
   ImpPath,
 ) where
 
-import Nuko.Tree.Expr     (Expr, Ty, XName)
+import Nuko.Tree.Expr     (Expr, XName, XTy)
 import Data.List.NonEmpty (NonEmpty)
 import Data.Maybe         (Maybe)
 
 data LetDecl x = LetDecl
   { declName :: XName x
-  , declArgs :: [(XName x, Ty x)]
+  , declArgs :: [(XName x, XTy x)]
   , declBody :: Expr x
-  , declRet  :: Maybe (Ty x)
+  , declRet  :: XTy x
   , declExt  :: !(XLetDecl x)
   }
 
 data TypeDeclArg x
-  = TypeSym (Ty x)
-  | TypeProd [(XName x, Ty x)]
-  | TypeSum (NonEmpty (XName x, [Ty x]))
+  = TypeSym (XTy x)
+  | TypeProd [(XName x, XTy x)]
+  | TypeSum (NonEmpty (XName x, [XTy x]))
 
 data TypeDecl x = TypeDecl
   { tyName :: XName x

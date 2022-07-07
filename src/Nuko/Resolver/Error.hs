@@ -18,5 +18,6 @@ data ResolveError
   | IsPrivate NameKind Text Range
   | AmbiguousNames (HashSet (Text, Text))
   | AlreadyExistsName Text NameKind Range
+  | ConflictingTypes (NonEmpty (Text, Range))
   | AlreadyExistsPat Text Range
   deriving Show

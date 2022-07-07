@@ -33,6 +33,7 @@ module Nuko.Tree.Expr (
   XTArrow,
   XTForall,
   XPath,
+  XTy,
 ) where
 
 import Relude      (Show, Int, Maybe, NonEmpty, Text)
@@ -60,7 +61,7 @@ data Pat x
   | PId (XName x) !(XPId x)
   | PCons (XPath x) [Pat x] !(XPCons x)
   | PLit (Literal x) !(XPLit x)
-  | PAnn (Pat x) (Ty x) !(XPAnn x)
+  | PAnn (Pat x) (XTy x) !(XPAnn x)
   | PExt !(XPExt x)
 
 data Var x = Var
@@ -83,13 +84,15 @@ data Expr x
   | Field (Expr x) (XName x) !(XField x)
   | If (Expr x) (Expr x) (Maybe (Expr x)) !(XIf x)
   | Match (Expr x) (NonEmpty (Pat x, Expr x)) !(XMatch x)
-  | Ann (Expr x) (Ty x) !(XAnn x)
+  | Ann (Expr x) (XTy x) !(XAnn x)
   | Block (Block x) !(XBlock x)
   | Ext !(XExt x)
 
 type family XVar x
 
 type family XName x
+
+type family XTy x
 
 type family XLInt x
 type family XLStr x
