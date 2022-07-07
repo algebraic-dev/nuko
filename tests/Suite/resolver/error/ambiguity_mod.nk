@@ -1,0 +1,12 @@
+type L =
+  | A String Int
+  | D Int String
+
+type G =
+  | A String Int
+  | D Int String
+
+import Main.L (D)
+import Main.G (D)
+
+let a (b: Int): String = D

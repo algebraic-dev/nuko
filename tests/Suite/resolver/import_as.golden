@@ -30,7 +30,7 @@
    | |     |     └TId NoExt (Path "Main.L.L" 6:10-6:13)
    | |     ├declBody: (Lit NoExt (LInt 6:26-6:27 2))
    | |     ├declRet:
-   | |     | └Just (TId NoExt (Path "Prelude.String" 6:17-6:23))
+   | |     | └TId NoExt (Path "Prelude.String" 6:17-6:23)
    | |     └declExt: NoExt
    | ├impDecls: Empty List
    | └programExt: NoExt

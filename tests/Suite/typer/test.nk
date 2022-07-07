@@ -1,2 +1,4 @@
-let a =
-  a
+type A b c =
+  | F b
+  | D b c
+  | E c

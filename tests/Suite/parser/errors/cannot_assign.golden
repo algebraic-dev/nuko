@@ -20,7 +20,7 @@ AssignInEndOfBlock
    |     ├declName: (Name "a" 0:4-0:5)
    |     ├declArgs: Empty List
    |     ├declBody: (Lit NoExt (LInt 1:12-1:13 3))
-   |     ├declRet: Nothing
+   |     ├declRet: (TId NoExt (Path "Int"))
    |     └declExt: NoExt
    ├impDecls: Empty List
    └programExt: NoExt

@@ -12,7 +12,7 @@
    |     |   ├Lower 2:9-2:10 (Path "b")
    |     |   ├Just (Lower 3:9-3:10 (Path "c"))
    |     |   └1:4-3:10
-   |     ├declRet: Nothing
+   |     ├declRet: (TId NoExt (Path "Int"))
    |     └declExt: NoExt
    ├impDecls: Empty List
    └programExt: NoExt

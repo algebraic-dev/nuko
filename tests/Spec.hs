@@ -1,8 +1,11 @@
-import Relude                      (id, ($), Show, Traversable(sequence, traverse), IO, unlines, FilePath, ConvertUtf8(encodeUtf8), ByteString, (.), fst, Bool (..))
+
+
+import Relude                      (id, ($), Show, IO, unlines, FilePath, ConvertUtf8(encodeUtf8), ByteString, (.), fst, Bool (..), HashMap, zip)
 import Relude.String               (Text)
-import Relude.Monoid               (Semigroup((<>)))
-import Relude.Monad                (Monad((>>=)))
-import Relude.Functor              (fmap, (<$>))
+import Relude.Monoid               (Semigroup((<>)),Endo(appEndo))
+import Relude.Monad                (Monad((>>=)), MonadIO)
+import Relude.Functor              (fmap, (<$>), first)
+import Relude.Foldable             (Traversable(sequence, traverse), forM)
 import Relude.Applicative          (Applicative(pure))
 
 import Data.These                  (These(..))
@@ -11,23 +14,27 @@ import Test.Tasty                  (defaultMain, testGroup, TestName, TestTree)
 import Test.Tasty.Golden           (findByExtension, goldenVsString)
 import System.FilePath             (dropExtension, addExtension)
 
-import Nuko.Tree
-import Nuko.Resolver               (resolveProgram)
 import Nuko.Syntax.Lexer.Support   (runLexer, Lexer)
 import Nuko.Syntax.Lexer           (scan)
 import Nuko.Syntax.Lexer.Tokens    (Token(TcEOF))
 import Nuko.Syntax.Range           (Ranged (info))
 import Nuko.Syntax.Parser          (parseProgram)
+import Nuko.Typer.Env              (MonadTyper, TypeSpace, emptyTS)
+import Nuko.Typer.Infer            (initTypeDecl, inferTypeDecl)
+import Nuko.Typer.Error            (TypeError)
 
 import Text.Pretty.Simple          (pShowNoColor)
 
 import Resolver.PreludeImporter    (resolveEntireProgram)
 import Pretty.Tree                 (PrettyTree(prettyShowTree))
-import Nuko.Typer.Infer
-import Nuko.Typer.Types
+
+import Nuko.Tree
 
 import qualified Data.ByteString as ByteString
 import qualified Data.Text.Lazy as LazyT
+import qualified Control.Monad.State.Strict as State
+import qualified Control.Monad.Trans.Chronicle as Chronicle
+import qualified Control.Monad.Reader as Reader
 
 scanUntilEnd :: Lexer [Ranged Token]
 scanUntilEnd = do
@@ -47,33 +54,42 @@ stringifyErr (That e) = That e
 stringifyErr (This e) = This (fmap prettyShow e)
 stringifyErr (These e f) = These (fmap prettyShow e) f
 
-runThat :: Show a =>  (b -> Text) ->  (ByteString -> These [a] b) -> FilePath -> IO TestTree
+runThat :: Show a =>  (b -> Text) ->  (forall m. MonadIO m => ByteString -> m (These [a] b)) -> FilePath -> IO TestTree
 runThat fn that file = do
   content <- ByteString.readFile $ addExtension file ".nk"
   let golden = addExtension file ".golden"
-  pure $ goldenStr file golden $ case that content of
+  resThat <- that content
+  pure $ goldenStr file golden $ case resThat of
     That e    -> "✓ That\n"  <> fn e
     This e    -> "✗ This\n"  <> unlines (fmap prettyShow e)
     These e f -> "• These\n" <> unlines (fmap prettyShow e) <> "\n" <> fn f
 
 runFile :: FilePath -> IO TestTree
-runFile = runThat prettyShowTree (runLexer scanUntilEnd)
+runFile = runThat prettyShowTree (pure . runLexer scanUntilEnd)
 
 runParser :: FilePath -> IO TestTree
-runParser = runThat prettyShowTree (runLexer parseProgram)
+runParser = runThat prettyShowTree (pure . runLexer parseProgram)
 
 runResolver :: FilePath -> IO TestTree
-runResolver = runThat prettyShowTree $ \content -> stringifyErr (runLexer parseProgram content)
-                                    >>= \ast    -> stringifyErr (resolveEntireProgram ast)
+runResolver = runThat prettyShowTree $ \content -> pure (stringifyErr (runLexer parseProgram content) >>= \ast -> stringifyErr (resolveEntireProgram ast))
+
+runTypeChecker :: MonadIO m => (forall m . MonadTyper m => m a) -> m (These [TypeError] (a, TypeSpace))
+runTypeChecker act =
+  first (`appEndo` []) <$> (Chronicle.runChronicleT (Reader.runReaderT (State.runStateT act emptyTS) emptyTS))
 
 runTyper :: FilePath -> IO TestTree
-runTyper = runThat id $ \content ->
-  let res = stringifyErr (runLexer parseProgram content)
-        >>= \ast -> fst <$> stringifyErr (resolveEntireProgram ast)
-        >>= \tree -> case tree.letDecls of
-                      [(LetDecl _ _ body _ _)] -> printTy <$> stringifyErr (typecheckExpr body)
-                      _                        -> That "No body!"
-  in res
+runTyper = runThat prettyShowTree $ \content -> do
+    let result = stringifyErr (runLexer parseProgram content) >>= \ast -> stringifyErr (resolveEntireProgram ast)
+    case result of
+      This a    -> pure (This (fmap prettyShow a))
+      That a    -> stringifyErr <$> runTypeChecker (run (fst a))
+      These b a -> stringifyErr <$> runTypeChecker (run (fst a))
+  where
+    run :: MonadTyper m => Program Re -> m [TypeDecl Tc]
+    run program = do
+      bindings <- traverse initTypeDecl program.typeDecls
+      forM (zip program.typeDecls bindings) $ \(decl, info) ->
+        inferTypeDecl decl info
 
 runTestPath :: TestName -> FilePath -> (FilePath -> IO TestTree) -> IO TestTree
 runTestPath name path run = do

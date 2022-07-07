@@ -1,9 +1,9 @@
 
 -- It works because it's not typechecking.
-let print = 42
-let plus  = 42
+let print: Int = 42
+let plus: Int  = 42
 
-let local (a : Int) =
+let local (a : Int): Int =
   let b = 3
   let c = plus a b
   if c

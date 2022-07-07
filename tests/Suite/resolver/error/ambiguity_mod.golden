@@ -2,12 +2,12 @@
 "AmbiguousNames
     ( fromList
         [
-            ( "A"
+            ( "D"
             , "Main.L"
             )
         ,
             ( "D"
-            , "Main.L"
+            , "Main.G"
             )
         ]
     )"

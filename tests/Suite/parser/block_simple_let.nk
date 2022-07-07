@@ -1,4 +1,4 @@
-let a =
+let a: Int =
     2
     3
     4

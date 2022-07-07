@@ -1,4 +1,4 @@
-let a =
+let a: Int =
     \a => b
     \b => c
     \d => e

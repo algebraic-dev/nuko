@@ -14,7 +14,7 @@
    |     |   |   ├Lit NoExt (LInt 2:4-2:5 3)
    |     |   |   └BlEnd (Lit NoExt (LInt 3:4-3:5 4))
    |     |   └1:4-3:5
-   |     ├declRet: Nothing
+   |     ├declRet: (TId NoExt (Path "Int"))
    |     └declExt: NoExt
    ├impDecls: Empty List
    └programExt: NoExt

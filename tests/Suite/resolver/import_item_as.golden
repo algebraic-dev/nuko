@@ -31,7 +31,7 @@
    | |     ├declBody:
    | |     | └Upper 6:23-6:24 (Path "Main.L.D" 6:23-6:24)
    | |     ├declRet:
-   | |     | └Just (TId NoExt (Path "Prelude.String" 6:14-6:20))
+   | |     | └TId NoExt (Path "Prelude.String" 6:14-6:20)
    | |     └declExt: NoExt
    | ├impDecls: Empty List
    | └programExt: NoExt

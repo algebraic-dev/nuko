@@ -1,16 +1,31 @@
-✗ This
-"UnexpectedToken
-    ( Ranged
-        { info = TcArrow
-        , position = Range
-            { start = Pos
-                { line = 0
-                , column = 11
-                }
-            , end = Pos
-                { line = 0
-                , column = 13
-                }
-            }
-        }
-    )"
+✓ That
+ └Prod
+   ├List
+   | └TypeDecl
+   |   ├tyName: (ReId A 0:5-0:6)
+   |   ├tyArgs:
+   |   | └List (ReId c 0:9-0:10) (ReId b 0:7-0:8)
+   |   └tyDecl:
+   |     └TypeSum
+   |       └NonEmpty
+   |         ├Prod
+   |         | ├ReId F 1:4-1:5
+   |         | └List (Type [No 0])
+   |         └Prod
+   |           ├ReId D 2:4-2:5
+   |           └List (Type [No 1]) (Type [No 0])
+   └TypeSpace
+     ├_tsTypes:
+     | └HashMap
+     |   └Prod
+     |     ├A
+     |     └Kind (^b.0 -> (^c.0 -> *))
+     ├_tsFields: HashMap
+     └_tsConstructors:
+       └HashMap
+         ├Prod
+         | ├F
+         | └Type ([No 0] -> ((A b) c))
+         └Prod
+           ├D
+           └Type ([No 0] -> ([No 1] -> ((A b) c)))

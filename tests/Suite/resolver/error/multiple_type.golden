@@ -1,0 +1,30 @@
+✗ This
+"ConflictingTypes
+    (
+        ( "b"
+        , Range
+            { start = Pos
+                { line = 0
+                , column = 9
+                }
+            , end = Pos
+                { line = 0
+                , column = 10
+                }
+            }
+        ) :|
+        [
+            ( "b"
+            , Range
+                { start = Pos
+                    { line = 0
+                    , column = 11
+                    }
+                , end = Pos
+                    { line = 0
+                    , column = 12
+                    }
+                }
+            )
+        ]
+    )"
