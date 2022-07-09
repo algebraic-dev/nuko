@@ -1,4 +1,6 @@
-type A b c =
-  | F b
-  | D b c
-  | E c
+type List a =
+  | Cons a (List a)
+  | Nil
+
+type Teste = List Lero
+type Lero = List Teste

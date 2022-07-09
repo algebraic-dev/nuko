@@ -27,7 +27,7 @@
    | |     | └List
    | |     |   └Prod
    | |     |     ├ReId b 6:7-6:8
-   | |     |     └TId NoExt (Path "Main.L.L" 6:10-6:11)
+   | |     |     └TId NoExt (Local "L" 6:10-6:11)
    | |     ├declBody:
    | |     | └Upper 6:23-6:24 (Path "Main.L.D" 6:23-6:24)
    | |     ├declRet:
@@ -42,12 +42,6 @@
      |   | ├OccName ConsName D
      |   | └Single Main.L D
      |   ├Prod
-     |   | ├OccName TyName L
-     |   | └Single Main.L L
-     |   ├Prod
-     |   | ├OccName TyName F
-     |   | └Single Main.L L
-     |   ├Prod
      |   | ├OccName TyName Int
      |   | └Single Prelude Int
      |   └Prod
@@ -60,6 +54,9 @@
      |   ├_modName: Main
      |   └_names:
      |     └HashMap
+     |       ├Prod
+     |       | ├OccName TyName L
+     |       | └Public
      |       └Prod
      |         ├OccName VarName a
      |         └Public
@@ -74,9 +71,6 @@
                  ├Prod
                  | ├OccName ConsName A
                  | └Public
-                 ├Prod
-                 | ├OccName ConsName D
-                 | └Public
                  └Prod
-                   ├OccName TyName L
+                   ├OccName ConsName D
                    └Public

@@ -22,9 +22,6 @@
      ├_openedNames:
      | └HashMap
      |   ├Prod
-     |   | ├OccName TyName Ata
-     |   | └Single Main.Ata Ata
-     |   ├Prod
      |   | ├OccName TyName Int
      |   | └Single Prelude Int
      |   └Prod
@@ -33,7 +30,13 @@
      ├_localNames: (NonEmpty HashMap)
      ├_openedModules: HashMap
      ├_currentNamespace:
-     | └NameSpace (_names: HashMap) (_modName: Main)
+     | └NameSpace
+     |   ├_modName: Main
+     |   └_names:
+     |     └HashMap
+     |       └Prod
+     |         ├OccName TyName Ata
+     |         └Public
      └_newNamespaces:
        └HashMap
          └Prod
@@ -44,9 +47,6 @@
                └HashMap
                  ├Prod
                  | ├OccName FieldName b
-                 | └Public
-                 ├Prod
-                 | ├OccName TyName Ata
                  | └Public
                  └Prod
                    ├OccName FieldName s

@@ -2,6 +2,6 @@ type L =
   | A String Int
   | D Int String
 
-import Main.L (L as F,D)
+import Main.L (D)
 
-let a (b: F): String = D
+let a (b: L): String = D
