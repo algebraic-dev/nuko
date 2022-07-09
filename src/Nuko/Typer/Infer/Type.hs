@@ -1,29 +1,35 @@
 module Nuko.Typer.Infer.Type (
-  inferTy
+  inferTy,
+  findCycle
 ) where
 
 import Data.List          (findIndex, (!!))
-import Relude.Lifted (newIORef)
-import Control.Monad (foldM)
+import Relude.Lifted      (newIORef)
+import Control.Monad      (foldM)
 
-import Relude             (MonadTrans (lift), NonEmpty ((:|)), Eq ((==)), MonadReader (ask), fst, Semigroup ((<>)), show, ($))
-import Relude.Monad       (asks, ReaderT, MonadReader (local), Maybe (..))
+import Relude             (NonEmpty ((:|)), Eq ((==)), fst, show, ($), StateT, Applicative ((*>)))
+import Relude.Monad       (asks, ReaderT, MonadReader (local, ask), Maybe (..), MonadTrans (lift))
 import Relude.String      (Text)
+import Relude.Monoid      (Semigroup ((<>)))
 import Relude.Functor     ((<$>))
+import Relude.Container   (HashMap)
 import Relude.Applicative (Applicative(pure, (<*>)))
 
 import Nuko.Utils         (terminate)
 import Nuko.Tree          (Ty(..), Re)
 import Nuko.Typer.Env     (MonadTyper, getKind)
-import Nuko.Typer.Error   (TypeError(NameResolution))
+import Nuko.Typer.Error   (TypeError(..))
 import Nuko.Typer.Types   (PType, TTy (..), TKind (..), Hole (..))
 import Nuko.Typer.Unify   (unifyKind)
-import Nuko.Resolver.Tree (ReId(text))
+import Nuko.Resolver.Tree (ReId(text), Path (..))
 
 import qualified Control.Monad.Reader as Reader
+import qualified Control.Monad.State.Strict as State
+import qualified Data.HashMap.Strict as HashMap
+import Relude.Foldable (traverse_)
 
-inferTy :: MonadTyper m => Ty Re -> [(Text, TKind)] -> m PType
-inferTy ast poly =
+inferTy :: MonadTyper m =>  [(Text, TKind)] -> Ty Re -> m PType
+inferTy poly ast =
     Reader.runReaderT (go ast) poly
   where
     go :: MonadTyper m => Ty Re -> ReaderT ([(Text, TKind)]) m PType
@@ -56,3 +62,32 @@ inferTy ast poly =
       TForall name ty _    -> do
         hole <- KiHole <$> newIORef (Empty name.text 0)
         local ((name.text,hole) :) (go ty)
+
+data Status = Visiting | Visited
+
+findCycle :: MonadTyper m => Text -> HashMap Text (Ty Re) -> Ty Re -> m ()
+findCycle name recursiveGroup ty = do
+    State.evalStateT (go [name] ty) (HashMap.singleton name Visiting)
+  where
+    setStatus :: MonadTyper m => ReId -> Status -> StateT (HashMap Text Status) m ()
+    setStatus name' status = State.modify (HashMap.insert name'.text status)
+
+    go :: MonadTyper m => [Text] -> Ty Re -> StateT (HashMap Text Status) m ()
+    go stack = \case
+      TId (Local name') _  -> do
+        env <- State.get
+        case HashMap.lookup name'.text env of
+          Nothing       -> do
+            setStatus name' Visiting
+            case HashMap.lookup name'.text recursiveGroup of
+              Just tyRes -> go (name'.text : stack) tyRes *> setStatus name' Visited
+              Nothing    -> pure ()
+          Just Visiting -> do
+            lift (terminate $ CyclicTypeDef stack)
+          Just Visited  -> pure ()
+      TApp ty' args _   -> go stack ty' *> traverse_ (go stack) args
+      TArrow from to _  -> go stack from *> go stack to
+      TForall _ ty' _   -> go stack ty'
+      TId _ _           -> pure ()
+      TPoly _ _         -> pure ()
+

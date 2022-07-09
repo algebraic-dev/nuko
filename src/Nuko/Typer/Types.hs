@@ -9,9 +9,9 @@ module Nuko.Typer.Types (
   PType,
   Int,
   If,
-  convertType,
   printTy,
   printKind,
+  fixKindHoles
 ) where
 
 import Relude.Container    (IntMap)
@@ -21,8 +21,7 @@ import Relude.Bool         (Bool(..))
 import Relude.Monad        (fromMaybe, MonadIO)
 import Relude.Monoid       (Semigroup((<>)))
 import Relude.Numeric      (Int)
-import Relude              (show, Text, MonadIO (liftIO))
-import Unsafe.Coerce       (unsafeCoerce)
+import Relude              (show, Text, MonadIO (liftIO), ($), zip)
 
 import Nuko.Resolver.Tree  (Path (..), ReId(..))
 
@@ -63,17 +62,23 @@ data TTy (v :: Bool) where
   TyApp     :: TTy a -> TTy a                          -> TTy a
 
 instance PrettyTree (TTy Virtual) where
-  prettyTree ty = Node "Type" [unsafePerformIO (printTy ty)] []
+  prettyTree ty = Node "Type" [unsafePerformIO (printTy [] ty)] []
 
 instance PrettyTree (TKind) where
-  prettyTree ty = Node "Kind" [unsafePerformIO (printKind ty)] []
+  prettyTree ty = Node "Kind" [unsafePerformIO (printKind  ty)] []
 
-convertType :: TKind -> TKind
-convertType t = unsafeCoerce t
+fixKindHoles :: MonadIO m => TKind -> m TKind
+fixKindHoles = \case
+  KiHole hole -> do
+    result <- readIORef hole
+    case result of
+      Empty {} -> pure (KiHole hole)
+      Filled t -> fixKindHoles t
+  other -> pure other
 
-printTy :: MonadIO m => TTy Virtual -> m Text
-printTy =
-    helper IntMap.empty
+printTy :: MonadIO m => [Text] -> TTy Virtual -> m Text
+printTy env =
+    helper $ IntMap.fromList (zip [0..] env)
   where
     helper :: MonadIO m => IntMap Text -> TTy Virtual -> m Text
     helper ctx = \case

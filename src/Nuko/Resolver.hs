@@ -47,11 +47,11 @@ initTyDecl (TypeDecl name' _ decl) = do
     curName <- gets (_modName . _currentNamespace)
     let moduleName = curName <> "." <> name'.text
 
-    openName (OccName name'.text TyName) moduleName name'.text
+    -- Probably it can fuck up everything?
+    addGlobal name'.range (OccName name'.text TyName) Public
 
     scopeNameSpace moduleName $ do
       -- Adds twice because it will be inside the module
-      addGlobal name'.range (OccName name'.text TyName) Public
       initFields decl
   where
     initFields :: MonadResolver m => TypeDeclArg Nm -> m ()
@@ -129,7 +129,7 @@ resolveTypeDecl (TypeDecl name' args decl) = do
     resolveDecl = \case
       TypeSym type'   -> TypeSym  <$> resolveType type'
       TypeProd fields -> TypeProd <$> traverse resolveField fields
-      TypeSum fields  -> TypeSum <$> traverse resolveSumField fields
+      TypeSum fields  -> TypeSum  <$> traverse resolveSumField fields
 
 resolveType :: MonadResolver m => Ty Nm -> m (Ty Re)
 resolveType = \case

@@ -5,7 +5,8 @@ module Nuko.Syntax.Range (
     Pos(..),
     oneColRange,
     advancePos,
-    toLabel
+    toLabel,
+    emptyRange
 ) where
 
 import Relude        (Int, Semigroup(..), Char, Num ((+)), Show, show, ($))
@@ -39,6 +40,9 @@ oneColRange point =
         (point { column = point.column + 1})
 
 -- Useful type class :D
+
+emptyRange :: Range
+emptyRange = Range (Pos 0 0) (Pos 0 0)
 
 class HasPosition a where
   getPos :: a -> Range

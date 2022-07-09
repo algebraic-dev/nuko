@@ -14,6 +14,8 @@ data TypeError
   | EscapingScope
   | NotAFunction
   | NameResolution Text
+  | CyclicTypeDef [Text]
+  | CannotFindTySym
   deriving (Show, Generic)
 
 instance PrettyTree TypeError where

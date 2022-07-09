@@ -6,10 +6,9 @@ module Nuko.Typer.Tree where
 import Nuko.Tree
 import Nuko.Syntax.Range  (Range, HasPosition(..))
 import Nuko.Resolver.Tree (ReId, Path)
-import Nuko.Typer.Types   (TTy, Virtual, printTy)
+import Nuko.Typer.Types   (TTy, Virtual)
 import Relude             (Semigroup((<>)), Void, Generic)
-import Pretty.Tree        (PrettyTree(prettyTree), Tree (..))
-import GHC.IO (unsafePerformIO)
+import Pretty.Tree        (PrettyTree)
 
 type instance XName Tc = ReId
 type instance XPath Tc = Path
