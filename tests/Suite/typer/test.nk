@@ -1,6 +1,10 @@
 type List a =
   | Cons a (List a)
-  | Nil
+  | Nil (User a)
 
-type Teste = List Lero
-type Lero = List Teste
+type User a = {
+  name: String,
+  age: Int,
+  likes: List Int,
+  data: List a
+}

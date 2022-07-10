@@ -23,12 +23,25 @@
      | └HashMap
      |   ├Prod
      |   | ├OccName TyName Int
-     |   | └Single Prelude Int
+     |   | └Single (Qualified Prelude Int)
      |   └Prod
      |     ├OccName TyName String
-     |     └Single Prelude String
+     |     └Single (Qualified Prelude String)
      ├_localNames: (NonEmpty HashMap)
-     ├_openedModules: HashMap
+     ├_openedModules:
+     | └HashMap
+     |   └Prod
+     |     ├Ata
+     |     └NameSpace
+     |       ├_modName: Main.Ata
+     |       └_names:
+     |         └HashMap
+     |           ├Prod
+     |           | ├OccName FieldName b
+     |           | └Public
+     |           └Prod
+     |             ├OccName FieldName s
+     |             └Public
      ├_currentNamespace:
      | └NameSpace
      |   ├_modName: Main

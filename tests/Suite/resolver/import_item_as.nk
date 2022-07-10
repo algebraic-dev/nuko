@@ -1,7 +1,0 @@
-type L =
-  | A String Int
-  | D Int String
-
-import Main.L (D)
-
-let a (b: L): String = D

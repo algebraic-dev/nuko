@@ -24,6 +24,7 @@ library
   exposed-modules:
       Control.Monad.Import
       Nuko.Driver
+      Nuko.Report.Range
       Nuko.Resolver
       Nuko.Resolver.Environment
       Nuko.Resolver.Error
@@ -35,7 +36,6 @@ library
       Nuko.Syntax.Lexer.Support
       Nuko.Syntax.Lexer.Tokens
       Nuko.Syntax.Parser
-      Nuko.Syntax.Range
       Nuko.Syntax.Tree
       Nuko.Tree
       Nuko.Tree.Expr
@@ -43,9 +43,9 @@ library
       Nuko.Typer.Env
       Nuko.Typer.Error
       Nuko.Typer.Infer
-      Nuko.Typer.Infer.Expr
-      Nuko.Typer.Infer.Lit
       Nuko.Typer.Infer.Type
+      Nuko.Typer.Infer.TypeDecl
+      Nuko.Typer.Tree
       Nuko.Typer.Types
       Nuko.Typer.Unify
       Nuko.Utils

@@ -74,10 +74,10 @@
      | └HashMap
      |   ├Prod
      |   | ├OccName TyName Int
-     |   | └Single Prelude Int
+     |   | └Single (Qualified Prelude Int)
      |   └Prod
      |     ├OccName TyName String
-     |     └Single Prelude String
+     |     └Single (Qualified Prelude String)
      ├_localNames: (NonEmpty HashMap)
      ├_openedModules: HashMap
      ├_currentNamespace:

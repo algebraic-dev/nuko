@@ -1,9 +1,7 @@
-
-
 import Relude                      (id, ($), Show, IO, unlines, FilePath, ConvertUtf8(encodeUtf8), ByteString, (.), fst, Bool (..), HashMap, zip, Applicative ((<*)), uncurry)
 import Relude.String               (Text)
 import Relude.Monoid               (Semigroup((<>)),Endo(appEndo))
-import Relude.Monad                (Monad((>>=)), MonadIO)
+import Relude.Monad                (Monad((>>=)), MonadIO, Maybe(..))
 import Relude.Functor              (fmap, (<$>), first)
 import Relude.Foldable             (Traversable(sequence, traverse), forM)
 import Relude.Applicative          (Applicative(pure))
@@ -17,12 +15,13 @@ import System.FilePath             (dropExtension, addExtension)
 import Nuko.Syntax.Lexer.Support   (runLexer, Lexer)
 import Nuko.Syntax.Lexer           (scan)
 import Nuko.Syntax.Lexer.Tokens    (Token(TcEOF))
-import Nuko.Syntax.Range           (Ranged (info))
+import Nuko.Report.Range           (Ranged (info))
 import Nuko.Syntax.Parser          (parseProgram)
-import Nuko.Typer.Env              (MonadTyper, TypeSpace(..), emptyTS, unifyHolesWithStar, TyInfo(..))
+import Nuko.Typer.Env              (updateTyKind, MonadTyper, TypeSpace(..), emptyTS, TyInfo(..), TypingEnv (TypingEnv), addTyKind)
 import Nuko.Typer.Infer            (initTypeDecl, inferTypeDecl, checkTypeSymLoop)
 import Nuko.Typer.Error            (TypeError)
-import Nuko.Typer.Types            (TKind(..))
+import Nuko.Typer.Types            (TKind(..), fixKindHoles, removeStar)
+import Nuko.Typer.Infer.TypeDecl   (InitTypeData(..))
 
 import Text.Pretty.Simple          (pShowNoColor)
 
@@ -37,6 +36,7 @@ import qualified Data.Text.Lazy                as LazyT
 import qualified Control.Monad.State.Strict    as State
 import qualified Control.Monad.Trans.Chronicle as Chronicle
 import qualified Control.Monad.Reader          as Reader
+import Data.Traversable (for)
 
 scanUntilEnd :: Lexer [Ranged Token]
 scanUntilEnd = do
@@ -75,24 +75,30 @@ runParser = runThat prettyShowTree (pure . runLexer parseProgram)
 runResolver :: FilePath -> IO TestTree
 runResolver = runThat prettyShowTree $ \content -> pure (stringifyErr (runLexer parseProgram content) >>= \ast -> stringifyErr (resolveEntireProgram ast))
 
-runTypeChecker :: MonadIO m => TypeSpace -> (forall m . MonadTyper m => m a) -> m (These [TypeError] (a, TypeSpace))
+runTypeChecker :: MonadIO m => TypeSpace -> (forall m . MonadTyper m => m a) -> m (These [TypeError] (a, TypingEnv))
 runTypeChecker ts act =
-  first (`appEndo` []) <$> (Chronicle.runChronicleT (Reader.runReaderT (State.runStateT act emptyTS) ts))
+  let te = TypingEnv "Main" ts in
+  first (`appEndo` []) <$> (Chronicle.runChronicleT (State.runStateT act te))
 
 runTyper :: FilePath -> IO TestTree
 runTyper = runThat prettyShowTree $ \content -> do
     let result = stringifyErr (runLexer parseProgram content) >>= \ast -> stringifyErr (resolveEntireProgram ast)
-    let ts = emptyTS { _tsTypes = HashMap.fromList [("Prelude.Int", (KiStar, IsTyDef))] }
+    let ts = emptyTS { _tsTypes = HashMap.fromList [("Prelude.Int", (KiStar, IsTyDef)), ("Prelude.String", (KiStar, IsTyDef))] }
     case result of
       This a    -> pure (This (fmap prettyShow a))
       That a    -> stringifyErr <$> runTypeChecker ts (run (fst a))
-      These b a -> stringifyErr <$> runTypeChecker  ts(run (fst a))
+      These _ a -> stringifyErr <$> runTypeChecker ts (run (fst a))
   where
     run :: MonadTyper m => Program Re -> m [TypeDecl Tc]
     run program = do
       initDatas <- traverse initTypeDecl program.typeDecls
       checkTypeSymLoop program.typeDecls
       checkedTc <- traverse (uncurry inferTypeDecl) (zip program.typeDecls initDatas)
+
+      for initDatas $ \initData -> do
+        res <- fixKindHoles initData.itResKind >>= removeStar
+        updateTyKind initData.itCanonName (\(_, i) -> Just (res, i))
+
       pure checkedTc
 
 runTestPath :: TestName -> FilePath -> (FilePath -> IO TestTree) -> IO TestTree

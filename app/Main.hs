@@ -1,13 +1,12 @@
 module Main (main) where
 
-import Relude
+import Relude                    (Monad((>>)), IO, forM_, print, putStrLn, putText, Text )
+import Data.These                (These(..))
 import Nuko.Syntax.Lexer.Support (runLexer)
-import Nuko.Syntax.Lexer (scan)
-import Nuko.Syntax.Parser (parseProgram)
-import qualified Data.ByteString as IO
-import Data.These
+import Nuko.Syntax.Parser        (parseProgram)
+import Pretty.Tree               (PrettyTree(..))
 
-import Pretty.Tree
+import qualified Data.ByteString as IO
 
 main :: IO ()
 main = do

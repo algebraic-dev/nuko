@@ -1,31 +1,92 @@
 ✓ That
  └Prod
    ├List
+   | ├TypeDecl
+   | | ├tyName: (ReId List 0:5-0:9)
+   | | ├tyArgs: (List (ReId a 0:10-0:11))
+   | | └tyDecl:
+   | |   └TypeSum
+   | |     └NonEmpty
+   | |       ├Prod
+   | |       | ├ReId Cons 1:4-1:8
+   | |       | └List (Type (List [No 0])) (Type [No 0])
+   | |       └Prod
+   | |         ├ReId Nil 2:4-2:7
+   | |         └List (Type (User [No 0]))
    | └TypeDecl
-   |   ├tyName: (ReId A 0:5-0:6)
-   |   ├tyArgs:
-   |   | └List (ReId c 0:9-0:10) (ReId b 0:7-0:8)
+   |   ├tyName: (ReId User 4:5-4:9)
+   |   ├tyArgs: (List (ReId a 4:10-4:11))
    |   └tyDecl:
-   |     └TypeSum
-   |       └NonEmpty
+   |     └TypeProd
+   |       └List
    |         ├Prod
-   |         | ├ReId F 1:4-1:5
-   |         | └List (Type [No 0])
+   |         | ├ReId name 5:2-5:6
+   |         | └Type (forall a. ((User a) -> Prelude.String))
+   |         ├Prod
+   |         | ├ReId age 6:2-6:5
+   |         | └Type (forall a. ((User a) -> Prelude.Int))
+   |         ├Prod
+   |         | ├ReId likes 7:2-7:7
+   |         | └Type (forall a. ((User a) -> (List Prelude.Int)))
    |         └Prod
-   |           ├ReId D 2:4-2:5
-   |           └List (Type [No 1]) (Type [No 0])
-   └TypeSpace
-     ├_tsTypes:
-     | └HashMap
-     |   └Prod
-     |     ├A
-     |     └Kind (^b.0 -> (^c.0 -> *))
-     ├_tsFields: HashMap
-     └_tsConstructors:
-       └HashMap
-         ├Prod
-         | ├F
-         | └Type ([No 0] -> ((A b) c))
-         └Prod
-           ├D
-           └Type ([No 0] -> ([No 1] -> ((A b) c)))
+   |           ├ReId data 8:2-8:6
+   |           └Type (forall a. ((User a) -> (List a)))
+   └TypingEnv
+     ├_teCurModule: Main
+     └_globalTypinvEnv:
+       └TypeSpace
+         ├_tsTypes:
+         | └HashMap
+         |   ├Prod
+         |   | ├Prelude.Int
+         |   | └Prod
+         |   |   ├Kind *
+         |   |   └IsTyDef
+         |   ├Prod
+         |   | ├Main.User
+         |   | └Prod
+         |   |   ├Kind (* -> *)
+         |   |   └IsTyDef
+         |   ├Prod
+         |   | ├Prelude.String
+         |   | └Prod
+         |   |   ├Kind *
+         |   |   └IsTyDef
+         |   └Prod
+         |     ├Main.List
+         |     └Prod
+         |       ├Kind (* -> *)
+         |       └IsTyDef
+         ├_tsConstructors:
+         | └HashMap
+         |   ├Prod
+         |   | ├Main.Nil
+         |   | └Type (forall a. ((User a) -> (List a)))
+         |   └Prod
+         |     ├Main.Cons
+         |     └Type (forall a. (a -> ((List a) -> (List a))))
+         └_tsTypeFields:
+           └HashMap
+             └Prod
+               ├Main.User
+               └HashMap
+                 ├Prod
+                 | ├likes
+                 | └FieldInfo
+                 |   └_fiResultType:
+                 |     └Type (forall a. ((User a) -> (List Prelude.Int)))
+                 ├Prod
+                 | ├name
+                 | └FieldInfo
+                 |   └_fiResultType:
+                 |     └Type (forall a. ((User a) -> Prelude.String))
+                 ├Prod
+                 | ├data
+                 | └FieldInfo
+                 |   └_fiResultType:
+                 |     └Type (forall a. ((User a) -> (List a)))
+                 └Prod
+                   ├age
+                   └FieldInfo
+                     └_fiResultType:
+                       └Type (forall a. ((User a) -> Prelude.Int))

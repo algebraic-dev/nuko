@@ -11,23 +11,25 @@ module Nuko.Typer.Types (
   If,
   printTy,
   printKind,
-  fixKindHoles
+  fixKindHoles,
+  removeStar,
 ) where
 
 import Relude.Container    (IntMap)
-import Relude.Applicative  (Applicative(pure))
-import Relude.Lifted       (IORef, readIORef)
+import Relude.Applicative  (Applicative(pure, (<*>)))
+import Relude.Lifted       (IORef, readIORef, writeIORef)
 import Relude.Bool         (Bool(..))
 import Relude.Monad        (fromMaybe, MonadIO)
 import Relude.Monoid       (Semigroup((<>)))
 import Relude.Numeric      (Int)
-import Relude              (show, Text, MonadIO (liftIO), ($), zip)
+import Relude.Functor      ((<$>))
+import Relude              (show, Text, MonadIO (liftIO), ($), zip, Applicative ((*>)))
 
 import Nuko.Resolver.Tree  (Path (..), ReId(..))
+import GHC.IO              (unsafePerformIO)
+import Pretty.Tree         (PrettyTree (..), Tree (..))
 
 import qualified Data.IntMap.Strict as IntMap
-import Pretty.Tree (PrettyTree (..), Tree (..))
-import GHC.IO (unsafePerformIO)
 
 type TyHole = IORef (Hole (TTy Virtual))
 type KiHole = IORef (Hole TKind)
@@ -74,6 +76,17 @@ fixKindHoles = \case
     case result of
       Empty {} -> pure (KiHole hole)
       Filled t -> fixKindHoles t
+  KiFun a b -> KiFun <$> fixKindHoles a <*> fixKindHoles b
+  other -> pure other
+
+removeStar :: MonadIO m => TKind -> m TKind
+removeStar = \case
+  KiHole hole -> do
+    result <- readIORef hole
+    case result of
+      Empty {} -> writeIORef hole (Filled KiStar) *> pure KiStar
+      Filled t -> fixKindHoles t
+  KiFun a b -> KiFun <$> removeStar a <*> removeStar b
   other -> pure other
 
 printTy :: MonadIO m => [Text] -> TTy Virtual -> m Text

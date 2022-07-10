@@ -1,22 +1,27 @@
 module Nuko.Typer.Env (
   TypeSpace(..),
   TyInfo(..),
+  FieldInfo(..),
+  TypingEnv(..),
   MonadTyper,
   getKind,
   tsTypes,
   addTyKind,
   unifyHolesWithStar,
-  localTypeSpace,
   tsConstructors,
-  tsFields,
   addTy,
-  emptyTS
+  emptyTS,
+  tsTypeFields,
+  fiResultType,
+  addFieldToEnv,
+  teCurModule,
+  updateTyKind
 ) where
 
 import Relude.Applicative      (Applicative(pure, (<*>), (*>)))
-import Relude.Function         ((.))
+import Relude.Function         ((.), ($))
 import Relude.Functor          ((<$>))
-import Relude.Monad            (MonadIO, MonadReader (ask), Maybe (..), MonadState (get, put, state), Either (..), Monad ((>>=)), either, modify)
+import Relude.Monad            (MonadIO, Maybe (..), MonadState, Either (..), either, modify, gets)
 import Relude.String           (Text)
 import Relude.Monoid           ((<>), Endo)
 import Relude.Lifted           (readIORef, writeIORef)
@@ -39,21 +44,33 @@ data TyInfo
   | IsTyDef
   deriving Generic
 
-data TypeSpace = TypeSpace
-  { _tsTypes        :: HashMap Text (TKind, TyInfo)
-  , _tsFields       :: HashMap Text (TTy Virtual)
-  , _tsConstructors :: HashMap Text (TTy Virtual)
+data FieldInfo = FieldInfo
+  { _fiResultType :: TTy Virtual
   } deriving Generic
 
-makeLenses ''TypeSpace
+data TypeSpace = TypeSpace
+  { _tsTypes        :: HashMap Text (TKind, TyInfo)
+  , _tsConstructors :: HashMap Text (TTy Virtual)
+  , _tsTypeFields   :: HashMap Text (HashMap Text FieldInfo)
+  } deriving Generic
 
+data TypingEnv = TypingEnv
+  { _teCurModule     :: Text
+  , _globalTypinvEnv :: TypeSpace
+  } deriving Generic
+
+makeLenses ''FieldInfo
+makeLenses ''TypeSpace
+makeLenses ''TypingEnv
+
+instance PrettyTree TypingEnv where
+instance PrettyTree FieldInfo where
 instance PrettyTree TyInfo where
 instance PrettyTree TypeSpace where
 
 type MonadTyper m =
   ( MonadIO m
-  , MonadReader TypeSpace m
-  , MonadState TypeSpace m
+  , MonadState TypingEnv m
   , MonadChronicle (Endo [TypeError]) m
   )
 
@@ -61,10 +78,18 @@ emptyTS :: TypeSpace
 emptyTS = TypeSpace HashMap.empty HashMap.empty HashMap.empty
 
 addTyKind :: MonadTyper m => Text -> TKind -> TyInfo -> m ()
-addTyKind name ki info = modify (over tsTypes (HashMap.insert name (ki, info)))
+addTyKind name ki info = do
+  curMod <- gets _teCurModule
+  modify (over (globalTypinvEnv . tsTypes) (HashMap.insert (curMod <> "." <> name) (ki, info)))
+
+updateTyKind :: MonadTyper m => Text -> ((TKind, TyInfo) -> Maybe (TKind, TyInfo)) -> m ()
+updateTyKind name f = do
+  modify (over (globalTypinvEnv . tsTypes) (HashMap.update f name))
 
 addTy :: MonadTyper m => Lens' TypeSpace (HashMap Text b) -> Text -> b -> m ()
-addTy lens name ki = modify (over lens (HashMap.insert name ki))
+addTy lens name ki = do
+  curMod <- gets _teCurModule
+  modify (over (globalTypinvEnv . lens) (HashMap.insert (curMod <> "." <> name) ki))
 
 getTypeSpaceKind ::  Text -> TypeSpace -> Either TypeError TKind
 getTypeSpaceKind name' ts =
@@ -74,8 +99,21 @@ getTypeSpaceKind name' ts =
       Nothing        -> Left (NameResolution name')
 
 getKind :: MonadTyper m => Path -> m TKind
-getKind (Local name')      = get >>= either terminate pure . getTypeSpaceKind name'.text
-getKind (Path mod name' _) = ask >>= either terminate pure . getTypeSpaceKind (mod <> "." <> name'.text)
+getKind path = do
+  curMod <- gets _teCurModule
+  let canonicalPath =
+        case path of
+          (Local name') -> curMod <> "." <> name'.text
+          (Path mod name' _) -> mod <> "." <> name'.text
+  ts     <- gets _globalTypinvEnv
+  either terminate pure (getTypeSpaceKind canonicalPath ts)
+
+addFieldToEnv :: MonadTyper m => Text -> Text -> FieldInfo -> m ()
+addFieldToEnv typeName fieldName fieldInfo = do
+  curMod <- gets _teCurModule
+  modify
+    $ over (globalTypinvEnv . tsTypeFields)
+    $ HashMap.insertWith ((<>)) (curMod <> "." <> typeName) (HashMap.singleton fieldName fieldInfo)
 
 unifyHolesWithStar :: MonadTyper m => TKind -> m TKind
 unifyHolesWithStar = \case
@@ -86,11 +124,3 @@ unifyHolesWithStar = \case
     case content of
       Empty _ _  -> writeIORef hole (Filled KiStar) *> pure KiStar
       Filled res -> unifyHolesWithStar res
-
-localTypeSpace :: MonadTyper m => TypeSpace -> m a -> m (a, TypeSpace)
-localTypeSpace ts action = do
-  current <- get
-  put ts
-  result <- action
-  typeSpace <- state (\s -> (s, current))
-  pure (result, typeSpace)

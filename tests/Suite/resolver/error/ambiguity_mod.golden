@@ -1,13 +1,7 @@
 ✗ This
 "AmbiguousNames
     ( fromList
-        [
-            ( "D"
-            , "Main.L"
-            )
-        ,
-            ( "D"
-            , "Main.G"
-            )
+        [ Qualified "D" "Main.L"
+        , Qualified "D" "Main.G"
         ]
     )"

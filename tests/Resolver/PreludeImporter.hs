@@ -4,7 +4,7 @@ module Resolver.PreludeImporter (
 ) where
 
 
-import Nuko.Resolver.Environment (NameSpace, LocalNS(..), Label(..), emptyLocalNS)
+import Nuko.Resolver.Environment (NameSpace, LocalNS(..), Label(..), emptyLocalNS, Qualified (..))
 import Nuko.Resolver.Occourence  (NameKind(..), OccName(..), insertEnv)
 import Nuko.Resolver.Error       (ResolveError)
 import Nuko.Resolver.Types       (MonadResolver)
@@ -44,8 +44,8 @@ runResolver action localNS predefined = first (`appEndo` []) (Chronicle.runChron
 resolveEntireProgram :: Program Nm -> These [ResolveError] (Program Re, LocalNS)
 resolveEntireProgram tree =
     let localNS  = (emptyLocalNS "Main") { _openedNames = openedLs}
-        openedLs = insertEnv (OccName "Int" TyName)    (Single "Int" "Prelude")
-                 $ insertEnv (OccName "String" TyName) (Single "String" "Prelude")
+        openedLs = insertEnv (OccName "Int" TyName)    (Single (Qualified "Int" "Prelude"))
+                 $ insertEnv (OccName "String" TyName) (Single (Qualified "String" "Prelude"))
                    Occ.empty in
         runResolver (initProgram tree) localNS HashMap.empty
     >>= \(_, initNS) -> runResolver (resolveProgram tree) initNS (initNS._newNamespaces)
