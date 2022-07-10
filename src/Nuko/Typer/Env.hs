@@ -10,39 +10,29 @@ module Nuko.Typer.Env (
   tsConstructors,
   tsFields,
   addTy,
-  generalizeTy,
   emptyTS
 ) where
 
-import Relude.Monad            (MonadIO (liftIO), MonadReader (ask), Maybe (..), MonadState (get, put, state), Either (..), Monad ((>>=)), either, modify, StateT, isNothing, join)
+import Relude.Applicative      (Applicative(pure, (<*>), (*>)))
+import Relude.Function         ((.))
+import Relude.Functor          ((<$>))
+import Relude.Monad            (MonadIO, MonadReader (ask), Maybe (..), MonadState (get, put, state), Either (..), Monad ((>>=)), either, modify)
 import Relude.String           (Text)
 import Relude.Monoid           ((<>), Endo)
-import Relude.Function         ((.), ($))
-import Relude.Functor          ((<$>))
 import Relude.Lifted           (readIORef, writeIORef)
+import Relude.Base             (Generic)
 
 import Nuko.Utils              (terminate)
-import Nuko.Typer.Types        (Hole (..), TKind (..), TTy (..), Virtual, Int)
+import Nuko.Typer.Types        (Hole (..), TKind (..), TTy (..), Virtual)
 import Nuko.Typer.Error        (TypeError(NameResolution))
-import Nuko.Typer.Types        (TyHole)
-import Nuko.Resolver.Tree      (Path (..), ReId(text, ReId))
+import Nuko.Resolver.Tree      (Path (..), ReId(text))
 
+import Pretty.Tree             (PrettyTree)
 import Data.HashMap.Strict     (HashMap, lookup)
-import Relude.Applicative      (Applicative(pure, (<*>), (*>)))
 import Control.Monad.Chronicle (MonadChronicle)
 import Lens.Micro.Platform     (makeLenses, over, Lens')
 
 import qualified Data.HashMap.Strict as HashMap
-import Relude.Base (Generic)
-import Pretty.Tree (PrettyTree)
-import Relude.Container (IntMap, HashSet)
-import qualified Data.IntMap as IntMap
-import Control.Monad (sequence)
-import Nuko.Syntax.Lexer.Support (ghostRange)
-import Nuko.Syntax.Range (emptyRange)
-import qualified Control.Monad.State.Strict as State
-import qualified Data.HashSet as HashSet
-import Relude ((+), Foldable (foldr), show)
 
 data TyInfo
   = IsTySyn
@@ -86,32 +76,6 @@ getTypeSpaceKind name' ts =
 getKind :: MonadTyper m => Path -> m TKind
 getKind (Local name')      = get >>= either terminate pure . getTypeSpaceKind name'.text
 getKind (Path mod name' _) = ask >>= either terminate pure . getTypeSpaceKind (mod <> "." <> name'.text)
-
-generalizeTy :: MonadTyper m => TTy Virtual -> m (TTy Virtual)
-generalizeTy ty = do
-    (res, holes) <- State.runStateT (helper 0 ty) 0
-    pure (foldr (\n b -> TyForall ("'" <> show (n :: Int)) (\_ -> b)) res [0..holes])
-  where
-    helper :: MonadTyper m => Int -> TTy Virtual -> StateT Int m (TTy Virtual)
-    helper scope = \case
-      TyIdent id   -> pure (TyIdent id)
-      TyVar int    -> pure (TyVar int)
-      TyForall n f -> do
-        _ <- helper (scope + 1) (f (TyIdent (Local (ReId n emptyRange))))
-        pure (TyForall n f)
-      TyApp a b    -> TyApp <$> helper scope a <*> helper scope b
-      TyFun a b    -> TyFun <$> helper scope a <*> helper scope b
-      TyHole hole  -> do
-        content <- liftIO (readIORef hole)
-        case content of
-          Empty {} -> do
-            curAdd <- State.get
-            State.modify (+ 1)
-            let ty' = TyVar (scope + curAdd)
-            writeIORef hole (Filled ty)
-            pure ty'
-          Filled a  -> helper scope a
-
 
 unifyHolesWithStar :: MonadTyper m => TKind -> m TKind
 unifyHolesWithStar = \case

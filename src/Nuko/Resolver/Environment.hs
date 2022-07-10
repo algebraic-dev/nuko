@@ -4,6 +4,7 @@ module Nuko.Resolver.Environment (
   NameSpace(..),
   Label(..),
   LocalNS(..),
+  Qualified(..),
   joinLabels,
   localNames,
   openedNames,
@@ -24,13 +25,14 @@ module Nuko.Resolver.Environment (
   emptyLocalNS,
 ) where
 
+
 import Nuko.Resolver.Occourence (OccEnv (OccEnv), empty, OccName(..), lookupEnv, insertEnv, updateEnvWith)
-import Nuko.Syntax.Range        (Range(..))
+import Nuko.Report.Range        (Range(..))
 
 import Relude.String            (Text)
-import Relude.Container         (HashSet, HashMap)
+import Relude.Container         (HashSet, HashMap, Hashable)
 import Relude.Base              (Eq((==)))
-import Relude.Bool              (otherwise, Bool (..), (&&))
+import Relude.Bool              (otherwise, Bool (..))
 import Relude.Monoid            ((<>))
 import Relude.Applicative       (Applicative(pure))
 import Relude.Monad             (modify, MonadState, fromMaybe, gets)
@@ -53,31 +55,36 @@ data Visibility
   | Private
   deriving (Eq, Show, Generic)
 
+data Qualified = Qualified Text Text deriving (Generic, Eq, Show)
+
+instance Hashable Qualified where
+
 data NameSpace = NameSpace
   { _modName :: Text
   , _names   :: OccEnv Visibility
   } deriving (Show, Generic)
 
+instance PrettyTree Qualified where
 instance PrettyTree Visibility where
 instance PrettyTree NameSpace where
 
 makeLenses ''NameSpace
 
 data Label
-   = Single Text Text
-   | Ambiguous (HashSet (Text, Text))
-   deriving (Show, Generic)
+   = Single Qualified
+   | Ambiguous (HashSet Qualified)
+   deriving Generic
 
 instance PrettyTree Label where
 
 joinLabels :: Label -> Label -> Label
 joinLabels a' b' = case (a', b') of
-  (Single r a, Ambiguous rf)  -> Ambiguous (HashSet.insert (r, a) rf)
-  (Ambiguous rf, Single r a)  -> Ambiguous (HashSet.insert (r, a) rf)
+  (Single r, Ambiguous rf)    -> Ambiguous (HashSet.insert r rf)
+  (Ambiguous rf, Single r)    -> Ambiguous (HashSet.insert r rf)
   (Ambiguous r, Ambiguous r') -> Ambiguous (r <> r')
-  (Single r a, Single r' b)
-    | a == b && r == r' -> Single r a
-    | otherwise         -> Ambiguous (HashSet.fromList [(r, a), (r', b)])
+  (Single r, Single r')
+    | r == r'   -> Single r
+    | otherwise -> Ambiguous (HashSet.fromList [r, r'])
 
 -- | LocalScope describes a single scope that stores if it's used
 -- and where it's the defined.
@@ -93,14 +100,18 @@ data LocalNS = LocalNS
   , _openedModules    :: HashMap Text NameSpace
   , _currentNamespace :: NameSpace
   , _newNamespaces    :: HashMap Text NameSpace
-  } deriving (Show, Generic)
+  } deriving Generic
 
 instance PrettyTree LocalNS where
 
 makeLenses ''LocalNS
 
+emptyNS :: Text -> NameSpace
+emptyNS moduleName = NameSpace moduleName Occ.empty
+
 emptyLocalNS :: Text -> LocalNS
-emptyLocalNS moduleName = LocalNS Occ.empty (one Occ.empty) HashMap.empty (NameSpace moduleName Occ.empty) HashMap.empty
+emptyLocalNS moduleName =
+  LocalNS Occ.empty (one Occ.empty) HashMap.empty (emptyNS moduleName) HashMap.empty
 
 -- Functions to help the localNames because it's a really messy type
 
@@ -112,12 +123,14 @@ scopeLocals action = do
   modify (over localNames (fromMaybe (one empty) . snd . uncons))
   pure result
 
-scopeNameSpace :: MonadState LocalNS m => Text -> m a -> m a
-scopeNameSpace name action = do
+scopeNameSpace :: MonadState LocalNS m => Text -> Text -> m a -> m a
+scopeNameSpace singleName name action = do
   last <- gets _currentNamespace
   modify (set currentNamespace (NameSpace name empty))
   res <- action
-  modify (\s -> s { _currentNamespace = last, _newNamespaces = HashMap.insert name s._currentNamespace s._newNamespaces })
+  modify (\s -> s { _currentNamespace = last
+                  , _newNamespaces = HashMap.insert name s._currentNamespace s._newNamespaces
+                  , _openedModules = HashMap.insert singleName s._currentNamespace s._openedModules })
   pure res
 
 setUsage :: LocalNS -> OccName -> Bool -> Maybe LocalNS
@@ -152,7 +165,9 @@ addLocal range name = do
   modify (set localNames (updateEnvWith name ((range, False) <|) (one (range, False)) scope :| names'))
 
 openName :: MonadState LocalNS m => OccName -> Text -> Text -> m ()
-openName name modName' ref = modify (over openedNames (updateEnvWith name (joinLabels (Single ref modName')) (Single ref modName')))
+openName name modName' ref =
+  let joinOp = joinLabels (Single (Qualified ref modName'))
+  in modify (over openedNames (updateEnvWith name joinOp (Single (Qualified ref modName'))))
 
 addDef :: MonadState LocalNS m => OccName -> Visibility -> m ()
 addDef name vs = modify (over (currentNamespace . names) (insertEnv name vs))

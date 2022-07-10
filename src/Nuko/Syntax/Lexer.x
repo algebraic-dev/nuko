@@ -15,7 +15,7 @@ import Nuko.Utils           (flag)
 
 import Nuko.Syntax.Lexer.Support
 import Nuko.Syntax.Lexer.Tokens
-import Nuko.Syntax.Range
+import Nuko.Report.Range
 
 import qualified Control.Monad.State     as State
 import qualified Data.ByteString         as ByteString

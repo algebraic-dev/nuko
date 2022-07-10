@@ -4,7 +4,6 @@ module Nuko.Typer.Infer.Type (
 ) where
 
 import Data.List          (findIndex, (!!))
-import Relude.Lifted      (newIORef)
 import Control.Monad      (foldM)
 
 import Relude             (NonEmpty ((:|)), Eq ((==)), fst, show, ($), StateT, Applicative ((*>)))
@@ -12,6 +11,8 @@ import Relude.Monad       (asks, ReaderT, MonadReader (local, ask), Maybe (..), 
 import Relude.String      (Text)
 import Relude.Monoid      (Semigroup ((<>)))
 import Relude.Functor     ((<$>))
+import Relude.Lifted      (newIORef)
+import Relude.Foldable    (traverse_)
 import Relude.Container   (HashMap)
 import Relude.Applicative (Applicative(pure, (<*>)))
 
@@ -23,10 +24,9 @@ import Nuko.Typer.Types   (PType, TTy (..), TKind (..), Hole (..))
 import Nuko.Typer.Unify   (unifyKind)
 import Nuko.Resolver.Tree (ReId(text), Path (..))
 
-import qualified Control.Monad.Reader as Reader
+import qualified Control.Monad.Reader       as Reader
 import qualified Control.Monad.State.Strict as State
-import qualified Data.HashMap.Strict as HashMap
-import Relude.Foldable (traverse_)
+import qualified Data.HashMap.Strict        as HashMap
 
 inferTy :: MonadTyper m =>  [(Text, TKind)] -> Ty Re -> m PType
 inferTy poly ast =
@@ -62,6 +62,10 @@ inferTy poly ast =
       TForall name ty _    -> do
         hole <- KiHole <$> newIORef (Empty name.text 0)
         local ((name.text,hole) :) (go ty)
+
+-- This is some kind of DFS but for a directed graph that the vertex
+-- are just other types in the same recursive group as the the type syn
+-- we are testing.
 
 data Status = Visiting | Visited
 

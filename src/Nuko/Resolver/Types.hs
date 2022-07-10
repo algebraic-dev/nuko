@@ -8,11 +8,11 @@ module Nuko.Resolver.Types (
 ) where
 
 import Nuko.Resolver.Occourence  (lookupEnv, OccName(..), NameKind, findAltKeyValue)
-import Nuko.Resolver.Environment (LocalNS(..), NameSpace(..), Label (..), setUsage, Visibility (Private, Public), currentNamespace, names, addDef)
+import Nuko.Resolver.Environment (LocalNS(..), NameSpace(..), Label (..), setUsage, Visibility (Private, Public), currentNamespace, names, addDef, Qualified (..))
 import Nuko.Resolver.Error       (ResolveError (..))
 import Nuko.Resolver.Tree        (Path (Local, Path), ReId(..))
 import Nuko.Tree.TopLevel        (ImpPath)
-import Nuko.Syntax.Range         (Range(..))
+import Nuko.Report.Range         (Range(..))
 import Nuko.Syntax.Tree          (Name(..))
 import Nuko.Utils                (terminate)
 import Nuko.Tree                 (Nm, Re, XPath)
@@ -61,8 +61,8 @@ resolveName kind' loc info = do
   where
     resolveAmbiguity :: MonadResolver m => Label -> m Path
     resolveAmbiguity = \case
-      (Ambiguous refs)  -> terminate (AmbiguousNames refs)
-      (Single ref mod') -> pure (Path mod' (ReId ref loc) loc)
+      (Ambiguous refs)              -> terminate (AmbiguousNames refs)
+      (Single (Qualified ref mod')) -> pure (Path mod' (ReId ref loc) loc)
 
 findInSpace :: MonadResolver m => NameSpace -> Range -> Text -> NonEmpty NameKind -> m OccName
 findInSpace space loc name occs =

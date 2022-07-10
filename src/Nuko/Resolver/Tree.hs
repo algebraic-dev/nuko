@@ -8,7 +8,7 @@
 module Nuko.Resolver.Tree where
 
 import Nuko.Tree
-import Nuko.Syntax.Range  (Range, HasPosition(..), toLabel)
+import Nuko.Report.Range  (Range, HasPosition(..), toLabel)
 import Relude             (Show, Semigroup((<>)), Void, Generic, show)
 import Data.Text          (Text)
 import Pretty.Tree        (PrettyTree (prettyTree), Tree (Node))

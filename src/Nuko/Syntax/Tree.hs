@@ -6,7 +6,7 @@
 module Nuko.Syntax.Tree where
 
 import Nuko.Tree
-import Nuko.Syntax.Range  (Range, HasPosition(..), toLabel)
+import Nuko.Report.Range  (Range, HasPosition(..), toLabel)
 import Relude             (Show, Semigroup((<>)), Void, show, Functor (fmap))
 import Data.Text          (Text, intercalate)
 import GHC.Generics       (Generic)

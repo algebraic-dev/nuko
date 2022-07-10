@@ -1,4 +1,4 @@
-module Nuko.Syntax.Range (
+module Nuko.Report.Range (
     HasPosition(..),
     Ranged(..),
     Range(..),

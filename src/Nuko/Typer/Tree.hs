@@ -4,7 +4,7 @@
 module Nuko.Typer.Tree where
 
 import Nuko.Tree
-import Nuko.Syntax.Range  (Range, HasPosition(..))
+import Nuko.Report.Range  (Range, HasPosition(..))
 import Nuko.Resolver.Tree (ReId, Path)
 import Nuko.Typer.Types   (TTy, Virtual)
 import Relude             (Semigroup((<>)), Void, Generic)

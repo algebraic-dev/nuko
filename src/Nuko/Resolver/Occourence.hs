@@ -31,13 +31,6 @@ data OccName = OccName
   , kind :: NameKind
   } deriving (Eq, Generic, Show)
 
-instance PrettyTree NameKind where
-instance PrettyTree OccName where
-  prettyTree t = Node "OccName" [show t.kind, t.occName] []
-
-instance Hashable NameKind where
-instance Hashable OccName where
-
 -- | Useful to store things like visibility of an name inside a module
 newtype OccEnv a = OccEnv (HashMap OccName a)
   deriving newtype (Semigroup, Monoid, Functor, Show)
@@ -63,3 +56,13 @@ empty = OccEnv HashMap.empty
 
 findAltKeyValue :: NonEmpty OccName -> OccEnv a -> Maybe (OccName, a)
 findAltKeyValue names env = asum (fmap (\name -> fmap (name, ) (lookupEnv name env)) names)
+
+-- Instances
+
+instance PrettyTree OccName where
+  prettyTree t = Node "OccName" [show t.kind, t.occName] []
+
+instance PrettyTree NameKind where
+
+instance Hashable NameKind where
+instance Hashable OccName where

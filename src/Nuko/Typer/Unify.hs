@@ -5,7 +5,7 @@ module Nuko.Typer.Unify (
 import Relude.Bool        (when, Bool (..), not)
 import Relude.Base        ((==))
 import Relude.Applicative (Applicative(pure, (*>), (<*>)))
-import Relude.Lifted      (readIORef, writeIORef, putStrLn)
+import Relude.Lifted      (readIORef, writeIORef)
 import Relude.Functor     ((<$>))
 import Relude.Monad       ((=<<))
 
@@ -16,19 +16,21 @@ import Nuko.Typer.Error   (TypeError(..))
 import Data.Function      (($))
 
 unifyKind :: MonadTyper m => TKind -> TKind -> m ()
-unifyKind k k' = case (k, k') of
-    (KiHole hole, _) -> do
-      content <- readIORef hole
-      ty <- fixKindHoles k'
-      case content of
-        Filled fil -> unifyKind fil ty
-        Empty {}   -> when (not $ isEq hole ty) $ do
-          unifyPreCheck hole ty
-          writeIORef hole (Filled ty)
-    (ty, KiHole hole)        -> unifyKind (KiHole hole) ty
-    (KiStar, KiStar)         -> pure ()
-    (KiFun a b, KiFun a' b') -> unifyKind a a' *> unifyKind b b'
-    (_, _)                   -> terminate =<< CannotUnify <$> printKind k <*> printKind k'
+unifyKind k1 k1' = do
+    (k, k') <- (,) <$> fixKindHoles k1 <*> fixKindHoles k1'
+    case (k, k') of
+      (KiHole hole, _) -> do
+        content <- readIORef hole
+        ty <- fixKindHoles k'
+        case content of
+          Filled fil -> unifyKind fil ty
+          Empty {}   -> when (not $ isEq hole ty) $ do
+            unifyPreCheck hole ty
+            writeIORef hole (Filled ty)
+      (ty, KiHole hole)        -> unifyKind (KiHole hole) ty
+      (KiStar, KiStar)         -> pure ()
+      (KiFun a b, KiFun a' b') -> unifyKind a a' *> unifyKind b b'
+      (_, _)                   -> terminate =<< CannotUnify <$> printKind k <*> printKind k'
   where
     isEq hole ty = case ty of { KiHole hole' -> hole == hole'; _ -> False }
 

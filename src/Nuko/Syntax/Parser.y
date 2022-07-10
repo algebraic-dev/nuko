@@ -10,8 +10,8 @@ import Relude
 import Nuko.Syntax.Lexer.Support
 import Nuko.Syntax.Lexer.Tokens
 import Nuko.Syntax.Lexer
-import Nuko.Syntax.Range
-import Nuko.Syntax.Range
+import Nuko.Report.Range
+import Nuko.Report.Range
 import Nuko.Syntax.Tree
 import Nuko.Syntax.Error
 import Nuko.Utils

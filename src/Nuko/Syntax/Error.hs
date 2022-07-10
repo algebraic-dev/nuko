@@ -4,7 +4,7 @@ module Nuko.Syntax.Error (
 ) where
 
 import Relude (Show)
-import Nuko.Syntax.Range ( Ranged, Range, Pos )
+import Nuko.Report.Range ( Ranged, Range, Pos )
 import Nuko.Syntax.Lexer.Tokens (Token)
 
 data Case = UpperCase | LowerCase

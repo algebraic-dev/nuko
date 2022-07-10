@@ -16,7 +16,7 @@ import Nuko.Resolver.Tree         (ReId(ReId), Path (..))
 import Nuko.Resolver.Types        (MonadResolver, makePath, addGlobal, findInSpace, resolvePath, resolveName)
 import Nuko.Resolver.Error        (ResolveError(..))
 import Nuko.Resolver.Occourence   (OccName(..), NameKind (..))
-import Nuko.Syntax.Range          (Range(..))
+import Nuko.Report.Range          (Range(..))
 import Nuko.Syntax.Tree           (Name(..))
 import Nuko.Tree                  (Nm, Re)
 import Nuko.Utils                 (terminate)
@@ -30,11 +30,11 @@ import Relude.Container           (One (one))
 import Relude.List                (NonEmpty ((:|)))
 import Relude                     (traverse_, ($), Traversable (traverse), (.), ($>), fst, when, Ord ((>)), for_)
 
+import Data.List.NonEmpty         (groupAllWith)
 import Data.HashMap.Strict        (HashMap)
 import Control.Monad.Import       (ImportErrorKind(..), MonadImport (..))
 
 import qualified Data.HashMap.Strict as HashMap
-import Data.List.NonEmpty (groupAllWith)
 import qualified Data.List.NonEmpty as NonEmpty
 
 -- Init for mutual things.
@@ -50,7 +50,7 @@ initTyDecl (TypeDecl name' _ decl) = do
     -- Probably it can fuck up everything?
     addGlobal name'.range (OccName name'.text TyName) Public
 
-    scopeNameSpace moduleName $ do
+    scopeNameSpace name'.text moduleName $ do
       -- Adds twice because it will be inside the module
       initFields decl
   where
@@ -134,7 +134,7 @@ resolveTypeDecl (TypeDecl name' args decl) = do
 resolveType :: MonadResolver m => Ty Nm -> m (Ty Re)
 resolveType = \case
   TPoly (Name t r) ext'         -> do
-    res <- resolveName TyName r t 
+    res <- resolveName TyName r t
     case res of
       Local res' -> pure (TPoly res' ext')
       _          -> pure (TId res ext') -- Probably impossible

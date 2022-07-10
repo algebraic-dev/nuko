@@ -35,7 +35,7 @@ import Relude             (fst, snd, ($), Int, Word8, (.),  const)
 import Data.These               (These)
 import Data.ByteString.Internal (w2c)
 import Control.Monad.Chronicle  (MonadChronicle, Chronicle)
-import Nuko.Syntax.Range        (Pos, Ranged, Range)
+import Nuko.Report.Range        (Pos, Ranged, Range)
 import Nuko.Syntax.Error        (SyntaxError(..))
 import Nuko.Utils               (flag)
 
@@ -43,7 +43,7 @@ import qualified Control.Monad.Chronicle as Chronicle
 import qualified Control.Monad.State     as State
 import qualified Data.List.NonEmpty      as NonEmpty
 import qualified Data.ByteString         as ByteString
-import qualified Nuko.Syntax.Range       as Range
+import qualified Nuko.Report.Range       as Range
 
 -- | AlexInput is the Data Type used by the Alex inside the
 -- generated code to track the input data.
