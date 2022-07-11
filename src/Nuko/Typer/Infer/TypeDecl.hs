@@ -5,7 +5,7 @@ module Nuko.Typer.Infer.TypeDecl (
   checkTypeSymLoop
 ) where
 
-import Relude                (newIORef, snd, fst, Foldable (foldl'), writeIORef, Applicative ((*>)), ($), HashMap, gets, Semigroup ((<>)))
+import Relude                (newIORef, snd, fst, Foldable (foldl'), writeIORef, Applicative ((*>)), ($), HashMap, gets, Semigroup ((<>)), uncurry, flip)
 import Relude.String         (Text)
 import Relude.Functor        (Functor(fmap), (<$>))
 import Relude.Foldable       (Foldable(foldr), Traversable(traverse), traverse_, for_)
@@ -15,12 +15,13 @@ import Nuko.Typer.Tree       () -- Just to make the equality between XName Re an
 import Nuko.Tree             (TypeDecl(..), Re, Tc, Ty, XName, XTy)
 import Nuko.Typer.Env        (MonadTyper, addTyKind, addTy, tsConstructors, TyInfo (IsTySyn, IsTyDef), addFieldToEnv, FieldInfo (FieldInfo), TypingEnv (_teCurModule))
 import Nuko.Typer.Types      (Hole (..), TKind (..), TTy (..), Virtual, KiHole)
-import Nuko.Resolver.Tree    (ReId(text), Path (Local))
+import Nuko.Resolver.Tree    (ReId(text, ReId), Path (Local))
 import Nuko.Tree.TopLevel    (TypeDeclArg(..))
 import Nuko.Typer.Infer.Type (inferTy, findCycle)
 import Nuko.Typer.Unify      (unifyKind)
 
 import qualified Data.HashMap.Strict as HashMap
+import Nuko.Report.Range (emptyRange)
 
 data InitTypeData =
   InitTypeData
@@ -34,7 +35,8 @@ data InitTypeData =
 checkTypeSymLoop :: MonadTyper m => [TypeDecl Re] -> m ()
 checkTypeSymLoop decls = do
     let filtered = filterDec decls HashMap.empty
-    for_ (HashMap.toList filtered) $ \(name, ty) -> findCycle name filtered ty
+    curMod <- gets _teCurModule
+    for_ (HashMap.toList filtered) $ \(name, ty) -> findCycle curMod name filtered ty
   where
     filterDec :: [TypeDecl Re] -> HashMap Text (Ty Re) -> HashMap Text (Ty Re)
     filterDec [] m  = m
@@ -56,7 +58,7 @@ initTypeDecl decl = do
   addTyKind decl.tyName.text curKind tyInfo
 
   let typeTy = (TyIdent (Local decl.tyName))
-  let resultantType = foldl' TyApp typeTy ((\n -> TyIdent (Local n)) <$> decl.tyArgs)
+  let resultantType = foldl' (\a (k, t) -> TyApp k a t) typeTy ((\(n, k) -> (k, TyIdent (Local (ReId n emptyRange)))) <$> bindings)
 
   curMod <- gets _teCurModule
   let canonName = curMod <> "." <> decl.tyName.text

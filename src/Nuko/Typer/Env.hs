@@ -1,8 +1,9 @@
 module Nuko.Typer.Env (
   TypeSpace(..),
-  TyInfo(..),
   FieldInfo(..),
   TypingEnv(..),
+  TyInfo(..),
+  ScopeEnv(..),
   MonadTyper,
   getKind,
   tsTypes,
@@ -15,20 +16,24 @@ module Nuko.Typer.Env (
   fiResultType,
   addFieldToEnv,
   teCurModule,
-  updateTyKind
+  updateTyKind,
+  seScope,
+  seVars,
+  eagerInstantiate,
+  removeHoles,
 ) where
 
 import Relude.Applicative      (Applicative(pure, (<*>), (*>)))
 import Relude.Function         ((.), ($))
 import Relude.Functor          ((<$>))
-import Relude.Monad            (MonadIO, Maybe (..), MonadState, Either (..), either, modify, gets)
+import Relude.Monad            (MonadIO, Maybe (..), MonadState, Either (..), either, modify, gets, MonadReader(ask), asks)
 import Relude.String           (Text)
 import Relude.Monoid           ((<>), Endo)
-import Relude.Lifted           (readIORef, writeIORef)
+import Relude.Lifted           (readIORef, writeIORef, newIORef)
 import Relude.Base             (Generic)
 
 import Nuko.Utils              (terminate)
-import Nuko.Typer.Types        (Hole (..), TKind (..), TTy (..), Virtual)
+import Nuko.Typer.Types        (Hole (..), TKind (..), TTy (..), Virtual, Int)
 import Nuko.Typer.Error        (TypeError(NameResolution))
 import Nuko.Resolver.Tree      (Path (..), ReId(text))
 
@@ -59,9 +64,15 @@ data TypingEnv = TypingEnv
   , _globalTypinvEnv :: TypeSpace
   } deriving Generic
 
+data ScopeEnv = ScopeEnv
+  { _seVars  :: HashMap Text (TTy Virtual)
+  , _seScope :: Int
+  } deriving Generic
+
 makeLenses ''FieldInfo
 makeLenses ''TypeSpace
 makeLenses ''TypingEnv
+makeLenses ''ScopeEnv
 
 instance PrettyTree TypingEnv where
 instance PrettyTree FieldInfo where
@@ -71,8 +82,26 @@ instance PrettyTree TypeSpace where
 type MonadTyper m =
   ( MonadIO m
   , MonadState TypingEnv m
+  , MonadReader ScopeEnv m
   , MonadChronicle (Endo [TypeError]) m
   )
+
+eagerInstantiate :: MonadTyper m => TTy Virtual -> m (TTy Virtual)
+eagerInstantiate = \case
+  TyForall n f -> do
+    curScope <- asks _seScope
+    hole     <- TyHole <$> newIORef (Empty n curScope)
+    pure (f hole)
+  other -> pure other
+
+removeHoles :: MonadTyper m => TTy Virtual -> m (TTy Virtual)
+removeHoles = \case
+    TyHole hole -> do
+      content <- readIORef hole
+      case content of
+        Empty {} -> pure (TyHole hole)
+        Filled f -> removeHoles f
+    other -> pure other
 
 emptyTS :: TypeSpace
 emptyTS = TypeSpace HashMap.empty HashMap.empty HashMap.empty

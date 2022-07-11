@@ -7,15 +7,22 @@ module Nuko.Syntax.Tree where
 
 import Nuko.Tree
 import Nuko.Report.Range  (Range, HasPosition(..), toLabel)
-import Relude             (Show, Semigroup((<>)), Void, show, Functor (fmap))
+import Relude             (Show, Semigroup((<>)), Void, show, Functor (fmap), Eq ((==)))
 import Data.Text          (Text, intercalate)
 import GHC.Generics       (Generic)
 import Pretty.Tree        (PrettyTree (prettyTree), Tree (Node))
+import Relude.Bool        ((&&))
 
 type Normal = Nuko 'Normal
 
 data Name = Name { text :: Text, range :: Range } deriving Show
 data Path = Path { mod :: [Name], last :: Name, range :: Range } deriving Show
+
+instance Eq Name where
+  (Name t _) == (Name g _) = t == g
+
+instance Eq Path where
+  (Path mod name _) == (Path mod' name' _) = mod == mod' && name == name'
 
 type instance XName Nm = Name
 type instance XPath Nm = Path

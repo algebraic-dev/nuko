@@ -61,7 +61,7 @@ data TTy (v :: Bool) where
   TyVar     :: Int                                     -> TTy a
   TyIdent   :: Path                                    -> TTy a
   TyFun     :: TTy a -> TTy a                          -> TTy a
-  TyApp     :: TTy a -> TTy a                          -> TTy a
+  TyApp     :: TKind -> TTy a -> TTy a                 -> TTy a
 
 instance PrettyTree (TTy Virtual) where
   prettyTree ty = Node "Type" [unsafePerformIO (printTy [] ty)] []
@@ -112,7 +112,7 @@ printTy env =
           Filled a      -> do
             filledRes <- helper ctx a
             pure ("~" <> filledRes)
-      TyApp a b -> do
+      TyApp _ a b -> do
         resA <- helper ctx a
         resB <- helper ctx b
         pure ("(" <> resA <> " " <> resB <> ")")

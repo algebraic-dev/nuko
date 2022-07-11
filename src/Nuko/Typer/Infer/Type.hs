@@ -4,9 +4,9 @@ module Nuko.Typer.Infer.Type (
 ) where
 
 import Data.List          (findIndex, (!!))
-import Control.Monad      (foldM)
+import Control.Monad      (foldM, when)
 
-import Relude             (NonEmpty ((:|)), Eq ((==)), fst, show, ($), StateT, Applicative ((*>)))
+import Relude             (NonEmpty ((:|)), Eq ((==)), fst, show, ($), StateT, Applicative ((*>)), traceM)
 import Relude.Monad       (asks, ReaderT, MonadReader (local, ask), Maybe (..), MonadTrans (lift))
 import Relude.String      (Text)
 import Relude.Monoid      (Semigroup ((<>)))
@@ -52,7 +52,7 @@ inferTy poly ast =
             (argTyRes, argKind) <- go arg
             resHole <- KiHole <$> newIORef (Empty "" 0)
             lift (unifyKind tyKind (KiFun argKind resHole))
-            pure (TyApp tyRes argTyRes, resHole)
+            pure (TyApp resHole tyRes argTyRes, resHole)
           ) res (x : xs)
       TArrow from to _     -> do
         ((vFrom, vFromKi), (vTo, vToKi)) <- (,) <$> go from <*> go to
@@ -69,8 +69,8 @@ inferTy poly ast =
 
 data Status = Visiting | Visited
 
-findCycle :: MonadTyper m => Text -> HashMap Text (Ty Re) -> Ty Re -> m ()
-findCycle name recursiveGroup ty = do
+findCycle :: MonadTyper m => Text -> Text -> HashMap Text (Ty Re) -> Ty Re -> m ()
+findCycle curMod name recursiveGroup ty = do
     State.evalStateT (go [name] ty) (HashMap.singleton name Visiting)
   where
     setStatus :: MonadTyper m => ReId -> Status -> StateT (HashMap Text Status) m ()
@@ -78,20 +78,19 @@ findCycle name recursiveGroup ty = do
 
     go :: MonadTyper m => [Text] -> Ty Re -> StateT (HashMap Text Status) m ()
     go stack = \case
-      TId (Local name') _  -> do
-        env <- State.get
-        case HashMap.lookup name'.text env of
-          Nothing       -> do
-            setStatus name' Visiting
-            case HashMap.lookup name'.text recursiveGroup of
-              Just tyRes -> go (name'.text : stack) tyRes *> setStatus name' Visited
-              Nothing    -> pure ()
-          Just Visiting -> do
-            lift (terminate $ CyclicTypeDef stack)
-          Just Visited  -> pure ()
+      TId (Path mod name' _) _  -> do
+        when (mod == curMod) $ do
+          env <- State.get
+          case HashMap.lookup name'.text env of
+            Nothing       -> do
+              setStatus name' Visiting
+              case HashMap.lookup name'.text recursiveGroup of
+                Just tyRes -> go (name'.text : stack) tyRes *> setStatus name' Visited
+                Nothing    -> pure ()
+            Just Visiting -> lift (terminate $ CyclicTypeDef stack)
+            Just Visited  -> pure ()
       TApp ty' args _   -> go stack ty' *> traverse_ (go stack) args
       TArrow from to _  -> go stack from *> go stack to
       TForall _ ty' _   -> go stack ty'
-      TId _ _           -> pure ()
-      TPoly _ _         -> pure ()
-
+      _                 -> pure ()
+      
