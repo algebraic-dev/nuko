@@ -187,8 +187,8 @@ resolveExpr = \case
     resolveBlock :: MonadResolver m => Block Nm -> m (Block Re)
     resolveBlock = \case
        BlVar (Var pat' var ext') rest -> BlVar  <$> (Var <$> resolvePat pat' <*> resolveExpr var <*> pure ext') <*> resolveBlock rest
-       BlBind expr rest             -> BlBind <$> resolveExpr expr <*> resolveBlock rest
-       BlEnd expr                   -> BlEnd  <$> resolveExpr expr
+       BlBind expr rest               -> BlBind <$> resolveExpr expr <*> resolveBlock rest
+       BlEnd expr                     -> BlEnd  <$> resolveExpr expr
 
 resolveLetDecl :: MonadResolver m => LetDecl Nm -> m (LetDecl Re)
 resolveLetDecl (LetDecl name' args body ret ext') =

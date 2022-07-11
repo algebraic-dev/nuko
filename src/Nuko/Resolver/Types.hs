@@ -52,13 +52,18 @@ makePath (x :| xs) =
 
 resolveName :: MonadResolver m => NameKind -> Range -> Text -> m Path
 resolveName kind' loc info = do
-    let name = OccName info kind'
+    let name  = OccName info kind'
+    let ident = ReId name.occName loc
     env <- get
+    let path  = Path (env._currentNamespace._modName) ident loc
     fromMaybe (terminate (CannotFindInModule (one (name.kind)) Nothing name.occName loc)) $
-          pure (Local (ReId name.occName loc))                 <$  lookupEnv name env._currentNamespace._names
-      <|> (\env' -> put env' $> Local (ReId name.occName loc)) <$> setUsage env name True
-      <|> resolveAmbiguity                                     <$> lookupEnv name env._openedNames
+          pure path         <$  lookupEnv name env._currentNamespace._names
+      <|> putEnv ident      <$> setUsage env name True -- It returns a new env if the variable exists so.. it's something like a bad workaround
+      <|> resolveAmbiguity  <$> lookupEnv name env._openedNames
   where
+    putEnv :: MonadResolver m => ReId -> LocalNS -> m Path
+    putEnv ident env' = put env' $> Local ident
+
     resolveAmbiguity :: MonadResolver m => Label -> m Path
     resolveAmbiguity = \case
       (Ambiguous refs)              -> terminate (AmbiguousNames refs)

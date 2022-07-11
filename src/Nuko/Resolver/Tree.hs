@@ -9,7 +9,7 @@ module Nuko.Resolver.Tree where
 
 import Nuko.Tree
 import Nuko.Report.Range  (Range, HasPosition(..), toLabel)
-import Relude             (Show, Semigroup((<>)), Void, Generic, show)
+import Relude             (Show, Semigroup((<>)), Void, Generic, show, Eq(..), (&&), Bool (False))
 import Data.Text          (Text)
 import Pretty.Tree        (PrettyTree (prettyTree), Tree (Node))
 
@@ -19,6 +19,14 @@ data Path
   = Path Text ReId Range
   | Local ReId
   deriving Show
+
+instance Eq ReId where
+  (ReId t _) == (ReId g _) = t == g
+
+instance Eq Path where
+  (Path mod name _) == (Path mod' name' _) = mod == mod' && name == name'
+  (Local r) == (Local r') = r == r'
+  _ == _ = False
 
 type instance XName Re = ReId
 type instance XPath Re = Path
