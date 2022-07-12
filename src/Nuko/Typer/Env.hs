@@ -49,6 +49,7 @@ import Control.Monad.Chronicle (MonadChronicle)
 import Lens.Micro.Platform     (makeLenses, over, Lens', view)
 
 import qualified Data.HashMap.Strict as HashMap
+import Relude (trace, show)
 
 data TyInfo
   = IsTySyn
@@ -68,7 +69,7 @@ data TypeSpace = TypeSpace
 
 data TypingEnv = TypingEnv
   { _teCurModule     :: Text
-  , _globalTypinvEnv :: TypeSpace
+  , _globalTypingEnv :: TypeSpace
   } deriving Generic
 
 data ScopeEnv = ScopeEnv
@@ -135,31 +136,31 @@ emptyTS = TypeSpace HashMap.empty HashMap.empty HashMap.empty HashMap.empty
 addTyKind :: MonadTyper m => Text -> TKind -> TyInfo -> m ()
 addTyKind name ki info = do
   curMod <- gets _teCurModule
-  modify (over (globalTypinvEnv . tsTypes) (HashMap.insert (curMod <> "." <> name) (ki, info)))
+  modify (over (globalTypingEnv . tsTypes) (HashMap.insert (curMod <> "." <> name) (ki, info)))
 
 updateTyKind :: MonadTyper m => Text -> ((TKind, TyInfo) -> Maybe (TKind, TyInfo)) -> m ()
 updateTyKind name f = do
-  modify (over (globalTypinvEnv . tsTypes) (HashMap.update f name))
+  modify (over (globalTypingEnv . tsTypes) (HashMap.update f name))
 
 addTy :: MonadTyper m => Lens' TypeSpace (HashMap Text b) -> Text -> b -> m ()
 addTy lens name ki = do
   curMod <- gets _teCurModule
-  modify (over (globalTypinvEnv . lens) (HashMap.insert (curMod <> "." <> name) ki))
+  modify (over (globalTypingEnv . lens) (HashMap.insert (curMod <> "." <> name) ki))
 
 getTy :: MonadTyper m => Lens' TypeSpace (HashMap Text b) -> Path -> m b
 getTy lens path = do
-  globalEnv <- gets _globalTypinvEnv
+  globalEnv <- gets _globalTypingEnv
   canonPath <- canonicalPath path
   case HashMap.lookup canonPath (view lens globalEnv) of
     Just ty -> pure ty
-    Nothing -> terminate (NameResolution canonPath)
+    Nothing -> terminate (trace (show $ HashMap.keys globalEnv._tsVars) $ NameResolution canonPath)
 
 getTypeSpaceKind ::  Text -> TypeSpace -> Either TypeError TKind
 getTypeSpaceKind name' ts =
   let res  = lookup name' (_tsTypes ts)
   in case res of
       Just (kind, _) -> pure kind
-      Nothing        -> Left (NameResolution name')
+      Nothing        -> Left (NameResolution ("Ki" <> name'))
 
 canonicalPath :: MonadTyper m => Path -> m Text
 canonicalPath path = do
@@ -171,14 +172,14 @@ canonicalPath path = do
 getKind :: MonadTyper m => Path -> m TKind
 getKind path = do
   canonPath <- canonicalPath path
-  ts     <- gets _globalTypinvEnv
+  ts     <- gets _globalTypingEnv
   either terminate pure (getTypeSpaceKind canonPath ts)
 
 addFieldToEnv :: MonadTyper m => Text -> Text -> FieldInfo -> m ()
 addFieldToEnv typeName fieldName fieldInfo = do
   curMod <- gets _teCurModule
   modify
-    $ over (globalTypinvEnv . tsTypeFields)
+    $ over (globalTypingEnv . tsTypeFields)
     $ HashMap.insertWith ((<>)) (curMod <> "." <> typeName) (HashMap.singleton fieldName fieldInfo)
 
 unifyHolesWithStar :: MonadTyper m => TKind -> m TKind

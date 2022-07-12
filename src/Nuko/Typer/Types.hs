@@ -18,7 +18,6 @@ module Nuko.Typer.Types (
   dereferenceType
 ) where
 
-import Relude.Container    (IntMap)
 import Relude.Applicative  (Applicative(pure, (<*>)))
 import Relude.Lifted       (IORef, readIORef, writeIORef)
 import Relude.Bool         (Bool(..))
@@ -26,13 +25,12 @@ import Relude.Monad        (fromMaybe, MonadIO)
 import Relude.Monoid       (Semigroup((<>)))
 import Relude.Numeric      (Int)
 import Relude.Functor      ((<$>))
-import Relude              (show, Text, MonadIO (liftIO), ($), zip, Applicative ((*>)), reverse, Ord ((<=)), Num ((-), (+)), trace)
+import Relude              (show, Text, MonadIO (liftIO), Applicative ((*>)), reverse, Num ((+)))
 
 import Nuko.Resolver.Tree  (Path (..), ReId(..))
 import GHC.IO              (unsafePerformIO)
 import Pretty.Tree         (PrettyTree (..), Tree (..))
 
-import qualified Data.IntMap.Strict as IntMap
 import Data.List ((!!))
 import Relude.List ((!!?))
 import Nuko.Report.Range (emptyRange)

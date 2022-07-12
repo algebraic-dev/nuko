@@ -4,7 +4,7 @@ module Nuko.Typer.Infer.Expr (
   inferBlock
 ) where
 
-import Relude               (fst, asks, Monad ((>>=)), readIORef)
+import Relude               (fst, asks, Monad ((>>=)), readIORef, Maybe (Just, Nothing))
 import Relude.Lifted        (writeIORef, newIORef)
 import Relude.Debug         (undefined)
 import Relude.Applicative   (Applicative(pure))
@@ -26,8 +26,9 @@ import Nuko.Utils               (terminate)
 import Nuko.Tree                (Re, Tc)
 
 import Data.List.NonEmpty ((<|))
-import Data.Traversable   (for)
+import Data.Traversable   (for, Traversable (traverse))
 import Control.Monad      (foldM)
+import Nuko.Report.Range
 
 inferBlock :: MonadTyper m => Block Re -> m (Block Tc, TTy Virtual)
 inferBlock = \case
@@ -84,7 +85,12 @@ applyExpr toCheck arg = do
 inferExpr :: MonadTyper m => Expr Re -> m (Expr Tc, TTy Virtual)
 inferExpr = \case
   Field expr f _   -> undefined
-  If con if' e _   -> undefined
+  If con if' e ext -> do
+    (conRes, conTy) <- inferExpr con
+    (if'Res, ifTy)  <- inferExpr if'
+    unify conTy (TyIdent (Path "Prelude" (ReId "Bool" emptyRange) emptyRange))
+    eRes <- traverse (\e' -> checkExpr e' ifTy) e
+    pure (If conRes if'Res eRes ext, ifTy)
   Lit lit _ -> do
     (resLit, resTy) <- inferLit lit
     pure (Lit resLit NoExt, resTy)

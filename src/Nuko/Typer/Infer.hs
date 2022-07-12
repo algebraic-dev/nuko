@@ -17,7 +17,7 @@ import Relude.Function    (($))
 import Relude.Applicative (Applicative(pure))
 
 import Nuko.Typer.Types (removeKindHoles, dereferenceKind)
-import Relude.Debug (undefined)
+import Nuko.Typer.Infer.LetDecl (initLetDecl, inferLetDecl)
 
 inferProgram :: MonadTyper m => Program Re -> m (Program Tc)
 inferProgram program = do
@@ -30,6 +30,8 @@ inferProgram program = do
     res <- dereferenceKind initData.itResKind >>= removeKindHoles
     updateTyKind initData.itCanonName (\(_, i) -> Just (res, i))
 
-  checkedLetDecls <- undefined
+  -- And all the type declarations
+  letInitDatas <- traverse initLetDecl program.letDecls
+  checkedLetDecls <- traverse (uncurry inferLetDecl) (zip program.letDecls letInitDatas)
 
   pure (Program checkedTypeDecls checkedLetDecls [] NoExt)

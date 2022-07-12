@@ -3,30 +3,32 @@ module Nuko.Typer.Infer.LetDecl (
   inferLetDecl
 ) where
 
-import Relude                (newIORef, snd, fst, Foldable (foldl', length), writeIORef, Applicative ((*>)), ($), HashMap, gets, Semigroup ((<>)), zip, undefined, Num ((+)), print, traceShowId)
-import Relude.String         (Text)
+import Relude                (snd, fst, Semigroup ((<>)), zip, (.), ($))
 import Relude.Functor        (Functor(fmap), (<$>))
-import Relude.Foldable       (Foldable(foldr), Traversable(traverse), traverse_, for_)
+import Relude.Foldable       (Foldable(foldr), Traversable(traverse), traverse_)
 import Relude.Applicative    (Applicative(pure))
 
 import Nuko.Typer.Tree       () -- Just to make the equality between XName Re and XName Tc works
-import Nuko.Tree             (LetDecl(..), Re, Tc, Ty, XName, XTy)
-import Nuko.Typer.Env        (MonadTyper, addTyKind, addTy, tsConstructors, TyInfo (IsTySyn, IsTyDef), addFieldToEnv, FieldInfo (FieldInfo), TypingEnv (_teCurModule), newTyHole, newKindHole, tsVars)
-import Nuko.Typer.Types      (Hole (..), TKind (..), TTy (..), Virtual, KiHole, implTy, generalizeOver)
-import Nuko.Resolver.Tree    (ReId(text, ReId), Path (Local))
-import Nuko.Tree.TopLevel
-import Nuko.Typer.Infer.Type (inferTy, findCycle, freeVars)
+import Nuko.Tree             (LetDecl(..), Re, Tc)
+import Nuko.Typer.Env        (MonadTyper, addTy, newKindHole, tsVars, addLocals)
+import Nuko.Typer.Types      (TKind (..), TTy (..), generalizeOver, Virtual, PType)
+import Nuko.Resolver.Tree    (ReId(text))
+import Nuko.Typer.Infer.Type (inferTy, freeVars)
 import Nuko.Typer.Unify      (unifyKind)
 
-import qualified Data.HashMap.Strict as HashMap
-import Nuko.Report.Range (emptyRange)
 import qualified Data.HashSet as HashSet
+import qualified Data.HashMap.Strict as HashMap
+import Nuko.Typer.Infer.Expr (checkExpr)
 
-initLetDecl :: MonadTyper m => LetDecl Re -> m ()
+data InitLetDecl = InitLetDecl
+  { bindings :: [PType]
+  , retType  :: TTy Virtual
+  }
+
+initLetDecl :: MonadTyper m => LetDecl Re -> m InitLetDecl
 initLetDecl decl = do
-
   let argRawTypes = fmap snd decl.declArgs
-  freeVarsSet    <- traceShowId <$> (HashSet.toList <$> foldr (<>) HashSet.empty <$> traverse freeVars argRawTypes)
+  freeVarsSet    <- HashSet.toList <$> foldr (<>) HashSet.empty <$> traverse freeVars argRawTypes
   newVars        <- traverse newKindHole freeVarsSet
   let bindings    = zip freeVarsSet newVars
   argsBindings   <- traverse (inferTy bindings) argRawTypes
@@ -37,14 +39,12 @@ initLetDecl decl = do
 
   let fnType = foldr TyFun retType (fst <$> argsBindings)
 
-  curMod <- gets _teCurModule
-  let canonName = curMod <> "." <> decl.declName.text
-
   let generalizedTy = generalizeOver freeVarsSet fnType
+  addTy tsVars decl.declName.text generalizedTy
+  pure (InitLetDecl argsBindings retType)
 
-  addTy tsVars canonName generalizedTy
-
-  pure ()
-
-inferLetDecl :: MonadTyper m => LetDecl Re -> m (LetDecl Tc)
-inferLetDecl (LetDecl name args ret body e) = undefined
+inferLetDecl :: MonadTyper m => LetDecl Re -> InitLetDecl -> m (LetDecl Tc)
+inferLetDecl (LetDecl name args body _ e) init = do
+  let bindings = HashMap.fromList $ zip ((text . fst) <$> args) (fst <$> init.bindings)
+  resBody <- addLocals bindings (checkExpr body init.retType)
+  pure (LetDecl name ((\((name', _), (ty, _)) -> (name', ty)) <$> zip args init.bindings) resBody init.retType e)
