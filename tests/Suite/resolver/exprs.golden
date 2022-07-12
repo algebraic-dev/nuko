@@ -1,0 +1,70 @@
+✓ That
+ └Prod
+   ├Program
+   | ├typeDecls: Empty List
+   | ├letDecls:
+   | | └List
+   | |   ├LetDecl
+   | |   | ├declName: (ReId add 0:4-0:7)
+   | |   | ├declArgs:
+   | |   | | └List
+   | |   | |   ├Prod
+   | |   | |   | ├ReId a 0:9-0:10
+   | |   | |   | └TId NoExt (Path "Prelude.Int" 0:12-0:15)
+   | |   | |   └Prod
+   | |   | |     ├ReId b 0:18-0:19
+   | |   | |     └TId NoExt (Path "Prelude.Int" 0:21-0:24)
+   | |   | ├declBody: (Lit NoExt (LInt 0:33-0:34 3))
+   | |   | ├declRet:
+   | |   | | └TId NoExt (Path "Prelude.Int" 0:27-0:30)
+   | |   | └declExt: NoExt
+   | |   └LetDecl
+   | |     ├declName: (ReId at 2:4-2:6)
+   | |     ├declArgs:
+   | |     | └List
+   | |     |   └Prod
+   | |     |     ├ReId a 2:8-2:9
+   | |     |     └TId NoExt (Path "Prelude.Int" 2:11-2:14)
+   | |     ├declBody:
+   | |     | └Block
+   | |     |   ├BlVar
+   | |     |   | ├Var
+   | |     |   | | ├pat: (PId NoExt (ReId a 3:6-3:7))
+   | |     |   | | ├val: (Lit NoExt (LInt 3:10-3:11 3))
+   | |     |   | | └ext: 3:2-3:11
+   | |     |   | └BlEnd
+   | |     |   |   └App
+   | |     |   |     ├Lower 4:2-4:5 (Path "Main.add" 4:2-4:5)
+   | |     |   |     ├NonEmpty
+   | |     |   |     | ├Lower 4:6-4:7 (Local "a" 4:6-4:7)
+   | |     |   |     | └Lower 4:8-4:9 (Local "a" 4:8-4:9)
+   | |     |   |     └4:2-4:9
+   | |     |   └3:2-4:9
+   | |     ├declRet:
+   | |     | └TId NoExt (Path "Prelude.Int" 2:17-2:20)
+   | |     └declExt: NoExt
+   | ├impDecls: Empty List
+   | └programExt: NoExt
+   └LocalNS
+     ├_openedNames:
+     | └HashMap
+     |   ├Prod
+     |   | ├OccName TyName Int
+     |   | └Single (Qualified Prelude Int)
+     |   └Prod
+     |     ├OccName TyName String
+     |     └Single (Qualified Prelude String)
+     ├_localNames: (NonEmpty HashMap)
+     ├_openedModules: HashMap
+     ├_currentNamespace:
+     | └NameSpace
+     |   ├_modName: Main
+     |   └_names:
+     |     └HashMap
+     |       ├Prod
+     |       | ├OccName VarName at
+     |       | └Public
+     |       └Prod
+     |         ├OccName VarName add
+     |         └Public
+     └_newNamespaces: HashMap

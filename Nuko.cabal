@@ -43,6 +43,10 @@ library
       Nuko.Typer.Env
       Nuko.Typer.Error
       Nuko.Typer.Infer
+      Nuko.Typer.Infer.Expr
+      Nuko.Typer.Infer.LetDecl
+      Nuko.Typer.Infer.Literal
+      Nuko.Typer.Infer.Pat
       Nuko.Typer.Infer.Type
       Nuko.Typer.Infer.TypeDecl
       Nuko.Typer.Tree

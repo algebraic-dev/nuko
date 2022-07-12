@@ -1,0 +1,41 @@
+✓ That
+ └Prod
+   ├Program
+   | ├typeDecls: Empty List
+   | ├letDecls:
+   | | └List
+   | |   └LetDecl
+   | |     ├declName: (ReId a 0:4-0:5)
+   | |     ├declArgs: Empty List
+   | |     ├declBody:
+   | |     | └Lam
+   | |     |   ├PId NoExt (ReId f 0:21-0:22)
+   | |     |   ├Lit NoExt (LInt 0:26-0:27 2)
+   | |     |   └0:20-0:27
+   | |     ├declRet: (Type (Prelude.Int -> Prelude.Int))
+   | |     └declExt: NoExt
+   | ├impDecls: Empty List
+   | └programExt: NoExt
+   └TypingEnv
+     ├_teCurModule: Main
+     └_globalTypingEnv:
+       └TypeSpace
+         ├_tsTypes:
+         | └HashMap
+         |   ├Prod
+         |   | ├Prelude.Int
+         |   | └Prod
+         |   |   ├Kind *
+         |   |   └IsTyDef
+         |   └Prod
+         |     ├Prelude.String
+         |     └Prod
+         |       ├Kind *
+         |       └IsTyDef
+         ├_tsConstructors: HashMap
+         ├_tsVars:
+         | └HashMap
+         |   └Prod
+         |     ├Main.a
+         |     └Type (Prelude.Int -> Prelude.Int)
+         └_tsTypeFields: HashMap

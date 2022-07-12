@@ -8,7 +8,7 @@ import Nuko.Resolver.Environment (NameSpace, LocalNS(..), Label(..), emptyLocalN
 import Nuko.Resolver.Occourence  (NameKind(..), OccName(..), insertEnv)
 import Nuko.Resolver.Error       (ResolveError)
 import Nuko.Resolver.Types       (MonadResolver)
-import Nuko.Tree                 (Program(Program), Nm, Re)
+import Nuko.Tree                 (Nm, Re, Program (..))
 import Nuko.Resolver             (initProgram, resolveProgram)
 import Control.Monad.Import      (MonadImport (importIn), ImportErrorKind (CannotFind))
 import Relude.Monad              (Monad((>>=)), Maybe(..))
@@ -19,11 +19,11 @@ import Relude                    (($), Either (..), HashMap, Text, Functor, Read
 import Data.These                (These)
 import Control.Monad.Chronicle   (MonadChronicle)
 
-import qualified Control.Monad.State as State
-import qualified Control.Monad.Chronicle as Chronicle
+import qualified Control.Monad.State      as State
+import qualified Control.Monad.Chronicle  as Chronicle
 import qualified Nuko.Resolver.Occourence as Occ
-import qualified Data.HashMap.Strict as HashMap
-import qualified Control.Monad.Reader as Reader
+import qualified Data.HashMap.Strict      as HashMap
+import qualified Control.Monad.Reader     as Reader
 
 newtype ConstImporter m a = ConstImporter { runImporter :: ReaderT (HashMap Text NameSpace) m a }
   deriving newtype (Functor, Monad, Applicative, MonadState b, MonadChronicle b)

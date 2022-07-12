@@ -1,0 +1,5 @@
+let add (a: Int) (b: Int): Int = 3
+
+let at (a: Int): Int = 
+  let a = 3
+  add a a

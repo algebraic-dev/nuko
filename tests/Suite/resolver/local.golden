@@ -37,7 +37,7 @@
    | |     |   |   | ├pat: (PId NoExt (ReId c 7:6-7:7))
    | |     |   |   | ├val:
    | |     |   |   | | └App
-   | |     |   |   | |   ├Lower 7:10-7:14 (Local "plus" 7:10-7:14)
+   | |     |   |   | |   ├Lower 7:10-7:14 (Path "Main.plus" 7:10-7:14)
    | |     |   |   | |   ├NonEmpty
    | |     |   |   | |   | ├Lower 7:15-7:16 (Local "a" 7:15-7:16)
    | |     |   |   | |   | └Lower 7:17-7:18 (Local "b" 7:17-7:18)
@@ -56,7 +56,7 @@
    | |     |   |       |   | | └ext: 10:9-10:18
    | |     |   |       |   | └BlEnd
    | |     |   |       |   |   └App
-   | |     |   |       |   |     ├Lower 11:9-11:13 (Local "plus" 11:9-11:13)
+   | |     |   |       |   |     ├Lower 11:9-11:13 (Path "Main.plus" 11:9-11:13)
    | |     |   |       |   |     ├NonEmpty
    | |     |   |       |   |     | ├Lower 11:14-11:15 (Local "d" 11:14-11:15)
    | |     |   |       |   |     | └Lit NoExt (LInt 11:16-11:17 4)

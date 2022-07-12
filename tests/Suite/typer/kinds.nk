@@ -1,8 +1,8 @@
 type List a =
   | Cons a (List a)
-  | Nil (User a)
+  | Nil (User a Int Int Int Int a a a a a)
 
-type User a = {
+type User c d e f g a b t y u = {
   name: String,
   age: Int,
   likes: List Int,
