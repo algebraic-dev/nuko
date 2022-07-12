@@ -4,7 +4,7 @@ module Nuko.Typer.Error (
 
 import Data.Text (Text)
 import Relude.Base (Show)
-import Relude (Generic)
+import Relude (Generic, Int)
 import Pretty.Tree (PrettyTree)
 
 data TypeError
@@ -16,6 +16,7 @@ data TypeError
   | NameResolution Text
   | CyclicTypeDef [Text]
   | CannotFindTySym
+  | ExpectedConst Int Int
   deriving (Show, Generic)
 
 instance PrettyTree TypeError where

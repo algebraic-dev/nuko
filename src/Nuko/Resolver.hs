@@ -133,14 +133,10 @@ resolveTypeDecl (TypeDecl name' args decl) = do
 
 resolveType :: MonadResolver m => Ty Nm -> m (Ty Re)
 resolveType = \case
-  TPoly (Name t r) ext'         -> do
-    res <- resolveName TyName r t
-    case res of
-      Local res' -> pure (TPoly res' ext')
-      _          -> pure (TId res ext') -- Probably impossible
   TId path' ext'                -> TId    <$> resolvePath TyName path' <*> pure ext'
   TApp ty' ty ext'              -> TApp   <$> resolveType ty' <*> traverse resolveType ty <*> pure ext'
   TArrow from to ext'           -> TArrow <$> resolveType from <*> resolveType to <*> pure ext'
+  TPoly (Name t r) ext'         -> pure (TPoly (ReId t r) ext')
   TForall binder ty ext'        -> scopeLocals $ do
     addLocal binder.range (OccName binder.text TyName)
     TForall (toReId binder) <$> resolveType ty <*> pure ext'

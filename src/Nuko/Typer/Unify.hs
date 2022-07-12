@@ -12,21 +12,21 @@ import Relude.String       (Text)
 import Relude.Lifted.IORef (writeIORef, readIORef)
 
 import Nuko.Typer.Types
-import Nuko.Typer.Env      (MonadTyper, TypingEnv(..), ScopeEnv(..), seScope)
-import Nuko.Typer.Error    (TypeError(..))
-import Nuko.Utils          (terminate)
+import Nuko.Typer.Env       (MonadTyper, ScopeEnv(..), seScope)
+import Nuko.Typer.Error     (TypeError(..))
+import Nuko.Utils           (terminate)
 import Lens.Micro.Platform  (over)
-import GHC.Num             ((+), Num ((-)))
-import Data.Function       (($))
-import Data.Traversable    (Traversable(..))
+import GHC.Num              ((+))
+import Data.Function        (($))
+import Data.Traversable     (Traversable(..))
 
 unifyKind :: MonadTyper m => TKind -> TKind -> m ()
 unifyKind k1 k1' = do
-    (k, k') <- (,) <$> fixKindHoles k1 <*> fixKindHoles k1'
+    (k, k') <- (,) <$> dereferenceKind k1 <*> dereferenceKind k1'
     case (k, k') of
       (KiHole hole, _) -> do
         content <- readIORef hole
-        ty <- fixKindHoles k'
+        ty <- dereferenceKind k'
         case content of
           Filled fil -> unifyKind fil ty
           Empty {}   -> when (not $ isEq hole ty) $ do
@@ -38,7 +38,6 @@ unifyKind k1 k1' = do
       (_, _)                   -> terminate =<< CannotUnify <$> printKind k <*> printKind k'
   where
     isEq hole ty = case ty of { KiHole hole' -> hole == hole'; _ -> False }
-
     unifyPreCheck :: MonadTyper m => KiHole -> TKind -> m ()
     unifyPreCheck hole = \case
       KiFun a b -> unifyPreCheck hole a *> unifyPreCheck hole b

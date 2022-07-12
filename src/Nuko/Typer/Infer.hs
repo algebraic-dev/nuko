@@ -16,7 +16,7 @@ import Relude.Monad       ((>>=), Maybe (..))
 import Relude.Function    (($))
 import Relude.Applicative (Applicative(pure))
 
-import Nuko.Typer.Types (removeStar, fixKindHoles)
+import Nuko.Typer.Types (removeKindHoles, dereferenceKind)
 import Relude.Debug (undefined)
 
 inferProgram :: MonadTyper m => Program Re -> m (Program Tc)
@@ -27,7 +27,7 @@ inferProgram program = do
   checkTypeSymLoop program.typeDecls
   checkedTypeDecls <- traverse (uncurry inferTypeDecl) (zip program.typeDecls initDatas)
   for_ initDatas $ \initData -> do
-    res <- fixKindHoles initData.itResKind >>= removeStar
+    res <- dereferenceKind initData.itResKind >>= removeKindHoles
     updateTyKind initData.itCanonName (\(_, i) -> Just (res, i))
 
   checkedLetDecls <- undefined

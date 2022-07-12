@@ -5,7 +5,7 @@ module Nuko.Typer.Infer.TypeDecl (
   checkTypeSymLoop
 ) where
 
-import Relude                (newIORef, snd, fst, Foldable (foldl'), writeIORef, Applicative ((*>)), ($), HashMap, gets, Semigroup ((<>)), uncurry, flip)
+import Relude                (newIORef, snd, fst, Foldable (foldl', length), writeIORef, Applicative ((*>)), ($), HashMap, gets, Semigroup ((<>)))
 import Relude.String         (Text)
 import Relude.Functor        (Functor(fmap), (<$>))
 import Relude.Foldable       (Foldable(foldr), Traversable(traverse), traverse_, for_)
@@ -14,7 +14,7 @@ import Relude.Applicative    (Applicative(pure))
 import Nuko.Typer.Tree       () -- Just to make the equality between XName Re and XName Tc works
 import Nuko.Tree             (TypeDecl(..), Re, Tc, Ty, XName, XTy)
 import Nuko.Typer.Env        (MonadTyper, addTyKind, addTy, tsConstructors, TyInfo (IsTySyn, IsTyDef), addFieldToEnv, FieldInfo (FieldInfo), TypingEnv (_teCurModule))
-import Nuko.Typer.Types      (Hole (..), TKind (..), TTy (..), Virtual, KiHole)
+import Nuko.Typer.Types      (Hole (..), TKind (..), TTy (..), Virtual, KiHole, generalizeOver)
 import Nuko.Resolver.Tree    (ReId(text, ReId), Path (Local))
 import Nuko.Tree.TopLevel    (TypeDeclArg(..))
 import Nuko.Typer.Infer.Type (inferTy, findCycle)
@@ -77,8 +77,8 @@ inferTypeDecl (TypeDecl name args body) initData = do
       unifyKind kind KiStar
 
       let resTy = TyFun initData.itResTy inferedTy
-
-      let generalizedType = foldr (\(n, _) b -> TyForall n (\_ -> b)) resTy initData.itBindings
+      let freeVarsSet = fst <$> initData.itBindings
+      let generalizedType = generalizeOver freeVarsSet resTy
 
       addFieldToEnv
         name.text
@@ -93,7 +93,7 @@ inferTypeDecl (TypeDecl name args body) initData = do
       traverse_ (\ty -> unifyKind (snd ty) KiStar) list
       let resTy  = foldr TyFun initData.itResTy (fst <$> list)
       let resTy' = foldr (\(n,_) b -> TyForall n (\_ -> b)) resTy initData.itBindings
-      addTy tsConstructors fieldName.text resTy'
+      addTy tsConstructors fieldName.text (resTy', length list)
       pure (fieldName, (fst <$> list))
 
     inferDecl :: MonadTyper m => TypeDeclArg Re -> m (TypeDeclArg Tc)
