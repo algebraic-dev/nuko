@@ -7,7 +7,7 @@ import Relude.Bool         (when, Bool (..), not, otherwise)
 import Relude.Base         ((==), Ord ((>), (>=)))
 import Relude.Applicative  (Applicative(pure, (*>), (<*>)))
 import Relude.Functor      ((<$>))
-import Relude.Monad        ((=<<), gets, modify, asks, MonadReader (local))
+import Relude.Monad        ((=<<), asks, MonadReader (local))
 import Relude.String       (Text)
 import Relude.Lifted.IORef (writeIORef, readIORef)
 
@@ -18,7 +18,6 @@ import Nuko.Utils           (terminate)
 import Lens.Micro.Platform  (over)
 import GHC.Num              ((+))
 import Data.Function        (($))
-import Data.Traversable     (Traversable(..))
 
 unifyKind :: MonadTyper m => TKind -> TKind -> m ()
 unifyKind k1 k1' = do
@@ -26,12 +25,11 @@ unifyKind k1 k1' = do
     case (k, k') of
       (KiHole hole, _) -> do
         content <- readIORef hole
-        ty <- dereferenceKind k'
         case content of
-          Filled fil -> unifyKind fil ty
-          Empty {}   -> when (not $ isEq hole ty) $ do
-            unifyPreCheck hole ty
-            writeIORef hole (Filled ty)
+          Filled fil -> unifyKind fil k'
+          Empty {}   -> when (not $ isEq hole k') $ do
+            unifyPreCheck hole k'
+            writeIORef hole (Filled k')
       (ty, KiHole hole)        -> unifyKind (KiHole hole) ty
       (KiStar, KiStar)         -> pure ()
       (KiFun a b, KiFun a' b') -> unifyKind a a' *> unifyKind b b'
@@ -51,8 +49,9 @@ unifyKind k1 k1' = do
 
 unify :: MonadTyper m => TTy Virtual -> TTy Virtual -> m ()
 unify ty ty' = do
-  tys <- traverse removeHoles (ty, ty')
-  case tys of
+  tyR <- removeHoles ty
+  tyR' <- removeHoles ty'
+  case (tyR, tyR') of
     (TyHole hole, _) -> do
       content <- readIORef hole
       case content of
@@ -108,8 +107,8 @@ unify ty ty' = do
                 Filled t          -> preCheck t
 
     unifyHoleTy :: MonadTyper m => TyHole -> Int -> TTy Virtual -> m ()
-    unifyHoleTy hole scope uTy =
-      case ty of
+    unifyHoleTy hole scope uTy = do
+      case uTy of
         TyHole hole' | hole == hole' -> pure ()
         _ -> do
           unifyPreCheck scope hole uTy

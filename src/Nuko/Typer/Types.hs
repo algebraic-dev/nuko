@@ -15,7 +15,8 @@ module Nuko.Typer.Types (
   printKind,
   dereferenceKind,
   removeKindHoles,
-  dereferenceType
+  dereferenceType,
+  subs
 ) where
 
 import Relude.Applicative  (Applicative(pure, (<*>)))
@@ -73,21 +74,22 @@ instance PrettyTree (TTy Virtual) where
 instance PrettyTree (TKind) where
   prettyTree ty = Node "Kind" [unsafePerformIO (printKind  ty)] []
 
+subs :: Int -> [TTy Virtual] -> TTy Virtual -> TTy Virtual
+subs scope types = \case
+  TyVar n -> types !! n
+  TyForall t f -> TyForall t (\n -> subs (scope + 1) (n : types) (f n))
+  TyHole h     ->
+    case unsafePerformIO (readIORef h) of
+      Empty {} -> TyHole h
+      Filled f -> subs scope types f
+  TyFun f t   -> TyFun (subs scope types f) (subs scope types t)
+  TyApp k f t -> TyApp k (subs scope types f) (subs scope types t)
+  TyIdent t   -> TyIdent t
+
 generalizeOver :: [Text] -> TTy Virtual -> TTy Virtual
 generalizeOver names tty =
     go names []
   where
-    subs :: Int -> [TTy Virtual] -> TTy Virtual -> TTy Virtual
-    subs scope types = \case
-      TyVar n -> types !! n
-      TyForall t f -> TyForall t (\n -> subs (scope + 1) (n : types) (f n))
-      TyHole h     ->
-        case unsafePerformIO (readIORef h) of
-          Empty {} -> TyHole h
-          Filled f -> subs scope types f
-      TyFun f t   -> TyFun (subs scope types f) (subs scope types t)
-      TyApp k f t -> TyApp k (subs scope types f) (subs scope types t)
-      TyIdent t   -> TyIdent t
     go []       tys = subs 0 (reverse tys) tty
     go (x : xs) tys = TyForall x (\f -> go xs (f : tys))
 
@@ -147,8 +149,8 @@ printTy env =
         resB <- helper ctx b
         pure ("(" <> resA <> " -> " <> resB <> ")")
       TyForall n f -> do
-        res <- helper (n : ctx) (f (TyIdent (Local (ReId n emptyRange))))
-        pure ("(forall " <> n <> ". " <> res <> ")")
+        res <- helper (n : ctx) (f (TyIdent (Local (ReId ("!" <> n) emptyRange))))
+        pure ("(forall " <> n <> "." <> res <> ")")
       TyHole hole -> do
         content <- liftIO (readIORef hole)
         case content of

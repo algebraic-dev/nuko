@@ -7,7 +7,7 @@ import Nuko.Tree
 import Nuko.Report.Range  (Range, HasPosition(..))
 import Nuko.Resolver.Tree (ReId, Path)
 import Nuko.Typer.Types   (TTy, Virtual)
-import Relude             (Semigroup((<>)), Void, Generic)
+import Relude             (Semigroup((<>)), Void, Generic, fst)
 import Pretty.Tree        (PrettyTree)
 
 type instance XName Tc = ReId
@@ -31,16 +31,16 @@ type instance XPCons Tc = Range
 type instance XPExt Tc = Void
 
 type instance XLit Tc = NoExt
-type instance XLam Tc = Range
-type instance XAnn Tc = Range
-type instance XApp Tc = Range
-type instance XLower Tc = Range
-type instance XUpper Tc = Range
-type instance XField Tc = Range
-type instance XIf Tc = Range
-type instance XMatch Tc = Range
-type instance XBlock Tc = Range
-type instance XVar Tc = Range
+type instance XLam Tc = (Range, TTy Virtual)
+type instance XAnn Tc = (Range, TTy Virtual)
+type instance XApp Tc = (Range, TTy Virtual)
+type instance XLower Tc = (Range, TTy Virtual)
+type instance XUpper Tc = (Range, TTy Virtual)
+type instance XField Tc = (Range, TTy Virtual)
+type instance XIf Tc = (Range, TTy Virtual)
+type instance XMatch Tc = (Range, TTy Virtual)
+type instance XBlock Tc = (Range, TTy Virtual)
+type instance XVar Tc = (Range, TTy Virtual)
 type instance XExt Tc = Void
 
 type instance XImport Tc = Void
@@ -76,7 +76,7 @@ instance PrettyTree (TypeDecl Tc) where
 instance PrettyTree (LetDecl Tc) where
 
 instance HasPosition (Var Tc) where
-  getPos (Var _ _ r) = r
+  getPos (Var _ _ r) = fst r
 
 instance HasPosition (Literal Tc) where
   getPos = \case
@@ -94,20 +94,20 @@ instance HasPosition (Pat Tc) where
 instance HasPosition (Expr Tc) where
   getPos = \case
     Lit t _ -> getPos t
-    Lam _ _ r -> r
-    App _ _ r -> r
-    Lower _ r -> r
-    Upper _ r -> r
-    Field _ _ r -> r
-    If _ _ _ r -> r
-    Match _ _ r -> r
-    Block _  r -> r
-    Ann _ _ r  -> r
+    Lam _ _ r -> fst r
+    App _ _ r -> fst r
+    Lower _ r -> fst r
+    Upper _ r -> fst r
+    Field _ _ r -> fst r
+    If _ _ _ r -> fst r
+    Match _ _ r -> fst r
+    Block _  r -> fst r
+    Ann _ _ r  -> fst r
 
 instance HasPosition (Block Tc) where
   getPos = \case
     BlBind x r           -> getPos x <> getPos r
-    BlVar (Var _ _ r1) r -> r1 <> getPos r
+    BlVar (Var _ _ r1) r -> fst r1 <> getPos r
     BlEnd x              -> getPos x
 
 instance HasPosition (Ty Tc) where

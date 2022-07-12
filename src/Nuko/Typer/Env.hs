@@ -49,7 +49,6 @@ import Control.Monad.Chronicle (MonadChronicle)
 import Lens.Micro.Platform     (makeLenses, over, Lens', view)
 
 import qualified Data.HashMap.Strict as HashMap
-import Relude (trace, show)
 
 data TyInfo
   = IsTySyn
@@ -153,14 +152,14 @@ getTy lens path = do
   canonPath <- canonicalPath path
   case HashMap.lookup canonPath (view lens globalEnv) of
     Just ty -> pure ty
-    Nothing -> terminate (trace (show $ HashMap.keys globalEnv._tsVars) $ NameResolution canonPath)
+    Nothing -> terminate (NameResolution canonPath)
 
 getTypeSpaceKind ::  Text -> TypeSpace -> Either TypeError TKind
 getTypeSpaceKind name' ts =
   let res  = lookup name' (_tsTypes ts)
   in case res of
       Just (kind, _) -> pure kind
-      Nothing        -> Left (NameResolution ("Ki" <> name'))
+      Nothing        -> Left (NameResolution name')
 
 canonicalPath :: MonadTyper m => Path -> m Text
 canonicalPath path = do

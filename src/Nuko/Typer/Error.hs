@@ -17,6 +17,7 @@ data TypeError
   | CyclicTypeDef [Text]
   | CannotFindTySym
   | ExpectedConst Int Int
+  | CannotInferField
   deriving (Show, Generic)
 
 instance PrettyTree TypeError where
