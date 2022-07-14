@@ -3,14 +3,17 @@
    ├typeDecls:
    | └List
    |   └TypeDecl
-   |     ├tyName: (Name "Ata" 0:5-0:8)
-   |     ├tyArgs: (List (Name "a" 0:9-0:10))
+   |     ├tyName: (Name: TyName Ata 0:5-0:8)
+   |     ├tyArgs: (List (Name: TyName a 0:9-0:10))
    |     └tyDecl:
    |       └TypeProd
    |         └List
    |           └Prod
-   |             ├Name "ata" 0:15-0:18
-   |             └TId NoExt (Path "Int")
+   |             ├Name: ValName ata 0:15-0:18
+   |             └TId
+   |               ├Local:
+   |               | └Name: TyName Int 0:20-0:23
+   |               └NoExt
    ├letDecls: Empty List
    ├impDecls: Empty List
    └programExt: NoExt

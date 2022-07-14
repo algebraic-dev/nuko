@@ -3,150 +3,255 @@
    ├typeDecls:
    | └List
    |   ├TypeDecl
-   |   | ├tyName: (Name "Range" 0:5-0:10)
+   |   | ├tyName: (Name: TyName Range 0:5-0:10)
    |   | ├tyArgs: Empty List
    |   | └tyDecl:
    |   |   └TypeProd
    |   |     └List
    |   |       └Prod
-   |   |         ├Name "line" 0:15-0:19
-   |   |         └TId NoExt (Path "Int")
+   |   |         ├Name: ValName line 0:15-0:19
+   |   |         └TId
+   |   |           ├Local:
+   |   |           | └Name: TyName Int 0:21-0:24
+   |   |           └NoExt
    |   └TypeDecl
-   |     ├tyName: (Name "Hole" 2:5-2:9)
+   |     ├tyName: (Name: TyName Hole 2:5-2:9)
    |     ├tyArgs: Empty List
    |     └tyDecl:
    |       └TypeSum
    |         └NonEmpty
    |           ├Prod
-   |           | ├Name "Filled" 3:4-3:10
-   |           | └List (TId NoExt (Path "Range"))
+   |           | ├Name: ConsName Filled 3:4-3:10
+   |           | └List
+   |           |   └TId
+   |           |     ├Local:
+   |           |     | └Name: TyName Range 3:11-3:16
+   |           |     └NoExt
    |           └Prod
-   |             ├Name "Empty" 4:4-4:9
+   |             ├Name: ConsName Empty 4:4-4:9
    |             └Empty List
    ├letDecls:
    | └List
    |   ├LetDecl
-   |   | ├declName: (Name "isEmpty?" 7:4-7:12)
+   |   | ├declName: (Name: ValName isEmpty? 7:4-7:12)
    |   | ├declArgs:
    |   | | └List
    |   | |   └Prod
-   |   | |     ├Name "hole" 7:14-7:18
-   |   | |     └TId NoExt (Path "Hole")
+   |   | |     ├Name: ValName hole 7:14-7:18
+   |   | |     └TId
+   |   | |       ├Local:
+   |   | |       | └Name: TyName Hole 7:20-7:24
+   |   | |       └NoExt
    |   | ├declBody:
    |   | | └Match
-   |   | |   ├Lower 8:8-8:12 (Path "hole")
+   |   | |   ├Lower
+   |   | |   | ├Local:
+   |   | |   | | └Name: ValName hole 8:8-8:12
+   |   | |   | └NoExt
    |   | |   ├NonEmpty
    |   | |   | ├Prod
    |   | |   | | ├PCons
-   |   | |   | | | ├Path "Filled"
-   |   | |   | | | ├List (PId NoExt (Name "range" 9:11-9:16))
+   |   | |   | | | ├Local:
+   |   | |   | | | | └Name: ConsName Filled 9:4-9:10
+   |   | |   | | | ├List (PId NoExt (Name: ValName range 9:11-9:16))
    |   | |   | | | └9:4-9:16
-   |   | |   | | └Upper 9:20-9:25 (Path "False")
+   |   | |   | | └Upper
+   |   | |   | |   ├Local:
+   |   | |   | |   | └Name: ConsName False 9:20-9:25
+   |   | |   | |   └NoExt
    |   | |   | └Prod
-   |   | |   |   ├PCons 10:4-10:9 Empty List (Path "Empty")
-   |   | |   |   └Upper 10:20-10:24 (Path "True")
+   |   | |   |   ├PCons
+   |   | |   |   | ├Local:
+   |   | |   |   | | └Name: ConsName Empty 10:4-10:9
+   |   | |   |   | ├Empty List
+   |   | |   |   | └10:4-10:9
+   |   | |   |   └Upper
+   |   | |   |     ├Local:
+   |   | |   |     | └Name: ConsName True 10:20-10:24
+   |   | |   |     └NoExt
    |   | |   └8:2-10:24
-   |   | ├declRet: (TId NoExt (Path "Bool"))
+   |   | ├declRet:
+   |   | | └TId
+   |   | |   ├Local:
+   |   | |   | └Name: TyName Bool 7:27-7:31
+   |   | |   └NoExt
    |   | └declExt: NoExt
    |   ├LetDecl
-   |   | ├declName: (Name "isEmpty?" 13:4-13:12)
+   |   | ├declName: (Name: ValName isEmpty? 13:4-13:12)
    |   | ├declArgs: Empty List
    |   | ├declBody:
    |   | | └Match
-   |   | |   ├Lower 14:8-14:12 (Path "hole")
+   |   | |   ├Lower
+   |   | |   | ├Local:
+   |   | |   | | └Name: ValName hole 14:8-14:12
+   |   | |   | └NoExt
    |   | |   ├NonEmpty
    |   | |   | ├Prod
    |   | |   | | ├PCons
-   |   | |   | | | ├Path "Filled"
-   |   | |   | | | ├List (PId NoExt (Name "range" 15:11-15:16))
+   |   | |   | | | ├Local:
+   |   | |   | | | | └Name: ConsName Filled 15:4-15:10
+   |   | |   | | | ├List (PId NoExt (Name: ValName range 15:11-15:16))
    |   | |   | | | └15:4-15:16
-   |   | |   | | └Upper 15:20-15:25 (Path "False")
+   |   | |   | | └Upper
+   |   | |   | |   ├Local:
+   |   | |   | |   | └Name: ConsName False 15:20-15:25
+   |   | |   | |   └NoExt
    |   | |   | └Prod
-   |   | |   |   ├PCons 16:4-16:9 Empty List (Path "Empty")
-   |   | |   |   └Upper 16:20-16:24 (Path "True")
+   |   | |   |   ├PCons
+   |   | |   |   | ├Local:
+   |   | |   |   | | └Name: ConsName Empty 16:4-16:9
+   |   | |   |   | ├Empty List
+   |   | |   |   | └16:4-16:9
+   |   | |   |   └Upper
+   |   | |   |     ├Local:
+   |   | |   |     | └Name: ConsName True 16:20-16:24
+   |   | |   |     └NoExt
    |   | |   └14:2-16:24
    |   | ├declRet:
    |   | | └TArrow
-   |   | |   ├TId NoExt (Path "Hole")
-   |   | |   ├TId NoExt (Path "Bool")
+   |   | |   ├TId
+   |   | |   | ├Local:
+   |   | |   | | └Name: TyName Hole 13:15-13:19
+   |   | |   | └NoExt
+   |   | |   ├TId
+   |   | |   | ├Local:
+   |   | |   | | └Name: TyName Bool 13:23-13:27
+   |   | |   | └NoExt
    |   | |   └13:15-13:27
    |   | └declExt: NoExt
    |   ├LetDecl
-   |   | ├declName: (Name "isEmpty" 18:4-18:11)
+   |   | ├declName: (Name: ValName isEmpty 18:4-18:11)
    |   | ├declArgs:
    |   | | └List
    |   | |   └Prod
-   |   | |     ├Name "hole" 18:13-18:17
-   |   | |     └TId NoExt (Path "Hole")
+   |   | |     ├Name: ValName hole 18:13-18:17
+   |   | |     └TId
+   |   | |       ├Local:
+   |   | |       | └Name: TyName Hole 18:19-18:23
+   |   | |       └NoExt
    |   | ├declBody:
    |   | | └If
    |   | |   ├App
-   |   | |   | ├Lower 19:5-19:13 (Path "isEmpty?")
-   |   | |   | ├NonEmpty (Lower 19:14-19:18 (Path "hole"))
+   |   | |   | ├Lower
+   |   | |   | | ├Local:
+   |   | |   | | | └Name: ValName isEmpty? 19:5-19:13
+   |   | |   | | └NoExt
+   |   | |   | ├NonEmpty
+   |   | |   | | └Lower
+   |   | |   | |   ├Local:
+   |   | |   | |   | └Name: ValName hole 19:14-19:18
+   |   | |   | |   └NoExt
    |   | |   | └19:5-19:18
    |   | |   ├App
-   |   | |   | ├Lower 20:9-20:14 (Path "print")
+   |   | |   | ├Lower
+   |   | |   | | ├Local:
+   |   | |   | | | └Name: ValName print 20:9-20:14
+   |   | |   | | └NoExt
    |   | |   | ├NonEmpty (Lit NoExt (LStr 20:15-20:29 It's empty!!))
    |   | |   | └20:9-20:29
    |   | |   ├Just
    |   | |   | └App
-   |   | |   |   ├Lower 21:9-21:14 (Path "print")
+   |   | |   |   ├Lower
+   |   | |   |   | ├Local:
+   |   | |   |   | | └Name: ValName print 21:9-21:14
+   |   | |   |   | └NoExt
    |   | |   |   ├NonEmpty (Lit NoExt (LStr 21:15-21:33 Is's not empty.'))
    |   | |   |   └21:9-21:33
    |   | |   └19:2-21:33
-   |   | ├declRet: (TId NoExt (Path "Unit"))
+   |   | ├declRet:
+   |   | | └TId
+   |   | |   ├Local:
+   |   | |   | └Name: TyName Unit 18:26-18:30
+   |   | |   └NoExt
    |   | └declExt: NoExt
    |   ├LetDecl
-   |   | ├declName: (Name "getLineOr" 23:4-23:13)
+   |   | ├declName: (Name: ValName getLineOr 23:4-23:13)
    |   | ├declArgs:
    |   | | └List
    |   | |   ├Prod
-   |   | |   | ├Name "hole" 23:15-23:19
-   |   | |   | └TId NoExt (Path "Hole")
+   |   | |   | ├Name: ValName hole 23:15-23:19
+   |   | |   | └TId
+   |   | |   |   ├Local:
+   |   | |   |   | └Name: TyName Hole 23:21-23:25
+   |   | |   |   └NoExt
    |   | |   └Prod
-   |   | |     ├Name "alt" 23:28-23:31
-   |   | |     └TId NoExt (Path "Int")
+   |   | |     ├Name: ValName alt 23:28-23:31
+   |   | |     └TId
+   |   | |       ├Local:
+   |   | |       | └Name: TyName Int 23:33-23:36
+   |   | |       └NoExt
    |   | ├declBody:
    |   | | └Match
-   |   | |   ├Lower 24:8-24:12 (Path "hole")
+   |   | |   ├Lower
+   |   | |   | ├Local:
+   |   | |   | | └Name: ValName hole 24:8-24:12
+   |   | |   | └NoExt
    |   | |   ├NonEmpty
    |   | |   | ├Prod
    |   | |   | | ├PCons
-   |   | |   | | | ├Path "Filled"
-   |   | |   | | | ├List (PId NoExt (Name "range" 25:11-25:16))
+   |   | |   | | | ├Local:
+   |   | |   | | | | └Name: ConsName Filled 25:4-25:10
+   |   | |   | | | ├List (PId NoExt (Name: ValName range 25:11-25:16))
    |   | |   | | | └25:4-25:16
    |   | |   | | └Field
-   |   | |   | |   ├Lower 25:20-25:25 (Path "range")
-   |   | |   | |   ├Name "line" 25:26-25:30
+   |   | |   | |   ├Lower
+   |   | |   | |   | ├Local:
+   |   | |   | |   | | └Name: ValName range 25:20-25:25
+   |   | |   | |   | └NoExt
+   |   | |   | |   ├Name: ValName line 25:26-25:30
    |   | |   | |   └25:26-25:30
    |   | |   | └Prod
-   |   | |   |   ├PCons 26:4-26:9 Empty List (Path "Empty")
-   |   | |   |   └Lower 26:20-26:23 (Path "alt")
+   |   | |   |   ├PCons
+   |   | |   |   | ├Local:
+   |   | |   |   | | └Name: ConsName Empty 26:4-26:9
+   |   | |   |   | ├Empty List
+   |   | |   |   | └26:4-26:9
+   |   | |   |   └Lower
+   |   | |   |     ├Local:
+   |   | |   |     | └Name: ValName alt 26:20-26:23
+   |   | |   |     └NoExt
    |   | |   └24:2-26:23
-   |   | ├declRet: (TId NoExt (Path "Int"))
+   |   | ├declRet:
+   |   | | └TId
+   |   | |   ├Local:
+   |   | |   | └Name: TyName Int 23:39-23:42
+   |   | |   └NoExt
    |   | └declExt: NoExt
    |   └LetDecl
-   |     ├declName: (Name "sequenced" 28:4-28:13)
+   |     ├declName: (Name: ValName sequenced 28:4-28:13)
    |     ├declArgs: Empty List
    |     ├declBody:
    |     | └Block
    |     |   ├BlBind
    |     |   | ├App
-   |     |   | | ├Lower 29:2-29:7 (Path "print")
+   |     |   | | ├Lower
+   |     |   | | | ├Local:
+   |     |   | | | | └Name: ValName print 29:2-29:7
+   |     |   | | | └NoExt
    |     |   | | ├NonEmpty (Lit NoExt (LStr 29:8-29:11 a))
    |     |   | | └29:2-29:11
    |     |   | └BlBind
    |     |   |   ├App
-   |     |   |   | ├Lower 30:2-30:7 (Path "print")
+   |     |   |   | ├Lower
+   |     |   |   | | ├Local:
+   |     |   |   | | | └Name: ValName print 30:2-30:7
+   |     |   |   | | └NoExt
    |     |   |   | ├NonEmpty (Lit NoExt (LStr 30:8-30:11 b))
    |     |   |   | └30:2-30:11
    |     |   |   └BlEnd
    |     |   |     └App
-   |     |   |       ├Lower 31:2-31:7 (Path "print")
+   |     |   |       ├Lower
+   |     |   |       | ├Local:
+   |     |   |       | | └Name: ValName print 31:2-31:7
+   |     |   |       | └NoExt
    |     |   |       ├NonEmpty (Lit NoExt (LStr 31:8-31:11 c))
    |     |   |       └31:2-31:11
    |     |   └29:2-31:11
-   |     ├declRet: (TId NoExt (Path "Unit"))
+   |     ├declRet:
+   |     | └TId
+   |     |   ├Local:
+   |     |   | └Name: TyName Unit 28:15-28:19
+   |     |   └NoExt
    |     └declExt: NoExt
    ├impDecls: Empty List
    └programExt: NoExt

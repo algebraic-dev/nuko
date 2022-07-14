@@ -1,12 +1,14 @@
 module Nuko.Report.Range (
     HasPosition(..),
+    SetPosition(..),
     Ranged(..),
     Range(..),
     Pos(..),
     oneColRange,
     advancePos,
     toLabel,
-    emptyRange
+    emptyRange,
+    copyPos
 ) where
 
 import Relude        (Int, Semigroup(..), Char, Num ((+)), Show, show, ($))
@@ -15,12 +17,15 @@ import Relude.String (Text)
 
 import qualified Data.List.NonEmpty as NonEmpty
 
-data Pos = Pos { line, column :: Int } deriving Show
+data Pos = Pos
+  { line :: {-# UNPACK #-} Int
+  , column :: {-# UNPACK #-} Int
+  } deriving Show
 
 data Range = Range
-  { start
-  , end :: Pos }
-  deriving Show
+  { start :: {-# UNPACK #-} Pos
+  , end :: {-# UNPACK #-} Pos
+  } deriving Show
 
 data Ranged a = Ranged
   { info :: a
@@ -35,14 +40,19 @@ advancePos pos '\n' = Pos { line = pos.line + 1, column = 0 }
 advancePos pos _    = pos { column = pos.column + 1 }
 
 oneColRange :: Pos -> Range
-oneColRange point =
-  Range point
-        (point { column = point.column + 1})
-
--- Useful type class :D
+oneColRange point = Range point (point { column = point.column + 1})
 
 emptyRange :: Range
 emptyRange = Range (Pos 0 0) (Pos 0 0)
+
+toLabel :: Range -> Text
+toLabel r = show r.start.line <> ":" <> show r.start.column <> "-" <> show r.end.line <> ":" <> show r.end.column
+
+copyPos :: (SetPosition a, HasPosition b) => b -> a -> a
+copyPos name name' = setPos (getPos name) name'
+
+class SetPosition a where
+  setPos :: Range -> a -> a
 
 class HasPosition a where
   getPos :: a -> Range
@@ -52,9 +62,6 @@ instance (HasPosition a, HasPosition b) => HasPosition (a, b) where
 
 instance HasPosition a => HasPosition (NonEmpty.NonEmpty a) where
   getPos x  = getPos (NonEmpty.head x) <> getPos (NonEmpty.last x)
-
-toLabel :: Range -> Text
-toLabel r = show r.start.line <> ":" <> show r.start.column <> "-" <> show r.end.line <> ":" <> show r.end.column
 
 instance HasPosition (Ranged a) where
     getPos (Ranged _ a) = a

@@ -1,5 +1,6 @@
 {
 
+{-# LANGUAGE NoStrictData #-}
 {-# OPTIONS_GHC -Wno-name-shadowing #-}
 {-# OPTIONS_GHC -Wno-missing-local-signatures #-}
 
@@ -15,8 +16,8 @@ import Nuko.Report.Range
 import Nuko.Syntax.Tree
 import Nuko.Syntax.Error
 import Nuko.Utils
+import Nuko.Names
 import Nuko.Tree
-
 import Data.Text (Text)
 import Data.Bifunctor
 
@@ -80,20 +81,20 @@ import qualified Data.List.NonEmpty      as NE
 -- Helpful predicates
 
 SepList(Sep, Pred)
-    : SepListHelper(Sep, Pred)     { $1 }
-    | {- UwU Empty -}              { [] }
+    : SepListHelper(Sep, Pred) { $1 }
+    | {- UwU Empty -} { [] }
 
 SepListHelper(Sep, Pred)
     : Pred  Sep SepListHelper(Sep, Pred) { $1 : $3 }
-    | Pred                               { $1 : [] }
+    | Pred { $1 : [] }
 
 SepList1(Sep, Pred)
-    : Pred  Sep SepListHelper(Sep, Pred) { $1 :| $3 }
-    | Pred                               { $1 :| [] }
+    : Pred Sep SepListHelper(Sep, Pred) { $1 :| $3 }
+    | Pred { $1 :| [] }
 
 List1(Pred)
-    : Pred List1(Pred)  { $1 NE.<| $2 }
-    | Pred              { NE.singleton $1 }
+    : Pred List1(Pred) { $1 NE.<| $2 }
+    | Pred { NE.singleton $1 }
 
 List(Pred)
     : Pred List(Pred) { $1 : $2 }
@@ -105,27 +106,30 @@ Optional(Pred)
 
 -- Parsing of identifiers and paths
 
-Lower :: { Name } : lower { Name (getData $1) $1.position }
-Upper :: { Name } : upper { Name (getData $1) $1.position }
+Lower :: { Ident } : lower { mkIdent (getData $1) $1.position }
+Upper :: { Ident } : upper { mkIdent (getData $1) $1.position }
+
+UpperCons :: { Name ConsName } : Upper { mkConsName $1 }
+UpperTy :: { Name TyName } : Upper { mkTyName $1 }
 
 PathHelper(Pred)
     : Upper '.' PathHelper(Pred) { let (p, f) = $3 in ($1 : p, f) }
     | Pred { ([], $1) }
 
 PathEnd
-    : Upper           { \p -> withPosListR p $1 (Upper $ withPosList $1 p (Path p $1)) }
-    | Lower           { \p -> withPosListR p $1 (Lower $ withPosList $1 p (Path p $1)) }
-    | Lower '.' Lower { \p -> withPosListR p $3 (Field (withPosListR p $1 $ Lower (withPosList $1 p $ Path p $1)) $3) }
+    : Upper           { \p -> Upper (mkPath p (mkConsName $1)) NoExt }
+    | Lower           { \p -> Lower (mkPath p (mkValName $1)) NoExt }
+    | Lower '.' Lower { \p -> withPosListR p $3 (Field (Lower (mkPath p (mkValName $1)) NoExt) (mkValName $3)) }
 
 PathExpr : PathHelper(PathEnd) { let (p , f) = $1 in f p }
 
-Path(Pred) : PathHelper(Pred) { let (p , f) = $1 in withPosListR p f $ Path p f }
+Path(Pred) : PathHelper(Pred) { let (p , f) = $1 in mkPath p f }
 
 -- Types
 
 TypeAtom :: { Ty Nm }
-    : Lower        { TPoly $1 NoExt }
-    | Path(Upper)  { TId $1 NoExt }
+    : Lower { TPoly (mkTyName $1) NoExt }
+    | Path(UpperTy) { TId $1 NoExt }
     | '(' Type ')' { $2 }
 
 TypeCon :: { Ty Nm }
@@ -135,20 +139,20 @@ TypeCon :: { Ty Nm }
 
 Type
     : TypeCon                    { $1 }
-    | forall Lower '.' Type      { withPos $1 $4 $ TForall $2 $4 }
+    | forall Lower '.' Type      { withPos $1 $4 $ TForall (mkTyName $2) $4 }
 
 -- Patterns
 
 AtomPat :: { Pat Nm }
     : '_'                         { PWild $1.position }
-    | Lower                       { PId $1 NoExt }
+    | Lower                       { PId (mkValName $1) NoExt }
     | Literal                     { PLit $1 NoExt }
     | '(' Pat ')'                 { $2 }
 
 Pat :: { Pat Nm }
-    : Path(Upper) List(AtomPat) { withPosList $1 $2 $ PCons $1 $2 }
-    | Pat ':' Type              { withPos $1 $3     $ PAnn $1 $3 }
-    | AtomPat                   { $1 }
+    : Path(UpperCons) List(AtomPat) { withPosList $1 $2 $ PCons $1 $2 }
+    | Pat ':' Type { withPos $1 $3 $ PAnn $1 $3 }
+    | AtomPat { $1 }
 
 -- Expressions
 
@@ -198,33 +202,33 @@ CaseClause :: { ((Pat Nm, Expr Nm)) }
 
 -- Top level
 
-ProdClause :: { (Name, Ty Nm) }
-    : Lower ':' Type { ($1, $3) }
+ProdClause :: { (Name ValName, Ty Nm) }
+    : Lower ':' Type { (mkValName $1, $3) }
 
-SumClause :: { (Name, [Ty Nm]) }
-    : '|' Upper List(TypeAtom) { ($2, $3) }
+SumClause :: { (Name ConsName, [Ty Nm]) }
+    : '|' Upper List(TypeAtom) { (mkConsName $2, $3) }
 
 TypeTy :: { TypeDeclArg Nm }
     : '{' SepList(',', ProdClause) '}'  { TypeProd $2 }
     | List1(SumClause)                  { TypeSum $1 }
     | Type                              { TypeSym $1 }
 
-TypeDecl : type Upper List(Lower) '=' TypeTy { TypeDecl $2 $3 $5 }
+TypeDecl : type Upper List(Lower) '=' TypeTy { TypeDecl (mkTyName $2) (fmap mkTyName $3) $5 }
 
 Ret : ':' Type { $2 }
 
-Binder : '(' Lower ':' Type ')' { ($2, $4) }
+Binder : '(' Lower ':' Type ')' { (mkValName $2, $4) }
 
-LetDecl : let Lower List(Binder) Ret '=' Expr { LetDecl $2 $3 $6 $4 NoExt }
+LetDecl : let Lower List(Binder) Ret '=' Expr { LetDecl (mkValName $2) $3 $6 $4 NoExt }
 
 -- Import declaration
 
-ImpPath :: { NonEmpty Name }
-    : SepList1('.', Upper) { $1 }
+ImpPath :: { ModName }
+    : SepList1('.', Upper) { mkModName $1 }
 
 ImpDeps :: { ImportDeps Nm }
-    : Upper as Lower {% terminate (WrongUsageOfCase LowerCase $3.range) }
-    | Lower as Upper {% terminate (WrongUsageOfCase UpperCase $3.range) }
+    : Upper as Lower {% terminate (WrongUsageOfCase LowerCase $3.iRange) }
+    | Lower as Upper {% terminate (WrongUsageOfCase UpperCase $3.iRange) }
     | Upper as Upper { ImportDeps (ImpDepUpper $1) (Just $3) }
     | Lower as Lower { ImportDeps (ImpDepLower $1) (Just $3) }
     | Upper          { ImportDeps (ImpDepUpper $1) Nothing }
@@ -242,6 +246,11 @@ Program :: { Program Nm }
     | ImportDecl Program { $2 { impDecls  = $1 : $2.impDecls }  }
     | {- Empty UwU -}    { Program [] [] [] NoExt }
 {
+
+mkPath list last' =
+  case list of
+    [] -> mkLocalPath last'
+    (x : xs) -> mkQualifiedPath (mkQualified (mkModName (x :| xs)) last' (getPos x <> getPos last'))
 
 withPosList :: (HasPosition a, HasPosition b) => a -> [b] -> (Range -> c) -> c
 withPosList p []       fn = fn (getPos p)

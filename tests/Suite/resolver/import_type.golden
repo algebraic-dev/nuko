@@ -4,66 +4,85 @@
    | ├typeDecls:
    | | └List
    | |   └TypeDecl
-   | |     ├tyName: (ReId A 0:5-0:6)
+   | |     ├tyName: (Name: TyName A 0:5-0:6)
    | |     ├tyArgs: Empty List
    | |     └tyDecl:
    | |       └TypeSum
    | |         └NonEmpty
    | |           ├Prod
-   | |           | ├ReId B 1:4-1:5
+   | |           | ├Name: ConsName B 1:4-1:5
    | |           | └Empty List
    | |           └Prod
-   | |             ├ReId C 2:4-2:5
+   | |             ├Name: ConsName C 2:4-2:5
    | |             └Empty List
    | ├letDecls: Empty List
    | ├impDecls: Empty List
    | └programExt: NoExt
-   └LocalNS
+   └ResolverState
      ├_openedNames:
      | └HashMap
      |   ├Prod
-     |   | ├OccName TyName Int
-     |   | └Single (Qualified Prelude Int)
+     |   | ├Name: TyName Int 0:0-0:0
+     |   | └Single
+     |   |   └Qualified: Prelude 0:0-0:0
+     |   |     └Name: TyName Int 0:0-0:0
      |   ├Prod
-     |   | ├OccName TyName String
-     |   | └Single (Qualified Prelude String)
+     |   | ├Name: ConsName B 4:15-4:16
+     |   | └Single
+     |   |   └Qualified: Main.A 4:15-4:16
+     |   |     └Name: ConsName B 4:15-4:16
      |   └Prod
-     |     ├OccName ConsName B
-     |     └Single (Qualified Main.A B)
-     ├_localNames: (NonEmpty HashMap)
+     |     ├Name: TyName String 0:0-0:0
+     |     └Single
+     |       └Qualified: Prelude 0:0-0:0
+     |         └Name: TyName String 0:0-0:0
      ├_openedModules:
      | └HashMap
+     |   ├Prod
+     |   | ├ModName: A
+     |   | └NameSpace
+     |   |   ├_modName: (ModName: Main.A)
+     |   |   └_names:
+     |   |     └HashMap
+     |   |       ├Prod
+     |   |       | ├Name: ConsName C 2:4-2:5
+     |   |       | └Public
+     |   |       └Prod
+     |   |         ├Name: ConsName B 1:4-1:5
+     |   |         └Public
      |   └Prod
-     |     ├A
+     |     ├ModName: Main.A
      |     └NameSpace
-     |       ├_modName: Main.A
+     |       ├_modName: (ModName: Main.A)
      |       └_names:
      |         └HashMap
      |           ├Prod
-     |           | ├OccName ConsName B
+     |           | ├Name: ConsName C 2:4-2:5
      |           | └Public
      |           └Prod
-     |             ├OccName ConsName C
+     |             ├Name: ConsName B 1:4-1:5
      |             └Public
+     ├_localNames: HashMap
+     ├_usedLocals: HashMap
      ├_currentNamespace:
      | └NameSpace
-     |   ├_modName: Main
+     |   ├_modName: (ModName: Main)
      |   └_names:
      |     └HashMap
      |       └Prod
-     |         ├OccName TyName A
+     |         ├Name: TyName A 0:5-0:6
      |         └Public
      └_newNamespaces:
        └HashMap
          └Prod
-           ├Main.A
+           ├ModName: Main.A
            └NameSpace
-             ├_modName: Main.A
+             ├_modName: (ModName: Main.A)
              └_names:
                └HashMap
                  ├Prod
-                 | ├OccName ConsName B
+                 | ├Name: ConsName C 2:4-2:5
                  | └Public
                  └Prod
-                   ├OccName ConsName C
+                   ├Name: ConsName B 1:4-1:5
                    └Public

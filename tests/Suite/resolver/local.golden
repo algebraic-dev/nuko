@@ -5,93 +5,134 @@
    | ├letDecls:
    | | └List
    | |   ├LetDecl
-   | |   | ├declName: (ReId print 2:4-2:9)
+   | |   | ├declName: (Name: ValName print 2:4-2:9)
    | |   | ├declArgs: Empty List
    | |   | ├declBody: (Lit NoExt (LInt 2:17-2:19 42))
    | |   | ├declRet:
-   | |   | | └TId NoExt (Path "Prelude.Int" 2:11-2:14)
+   | |   | | └TId
+   | |   | |   ├Full: "Prelude" 2:11-2:14
+   | |   | |   | └Name: TyName Int 2:11-2:14
+   | |   | |   └NoExt
    | |   | └declExt: NoExt
    | |   ├LetDecl
-   | |   | ├declName: (ReId plus 3:4-3:8)
+   | |   | ├declName: (Name: ValName plus 3:4-3:8)
    | |   | ├declArgs: Empty List
    | |   | ├declBody: (Lit NoExt (LInt 3:17-3:19 42))
    | |   | ├declRet:
-   | |   | | └TId NoExt (Path "Prelude.Int" 3:10-3:13)
+   | |   | | └TId
+   | |   | |   ├Full: "Prelude" 3:10-3:13
+   | |   | |   | └Name: TyName Int 3:10-3:13
+   | |   | |   └NoExt
    | |   | └declExt: NoExt
    | |   └LetDecl
-   | |     ├declName: (ReId local 5:4-5:9)
+   | |     ├declName: (Name: ValName local 5:4-5:9)
    | |     ├declArgs:
    | |     | └List
    | |     |   └Prod
-   | |     |     ├ReId a 5:11-5:12
-   | |     |     └TId NoExt (Path "Prelude.Int" 5:15-5:18)
+   | |     |     ├Name: ValName a 5:11-5:12
+   | |     |     └TId
+   | |     |       ├Full: "Prelude" 5:15-5:18
+   | |     |       | └Name: TyName Int 5:15-5:18
+   | |     |       └NoExt
    | |     ├declBody:
    | |     | └Block
    | |     |   ├BlVar
    | |     |   | ├Var
-   | |     |   | | ├pat: (PId NoExt (ReId b 6:6-6:7))
+   | |     |   | | ├pat:
+   | |     |   | | | └PId NoExt (Name: ValName b 6:6-6:7)
    | |     |   | | ├val: (Lit NoExt (LInt 6:10-6:11 3))
    | |     |   | | └ext: 6:2-6:11
    | |     |   | └BlVar
    | |     |   |   ├Var
-   | |     |   |   | ├pat: (PId NoExt (ReId c 7:6-7:7))
+   | |     |   |   | ├pat:
+   | |     |   |   | | └PId NoExt (Name: ValName c 7:6-7:7)
    | |     |   |   | ├val:
    | |     |   |   | | └App
-   | |     |   |   | |   ├Lower 7:10-7:14 (Path "Main.plus" 7:10-7:14)
+   | |     |   |   | |   ├Lower
+   | |     |   |   | |   | ├Full: "Main" 7:10-7:14
+   | |     |   |   | |   | | └Name: ValName plus 7:10-7:14
+   | |     |   |   | |   | └NoExt
    | |     |   |   | |   ├NonEmpty
-   | |     |   |   | |   | ├Lower 7:15-7:16 (Local "a" 7:15-7:16)
-   | |     |   |   | |   | └Lower 7:17-7:18 (Local "b" 7:17-7:18)
+   | |     |   |   | |   | ├Lower
+   | |     |   |   | |   | | ├Local:
+   | |     |   |   | |   | | | └Name: ValName a 7:15-7:16
+   | |     |   |   | |   | | └NoExt
+   | |     |   |   | |   | └Lower
+   | |     |   |   | |   |   ├Local:
+   | |     |   |   | |   |   | └Name: ValName b 7:17-7:18
+   | |     |   |   | |   |   └NoExt
    | |     |   |   | |   └7:10-7:18
    | |     |   |   | └ext: 7:2-7:18
    | |     |   |   └BlEnd
    | |     |   |     └If
-   | |     |   |       ├Lower 8:5-8:6 (Local "c" 8:5-8:6)
-   | |     |   |       ├Lower 9:9-9:10 (Local "b" 9:9-9:10)
+   | |     |   |       ├Lower
+   | |     |   |       | ├Local:
+   | |     |   |       | | └Name: ValName c 8:5-8:6
+   | |     |   |       | └NoExt
+   | |     |   |       ├Lower
+   | |     |   |       | ├Local:
+   | |     |   |       | | └Name: ValName b 9:9-9:10
+   | |     |   |       | └NoExt
    | |     |   |       ├Just
    | |     |   |       | └Block
    | |     |   |       |   ├BlVar
    | |     |   |       |   | ├Var
-   | |     |   |       |   | | ├pat: (PId NoExt (ReId d 10:13-10:14))
+   | |     |   |       |   | | ├pat:
+   | |     |   |       |   | | | └PId NoExt (Name: ValName d 10:13-10:14)
    | |     |   |       |   | | ├val: (Lit NoExt (LInt 10:17-10:18 3))
    | |     |   |       |   | | └ext: 10:9-10:18
    | |     |   |       |   | └BlEnd
    | |     |   |       |   |   └App
-   | |     |   |       |   |     ├Lower 11:9-11:13 (Path "Main.plus" 11:9-11:13)
+   | |     |   |       |   |     ├Lower
+   | |     |   |       |   |     | ├Full: "Main" 11:9-11:13
+   | |     |   |       |   |     | | └Name: ValName plus 11:9-11:13
+   | |     |   |       |   |     | └NoExt
    | |     |   |       |   |     ├NonEmpty
-   | |     |   |       |   |     | ├Lower 11:14-11:15 (Local "d" 11:14-11:15)
+   | |     |   |       |   |     | ├Lower
+   | |     |   |       |   |     | | ├Local:
+   | |     |   |       |   |     | | | └Name: ValName d 11:14-11:15
+   | |     |   |       |   |     | | └NoExt
    | |     |   |       |   |     | └Lit NoExt (LInt 11:16-11:17 4)
    | |     |   |       |   |     └11:9-11:17
    | |     |   |       |   └10:9-11:17
    | |     |   |       └8:2-11:17
    | |     |   └6:2-11:17
    | |     ├declRet:
-   | |     | └TId NoExt (Path "Prelude.Int" 5:21-5:24)
+   | |     | └TId
+   | |     |   ├Full: "Prelude" 5:21-5:24
+   | |     |   | └Name: TyName Int 5:21-5:24
+   | |     |   └NoExt
    | |     └declExt: NoExt
    | ├impDecls: Empty List
    | └programExt: NoExt
-   └LocalNS
+   └ResolverState
      ├_openedNames:
      | └HashMap
      |   ├Prod
-     |   | ├OccName TyName Int
-     |   | └Single (Qualified Prelude Int)
+     |   | ├Name: TyName Int 0:0-0:0
+     |   | └Single
+     |   |   └Qualified: Prelude 0:0-0:0
+     |   |     └Name: TyName Int 0:0-0:0
      |   └Prod
-     |     ├OccName TyName String
-     |     └Single (Qualified Prelude String)
-     ├_localNames: (NonEmpty HashMap)
+     |     ├Name: TyName String 0:0-0:0
+     |     └Single
+     |       └Qualified: Prelude 0:0-0:0
+     |         └Name: TyName String 0:0-0:0
      ├_openedModules: HashMap
+     ├_localNames: HashMap
+     ├_usedLocals: HashMap
      ├_currentNamespace:
      | └NameSpace
-     |   ├_modName: Main
+     |   ├_modName: (ModName: Main)
      |   └_names:
      |     └HashMap
      |       ├Prod
-     |       | ├OccName VarName local
+     |       | ├Name: ValName plus 3:4-3:8
      |       | └Public
      |       ├Prod
-     |       | ├OccName VarName plus
+     |       | ├Name: ValName print 2:4-2:9
      |       | └Public
      |       └Prod
-     |         ├OccName VarName print
+     |         ├Name: ValName local 5:4-5:9
      |         └Public
      └_newNamespaces: HashMap

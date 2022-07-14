@@ -4,63 +4,86 @@
    | ├typeDecls:
    | | └List
    | |   └TypeDecl
-   | |     ├tyName: (ReId Ata 0:5-0:8)
+   | |     ├tyName: (Name: TyName Ata 0:5-0:8)
    | |     ├tyArgs: Empty List
    | |     └tyDecl:
    | |       └TypeProd
    | |         └List
    | |           ├Prod
-   | |           | ├ReId b 1:2-1:3
-   | |           | └TId NoExt (Path "Prelude.Int" 1:5-1:8)
+   | |           | ├Name: ValName b 1:2-1:3
+   | |           | └TId
+   | |           |   ├Full: "Prelude" 1:5-1:8
+   | |           |   | └Name: TyName Int 1:5-1:8
+   | |           |   └NoExt
    | |           └Prod
-   | |             ├ReId s 2:2-2:3
-   | |             └TId NoExt (Path "Prelude.String" 2:5-2:11)
+   | |             ├Name: ValName s 2:2-2:3
+   | |             └TId
+   | |               ├Full: "Prelude" 2:5-2:11
+   | |               | └Name: TyName String 2:5-2:11
+   | |               └NoExt
    | ├letDecls: Empty List
    | ├impDecls: Empty List
    | └programExt: NoExt
-   └LocalNS
+   └ResolverState
      ├_openedNames:
      | └HashMap
      |   ├Prod
-     |   | ├OccName TyName Int
-     |   | └Single (Qualified Prelude Int)
+     |   | ├Name: TyName Int 0:0-0:0
+     |   | └Single
+     |   |   └Qualified: Prelude 0:0-0:0
+     |   |     └Name: TyName Int 0:0-0:0
      |   └Prod
-     |     ├OccName TyName String
-     |     └Single (Qualified Prelude String)
-     ├_localNames: (NonEmpty HashMap)
+     |     ├Name: TyName String 0:0-0:0
+     |     └Single
+     |       └Qualified: Prelude 0:0-0:0
+     |         └Name: TyName String 0:0-0:0
      ├_openedModules:
      | └HashMap
+     |   ├Prod
+     |   | ├ModName: Main.Ata
+     |   | └NameSpace
+     |   |   ├_modName: (ModName: Main.Ata)
+     |   |   └_names:
+     |   |     └HashMap
+     |   |       ├Prod
+     |   |       | ├Name: ValName s 2:2-2:3
+     |   |       | └Public
+     |   |       └Prod
+     |   |         ├Name: ValName b 1:2-1:3
+     |   |         └Public
      |   └Prod
-     |     ├Ata
+     |     ├ModName: Ata
      |     └NameSpace
-     |       ├_modName: Main.Ata
+     |       ├_modName: (ModName: Main.Ata)
      |       └_names:
      |         └HashMap
      |           ├Prod
-     |           | ├OccName FieldName b
+     |           | ├Name: ValName s 2:2-2:3
      |           | └Public
      |           └Prod
-     |             ├OccName FieldName s
+     |             ├Name: ValName b 1:2-1:3
      |             └Public
+     ├_localNames: HashMap
+     ├_usedLocals: HashMap
      ├_currentNamespace:
      | └NameSpace
-     |   ├_modName: Main
+     |   ├_modName: (ModName: Main)
      |   └_names:
      |     └HashMap
      |       └Prod
-     |         ├OccName TyName Ata
+     |         ├Name: TyName Ata 0:5-0:8
      |         └Public
      └_newNamespaces:
        └HashMap
          └Prod
-           ├Main.Ata
+           ├ModName: Main.Ata
            └NameSpace
-             ├_modName: Main.Ata
+             ├_modName: (ModName: Main.Ata)
              └_names:
                └HashMap
                  ├Prod
-                 | ├OccName FieldName b
+                 | ├Name: ValName s 2:2-2:3
                  | └Public
                  └Prod
-                   ├OccName FieldName s
+                   ├Name: ValName b 1:2-1:3
                    └Public

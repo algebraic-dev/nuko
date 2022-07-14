@@ -38,7 +38,10 @@ default-extensions:
   - DefaultSignatures
   - UndecidableInstances
   - GADTs
-  
+  - ImpredicativeTypes
+  - StrictData
+  - DeriveFunctor
+
 ghc-options:
   - -Weverything
   - -Wno-all-missed-specializations
@@ -65,6 +68,8 @@ library:
     - these
     - microlens-platform
     - containers
+    - unordered-containers
+    - hashable
 
 executables:
   Nuko-exe:

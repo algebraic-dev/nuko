@@ -1,0 +1,6 @@
+type T = {
+  a : Int,
+  b : String
+}
+
+let a (b : T) : String = b.b

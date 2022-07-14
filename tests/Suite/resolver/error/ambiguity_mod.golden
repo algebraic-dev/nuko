@@ -1,7 +1,8 @@
 ✗ This
-"AmbiguousNames
-    ( fromList
-        [ Qualified "D" "Main.L"
-        , Qualified "D" "Main.G"
-        ]
-    )"
+" └AmbiguousNames
+   └HashSet
+     ├Qualified: Main.G 9:15-9:16
+     | └Name: ConsName D 9:15-9:16
+     └Qualified: Main.L 8:15-8:16
+       └Name: ConsName D 8:15-8:16
+"

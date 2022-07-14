@@ -17,10 +17,14 @@ AssignInEndOfBlock
    ├letDecls:
    | └List
    |   └LetDecl
-   |     ├declName: (Name "a" 0:4-0:5)
+   |     ├declName: (Name: ValName a 0:4-0:5)
    |     ├declArgs: Empty List
    |     ├declBody: (Lit NoExt (LInt 1:12-1:13 3))
-   |     ├declRet: (TId NoExt (Path "Int"))
+   |     ├declRet:
+   |     | └TId
+   |     |   ├Local:
+   |     |   | └Name: TyName Int 0:7-0:10
+   |     |   └NoExt
    |     └declExt: NoExt
    ├impDecls: Empty List
    └programExt: NoExt

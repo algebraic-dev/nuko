@@ -5,66 +5,96 @@
    | ├letDecls:
    | | └List
    | |   ├LetDecl
-   | |   | ├declName: (ReId add 0:4-0:7)
+   | |   | ├declName: (Name: ValName add 0:4-0:7)
    | |   | ├declArgs:
    | |   | | └List
    | |   | |   ├Prod
-   | |   | |   | ├ReId a 0:9-0:10
-   | |   | |   | └TId NoExt (Path "Prelude.Int" 0:12-0:15)
+   | |   | |   | ├Name: ValName a 0:9-0:10
+   | |   | |   | └TId
+   | |   | |   |   ├Full: "Prelude" 0:12-0:15
+   | |   | |   |   | └Name: TyName Int 0:12-0:15
+   | |   | |   |   └NoExt
    | |   | |   └Prod
-   | |   | |     ├ReId b 0:18-0:19
-   | |   | |     └TId NoExt (Path "Prelude.Int" 0:21-0:24)
+   | |   | |     ├Name: ValName b 0:18-0:19
+   | |   | |     └TId
+   | |   | |       ├Full: "Prelude" 0:21-0:24
+   | |   | |       | └Name: TyName Int 0:21-0:24
+   | |   | |       └NoExt
    | |   | ├declBody: (Lit NoExt (LInt 0:33-0:34 3))
    | |   | ├declRet:
-   | |   | | └TId NoExt (Path "Prelude.Int" 0:27-0:30)
+   | |   | | └TId
+   | |   | |   ├Full: "Prelude" 0:27-0:30
+   | |   | |   | └Name: TyName Int 0:27-0:30
+   | |   | |   └NoExt
    | |   | └declExt: NoExt
    | |   └LetDecl
-   | |     ├declName: (ReId at 2:4-2:6)
+   | |     ├declName: (Name: ValName at 2:4-2:6)
    | |     ├declArgs:
    | |     | └List
    | |     |   └Prod
-   | |     |     ├ReId a 2:8-2:9
-   | |     |     └TId NoExt (Path "Prelude.Int" 2:11-2:14)
+   | |     |     ├Name: ValName a 2:8-2:9
+   | |     |     └TId
+   | |     |       ├Full: "Prelude" 2:11-2:14
+   | |     |       | └Name: TyName Int 2:11-2:14
+   | |     |       └NoExt
    | |     ├declBody:
    | |     | └Block
    | |     |   ├BlVar
    | |     |   | ├Var
-   | |     |   | | ├pat: (PId NoExt (ReId a 3:6-3:7))
+   | |     |   | | ├pat:
+   | |     |   | | | └PId NoExt (Name: ValName a 3:6-3:7)
    | |     |   | | ├val: (Lit NoExt (LInt 3:10-3:11 3))
    | |     |   | | └ext: 3:2-3:11
    | |     |   | └BlEnd
    | |     |   |   └App
-   | |     |   |     ├Lower 4:2-4:5 (Path "Main.add" 4:2-4:5)
+   | |     |   |     ├Lower
+   | |     |   |     | ├Full: "Main" 4:2-4:5
+   | |     |   |     | | └Name: ValName add 4:2-4:5
+   | |     |   |     | └NoExt
    | |     |   |     ├NonEmpty
-   | |     |   |     | ├Lower 4:6-4:7 (Local "a" 4:6-4:7)
-   | |     |   |     | └Lower 4:8-4:9 (Local "a" 4:8-4:9)
+   | |     |   |     | ├Lower
+   | |     |   |     | | ├Local:
+   | |     |   |     | | | └Name: ValName a 4:6-4:7
+   | |     |   |     | | └NoExt
+   | |     |   |     | └Lower
+   | |     |   |     |   ├Local:
+   | |     |   |     |   | └Name: ValName a 4:8-4:9
+   | |     |   |     |   └NoExt
    | |     |   |     └4:2-4:9
    | |     |   └3:2-4:9
    | |     ├declRet:
-   | |     | └TId NoExt (Path "Prelude.Int" 2:17-2:20)
+   | |     | └TId
+   | |     |   ├Full: "Prelude" 2:17-2:20
+   | |     |   | └Name: TyName Int 2:17-2:20
+   | |     |   └NoExt
    | |     └declExt: NoExt
    | ├impDecls: Empty List
    | └programExt: NoExt
-   └LocalNS
+   └ResolverState
      ├_openedNames:
      | └HashMap
      |   ├Prod
-     |   | ├OccName TyName Int
-     |   | └Single (Qualified Prelude Int)
+     |   | ├Name: TyName Int 0:0-0:0
+     |   | └Single
+     |   |   └Qualified: Prelude 0:0-0:0
+     |   |     └Name: TyName Int 0:0-0:0
      |   └Prod
-     |     ├OccName TyName String
-     |     └Single (Qualified Prelude String)
-     ├_localNames: (NonEmpty HashMap)
+     |     ├Name: TyName String 0:0-0:0
+     |     └Single
+     |       └Qualified: Prelude 0:0-0:0
+     |         └Name: TyName String 0:0-0:0
      ├_openedModules: HashMap
+     ├_localNames: HashMap
+     ├_usedLocals: HashMap
      ├_currentNamespace:
      | └NameSpace
-     |   ├_modName: Main
+     |   ├_modName: (ModName: Main)
      |   └_names:
      |     └HashMap
      |       ├Prod
-     |       | ├OccName VarName at
+     |       | ├Name: ValName add 0:4-0:7
      |       | └Public
      |       └Prod
-     |         ├OccName VarName add
+     |         ├Name: ValName at 2:4-2:6
      |         └Public
      └_newNamespaces: HashMap

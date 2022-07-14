@@ -1,6 +1,6 @@
 module Nuko.Driver (compile) where
 
-import Relude (error)
+import Relude (undefined, ByteString, IO)
 
-compile :: p
-compile = error "Todo! Nothing here dumbass!"
+compile :: ByteString -> IO ()
+compile _ = undefined

@@ -6,26 +6,18 @@
 module Nuko.Syntax.Tree where
 
 import Nuko.Tree
-import Nuko.Report.Range  (Range, HasPosition(..), toLabel)
-import Relude             (Show, Semigroup((<>)), Void, show, Functor (fmap), Eq ((==)))
-import Data.Text          (Text, intercalate)
+import Nuko.Report.Range  (Range, HasPosition(..))
+import Relude             (Semigroup((<>)), Void)
 import GHC.Generics       (Generic)
-import Pretty.Tree        (PrettyTree (prettyTree), Tree (Node))
-import Relude.Bool        ((&&))
+import Pretty.Tree        (PrettyTree)
+import Nuko.Names         (Ident, Path, Name, ModName)
 
 type Normal = Nuko 'Normal
 
-data Name = Name { text :: Text, range :: Range } deriving Show
-data Path = Path { mod :: [Name], last :: Name, range :: Range } deriving Show
-
-instance Eq Name where
-  (Name t _) == (Name g _) = t == g
-
-instance Eq Path where
-  (Path mod name _) == (Path mod' name' _) = mod == mod' && name == name'
-
-type instance XName Nm = Name
-type instance XPath Nm = Path
+type instance XIdent Nm  = Ident
+type instance XModName Nm  = ModName
+type instance XName Nm k = Name k
+type instance XPath Nm k = Path (Name k)
 type instance XTy   Nm = Ty Nm
 
 type instance XLInt Nm = Range
@@ -48,8 +40,8 @@ type instance XLit Nm = NoExt
 type instance XLam Nm = Range
 type instance XAnn Nm = Range
 type instance XApp Nm = Range
-type instance XLower Nm = Range
-type instance XUpper Nm = Range
+type instance XLower Nm = NoExt
+type instance XUpper Nm = NoExt
 type instance XField Nm = Range
 type instance XIf Nm = Range
 type instance XMatch Nm = Range
@@ -74,9 +66,6 @@ deriving instance Generic (TypeDeclArg Nm)
 deriving instance Generic (TypeDecl Nm)
 deriving instance Generic (LetDecl Nm)
 
-instance PrettyTree Path  where prettyTree (Path mod' t _) = Node "Path" [show (intercalate "." (fmap text (mod' <> [t])))] []
-instance PrettyTree Name  where prettyTree (Name a r) = Node "Name" [show a, toLabel r] []
-
 instance PrettyTree (Expr Nm) where
 instance PrettyTree (Block Nm) where
 instance PrettyTree (Var Nm) where
@@ -91,12 +80,6 @@ instance PrettyTree (Program Nm) where
 instance PrettyTree (TypeDeclArg Nm) where
 instance PrettyTree (TypeDecl Nm) where
 instance PrettyTree (LetDecl Nm) where
-
-instance HasPosition Path where
-  getPos (Path _ _ r) = r
-
-instance HasPosition Name where
-  getPos (Name _ r) = r
 
 instance HasPosition (Var Nm) where
   getPos (Var _ _ r) = r
@@ -119,8 +102,8 @@ instance HasPosition (Expr Nm) where
     Lit t _ -> getPos t
     Lam _ _ r -> r
     App _ _ r -> r
-    Lower _ r -> r
-    Upper _ r -> r
+    Lower n _ -> getPos n
+    Upper n _ -> getPos n
     Field _ _ r -> r
     If _ _ _ r -> r
     Match _ _ r -> r

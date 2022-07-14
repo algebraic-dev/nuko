@@ -4,12 +4,12 @@ type List a =
 
 type Either a b c = | Nel
 
-let add (a: ffff) (b: List b) (c: forall c. List c -> Either b d ffff) (d: List d): Int = 3
+let add (a: ffff) (b: List b) (d: List d): Int = 3
 
 let adf (c: forall c. List c -> List b): Int = 3
 
 let ade (a: ffff) (b: List b) (c: Int -> List d) (d: List b): Int = 3
 
-let at (a: Int): Int = 
+let at (a: Int): Int =
   let a = 3
-  add a a
+  add a List.Nil List.Nil

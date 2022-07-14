@@ -6,19 +6,22 @@ module Nuko.Resolver.Error (
 import Relude                    (Show, Text, HashSet, Maybe)
 import Relude.List.NonEmpty      (NonEmpty)
 import Nuko.Report.Range         (Range(..))
-import Nuko.Resolver.Occourence  (NameKind)
-import Nuko.Resolver.Environment (Qualified)
+import Nuko.Names                (NameSort, Path, Label, Ident, Qualified, ModName, ValName, Name, TyName)
+import GHC.Generics (Generic)
+import Pretty.Tree (PrettyTree)
 
 data Case = UpperCase | LowerCase
   deriving Show
 
 data ResolveError
-  = CyclicImport Text Range
-  | CannotFindModule Text Range
-  | CannotFindInModule (NonEmpty NameKind) (Maybe Text) Text Range
-  | IsPrivate NameKind Text Range
-  | AmbiguousNames (HashSet Qualified)
-  | AlreadyExistsName Text NameKind Range
-  | ConflictingTypes (NonEmpty (Text, Range))
-  | AlreadyExistsPat Text Range
-  deriving Show
+  = CyclicImport ModName
+  | CannotFindModule ModName
+  | CannotFindInModule (NonEmpty NameSort) (Maybe ModName) Ident
+  | IsPrivate (Path Label)
+  | AmbiguousNames (HashSet (Qualified Label))
+  | AlreadyExistsName Label
+  | ConflictingTypes (NonEmpty (Name TyName))
+  | AlreadyExistsPat Label
+  deriving Generic
+
+instance PrettyTree ResolveError where

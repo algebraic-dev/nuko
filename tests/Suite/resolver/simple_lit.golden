@@ -5,31 +5,39 @@
    | ├letDecls:
    | | └List
    | |   └LetDecl
-   | |     ├declName: (ReId a 0:4-0:5)
+   | |     ├declName: (Name: ValName a 0:4-0:5)
    | |     ├declArgs: Empty List
    | |     ├declBody: (Lit NoExt (LInt 0:13-0:14 2))
    | |     ├declRet:
-   | |     | └TId NoExt (Path "Prelude.Int" 0:7-0:10)
+   | |     | └TId
+   | |     |   ├Full: "Prelude" 0:7-0:10
+   | |     |   | └Name: TyName Int 0:7-0:10
+   | |     |   └NoExt
    | |     └declExt: NoExt
    | ├impDecls: Empty List
    | └programExt: NoExt
-   └LocalNS
+   └ResolverState
      ├_openedNames:
      | └HashMap
      |   ├Prod
-     |   | ├OccName TyName Int
-     |   | └Single (Qualified Prelude Int)
+     |   | ├Name: TyName Int 0:0-0:0
+     |   | └Single
+     |   |   └Qualified: Prelude 0:0-0:0
+     |   |     └Name: TyName Int 0:0-0:0
      |   └Prod
-     |     ├OccName TyName String
-     |     └Single (Qualified Prelude String)
-     ├_localNames: (NonEmpty HashMap)
+     |     ├Name: TyName String 0:0-0:0
+     |     └Single
+     |       └Qualified: Prelude 0:0-0:0
+     |         └Name: TyName String 0:0-0:0
      ├_openedModules: HashMap
+     ├_localNames: HashMap
+     ├_usedLocals: HashMap
      ├_currentNamespace:
      | └NameSpace
-     |   ├_modName: Main
+     |   ├_modName: (ModName: Main)
      |   └_names:
      |     └HashMap
      |       └Prod
-     |         ├OccName VarName a
+     |         ├Name: ValName a 0:4-0:5
      |         └Public
      └_newNamespaces: HashMap

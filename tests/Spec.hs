@@ -18,16 +18,12 @@ import Nuko.Syntax.Lexer           (scan)
 import Nuko.Syntax.Lexer.Tokens    (Token(TcEOF))
 import Nuko.Report.Range           (Ranged (info))
 import Nuko.Syntax.Parser          (parseProgram)
-import Nuko.Typer.Env              (updateTyKind, ScopeEnv(..), MonadTyper, TypeSpace(..), emptyTS, TyInfo(..), TypingEnv (TypingEnv), addTyKind)
-import Nuko.Typer.Infer            (initTypeDecl, inferTypeDecl, checkTypeSymLoop, inferProgram)
-import Nuko.Typer.Error            (TypeError)
-import Nuko.Typer.Types            (TKind(..), dereferenceKind, removeKindHoles)
-import Nuko.Typer.Infer.TypeDecl   (InitTypeData(..))
 
 import Text.Pretty.Simple          (pShowNoColor)
 
-import Resolver.PreludeImporter    (resolveEntireProgram)
 import Pretty.Tree                 (PrettyTree(prettyShowTree))
+
+import Resolver.PreludeImporter
 
 import Nuko.Tree
 import Nuko.Tree ( Re, Tc, Program(typeDecls), TypeDecl )
@@ -37,7 +33,6 @@ import qualified Data.Text.Lazy                as LazyT
 import qualified Control.Monad.State.Strict    as State
 import qualified Control.Monad.Trans.Chronicle as Chronicle
 import qualified Control.Monad.Reader          as Reader
-import Nuko.Typer.Infer.LetDecl (initLetDecl)
 
 scanUntilEnd :: Lexer [Ranged Token]
 scanUntilEnd = do
@@ -57,6 +52,11 @@ stringifyErr (That e) = That e
 stringifyErr (This e) = This (fmap prettyShow e)
 stringifyErr (These e f) = These (fmap prettyShow e) f
 
+treeErr :: PrettyTree a => These [a] b -> These [Text] b
+treeErr (That e) = That e
+treeErr (This e) = This (fmap prettyShowTree e)
+treeErr (These e f) = These (fmap prettyShowTree e) f
+
 runThat :: Show a =>  (b -> Text) ->  (forall m. MonadIO m => ByteString -> m (These [a] b)) -> FilePath -> IO TestTree
 runThat fn that file = do
   content <- ByteString.readFile $ addExtension file ".nk"
@@ -73,35 +73,20 @@ runFile = runThat prettyShowTree (pure . runLexer scanUntilEnd)
 runParser :: FilePath -> IO TestTree
 runParser = runThat prettyShowTree (pure . runLexer parseProgram)
 
-runResolver :: FilePath -> IO TestTree
-runResolver = runThat prettyShowTree $ \content -> pure (stringifyErr (runLexer parseProgram content) >>= \ast -> stringifyErr (resolveEntireProgram ast))
-
-runTypeChecker :: MonadIO m => TypeSpace -> (forall m . MonadTyper m => m a) -> m (These [TypeError] (a, TypingEnv))
-runTypeChecker ts act =
-  let te = TypingEnv "Main" ts
-      se = ScopeEnv HashMap.empty 0 in
-  first (`appEndo` []) <$> (Chronicle.runChronicleT (State.runStateT (Reader.runReaderT act se) te))
-
-runTyper :: FilePath -> IO TestTree
-runTyper = runThat prettyShowTree $ \content -> do
-    let result = stringifyErr (runLexer parseProgram content) >>= \ast -> stringifyErr (resolveEntireProgram ast)
-    let ts = emptyTS { _tsTypes = HashMap.fromList [("Prelude.Int", (KiStar, IsTyDef)), ("Prelude.String", (KiStar, IsTyDef))] }
-    case result of
-      This a    -> pure (This (fmap prettyShow a))
-      That a    -> stringifyErr <$> runTypeChecker ts (inferProgram (fst a))
-      These _ a -> stringifyErr <$> runTypeChecker ts (inferProgram (fst a))
-
 runTestPath :: TestName -> FilePath -> (FilePath -> IO TestTree) -> IO TestTree
 runTestPath name path run = do
   filesNoExt <- fmap dropExtension <$> findByExtension [".nk"] path
   tests <- traverse run filesNoExt
   pure (Test.Tasty.testGroup name tests)
 
+
+runResolver :: FilePath -> IO TestTree
+runResolver = runThat prettyShowTree $ \content -> pure (stringifyErr (runLexer parseProgram content) >>= \ast -> treeErr (resolveEntireProgram ast))
+
 main :: IO ()
 main = do
   testTree <- sequence
     [ runTestPath "Lexing" "tests/Suite/lexer" runFile
     , runTestPath "Parsing" "tests/Suite/parser" runParser
-    , runTestPath "Resolver" "tests/Suite/resolver" runResolver
-    , runTestPath "Typer" "tests/Suite/typer" runTyper ]
+    , runTestPath "Resolving" "tests/Suite/resolver" runResolver]
   defaultMain $ Test.Tasty.testGroup "Tests" testTree

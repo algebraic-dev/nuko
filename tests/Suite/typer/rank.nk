@@ -1,0 +1,4 @@
+type Tuple a b =
+	| Tuple a b
+
+let apply : Tuple Int String = Tuple.Tuple 2 "a"

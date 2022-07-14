@@ -6,6 +6,7 @@ module Nuko.Tree.Expr (
   Block(..),
   Ty(..),
   Var(..),
+  XIdent,
   XLInt,
   XLStr,
   XPWild,
@@ -31,6 +32,7 @@ module Nuko.Tree.Expr (
   XTPoly,
   XTCons,
   XTArrow,
+  XModName,
   XTForall,
   XPath,
   XTy,
@@ -38,6 +40,7 @@ module Nuko.Tree.Expr (
 
 import Relude      (Show, Int, Maybe, NonEmpty, Text)
 import Pretty.Tree (PrettyTree(prettyTree), Tree (..))
+import Nuko.Names (TyName, ValName, ConsName)
 
 data NoExt = NoExt deriving Show
 
@@ -46,11 +49,11 @@ instance PrettyTree NoExt where prettyTree _ = Node "NoExt" [] []
 -- Abstract Syntax Tree
 
 data Ty x
-  = TId (XPath x) !(XTId x)
-  | TPoly (XName x) !(XTPoly x)
+  = TId (XPath x TyName) !(XTId x)
+  | TPoly (XName x TyName) !(XTPoly x)
   | TApp (Ty x) (NonEmpty (Ty x)) !(XTCons x)
   | TArrow  (Ty x) (Ty x) !(XTArrow x)
-  | TForall (XName x) (Ty x) !(XTForall x)
+  | TForall (XName x TyName) (Ty x) !(XTForall x)
 
 data Literal x
   = LStr Text !(XLInt x)
@@ -58,8 +61,8 @@ data Literal x
 
 data Pat x
   = PWild !(XPWild x)
-  | PId (XName x) !(XPId x)
-  | PCons (XPath x) [Pat x] !(XPCons x)
+  | PId (XName x ValName) !(XPId x)
+  | PCons (XPath x ConsName) [Pat x] !(XPCons x)
   | PLit (Literal x) !(XPLit x)
   | PAnn (Pat x) (XTy x) !(XPAnn x)
   | PExt !(XPExt x)
@@ -79,18 +82,21 @@ data Expr x
   = Lit (Literal x) !(XLit x)
   | Lam (Pat x) (Expr x) !(XLam x)
   | App (Expr x) (NonEmpty (Expr x)) !(XApp x)
-  | Lower (XPath x) !(XLower x)
-  | Upper (XPath x) !(XUpper x)
-  | Field (Expr x) (XName x) !(XField x)
+  | Lower (XPath x ValName) !(XLower x)
+  | Upper (XPath x ConsName) !(XUpper x)
+  | Field (Expr x) (XName x ValName) !(XField x)
   | If (Expr x) (Expr x) (Maybe (Expr x)) !(XIf x)
   | Match (Expr x) (NonEmpty (Pat x, Expr x)) !(XMatch x)
   | Ann (Expr x) (XTy x) !(XAnn x)
   | Block (Block x) !(XBlock x)
   | Ext !(XExt x)
 
-type family XVar x
+type family XModName x
+type family XIdent x
+type family XName x k
+type family XPath x k
 
-type family XName x
+type family XVar x
 
 type family XTy x
 
@@ -122,5 +128,4 @@ type family XMatch x
 type family XBlock x
 type family XExt x
 
-type family XPath x
 

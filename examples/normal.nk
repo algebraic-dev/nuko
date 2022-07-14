@@ -1,5 +1,9 @@
-type A = {
-  a : Int -> Int -> String,
-  b : String,
-  c : Lero a a b
-}
+type Pair a b = | Pair a b
+
+type List a =
+  | Cons a
+  | Nil
+
+import Main.Pair (Pair)
+
+let apply (fst : (forall a. a -> List a)) : Pair (List Int) (List String) = Pair (fst 2) (fst "3")

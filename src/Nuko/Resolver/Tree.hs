@@ -8,29 +8,16 @@
 module Nuko.Resolver.Tree where
 
 import Nuko.Tree
-import Nuko.Report.Range  (Range, HasPosition(..), toLabel)
-import Relude             (Show, Semigroup((<>)), Void, Generic, show, Eq(..), (&&), Bool (False))
-import Data.Text          (Text)
-import Pretty.Tree        (PrettyTree (prettyTree), Tree (Node))
+import Nuko.Report.Range  (Range, HasPosition(..))
+import Relude             (Semigroup((<>)), Void, Generic)
+import Pretty.Tree        (PrettyTree)
+import Nuko.Names         (Path, Name, Ident, ModName)
 
-data ReId = ReId { text :: Text, range :: Range } deriving (Show, Generic)
-
-data Path
-  = Path Text ReId Range
-  | Local ReId
-  deriving Show
-
-instance Eq ReId where
-  (ReId t _) == (ReId g _) = t == g
-
-instance Eq Path where
-  (Path mod name _) == (Path mod' name' _) = mod == mod' && name == name'
-  (Local r) == (Local r') = r == r'
-  _ == _ = False
-
-type instance XName Re = ReId
-type instance XPath Re = Path
-type instance XTy Re   = Ty Re
+type instance XIdent Re    = Ident
+type instance XModName Re  = ModName
+type instance XName Re k   = Name k
+type instance XPath Re k   = Path (Name k)
+type instance XTy Re       = Ty Re
 
 type instance XLInt Re = Range
 type instance XLStr Re = Range
@@ -52,8 +39,8 @@ type instance XLit Re = NoExt
 type instance XLam Re = Range
 type instance XAnn Re = Range
 type instance XApp Re = Range
-type instance XLower Re = Range
-type instance XUpper Re = Range
+type instance XLower Re = NoExt
+type instance XUpper Re = NoExt
 type instance XField Re = Range
 type instance XIf Re = Range
 type instance XMatch Re = Range
@@ -78,12 +65,6 @@ deriving instance Generic (TypeDeclArg Re)
 deriving instance Generic (TypeDecl Re)
 deriving instance Generic (LetDecl Re)
 
-instance PrettyTree Path  where
-  prettyTree (Path mod' t r) = Node "Path" [show (mod' <> "." <> t.text), toLabel r] []
-  prettyTree (Local t) = Node "Local" [show t.text, toLabel t.range] []
-
-instance PrettyTree ReId  where prettyTree a = Node "ReId" [a.text, toLabel a.range] []
-
 instance PrettyTree (Expr Re) where
 instance PrettyTree (Block Re) where
 instance PrettyTree (Var Re) where
@@ -98,13 +79,6 @@ instance PrettyTree (Program Re) where
 instance PrettyTree (TypeDeclArg Re) where
 instance PrettyTree (TypeDecl Re) where
 instance PrettyTree (LetDecl Re) where
-
-instance HasPosition ReId where
-  getPos (ReId _ r) = r
-
-instance HasPosition Path where
-  getPos (Path _ _ r) = r
-  getPos (Local r) = r.range
 
 instance HasPosition (Var Re) where
   getPos (Var _ _ r) = r
@@ -127,8 +101,8 @@ instance HasPosition (Expr Re) where
     Lit t _ -> getPos t
     Lam _ _ r -> r
     App _ _ r -> r
-    Lower _ r -> r
-    Upper _ r -> r
+    Lower r _ -> getPos r
+    Upper r _ -> getPos r
     Field _ _ r -> r
     If _ _ _ r -> r
     Match _ _ r -> r
