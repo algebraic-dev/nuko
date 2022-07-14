@@ -1,28 +1,3 @@
 ✗ This
-UnexpectedStr
-    ( Range
-        { start = Pos
-            { line = 2
-            , column = 4
-            }
-        , end = Pos
-            { line = 2
-            , column = 5
-            }
-        }
-    )
-UnexpectedToken
-    ( Ranged
-        { info = TcEnd
-        , position = Range
-            { start = Pos
-                { line = 2
-                , column = 5
-                }
-            , end = Pos
-                { line = 2
-                , column = 5
-                }
-            }
-        }
-    )
+{"code":1,"place":"2:4-2:5","title":"Unexpected token"}
+{"code":3,"place":"2:5-2:5","title":"Unexpected token"}

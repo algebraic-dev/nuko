@@ -26,7 +26,7 @@ module Nuko.Resolver.Env (
 
 import Nuko.Resolver.Occourence (OccEnv, empty, insertOcc, insertWith, getMap)
 import Nuko.Report.Range        (Range, HasPosition (..))
-import Nuko.Resolver.Error      (ResolveError (..))
+import Nuko.Resolver.Error      (ResolveError (..), mkErr, ResolveErrorReason (..))
 import Nuko.Utils               (terminate)
 import Nuko.Names               (Qualified, ModName, Label(..), Ident(..), Name(..), genIdent, changeName, getChildName)
 
@@ -36,7 +36,7 @@ import Relude.Bool              (otherwise)
 import Relude.Monoid            ((<>), Endo)
 import Relude.Applicative       (Applicative(pure))
 import Relude.Monad             (MonadState, maybe)
-import Relude                   (Show, Generic, (.), Text, Num ((+)), show, Int, const, Maybe (..))
+import Relude                   (Show, Generic, (.), Text, Num ((+)), show, Int, const, Maybe (..), ($))
 
 import Pretty.Tree              (PrettyTree)
 import Control.Monad.Chronicle  (MonadChronicle)
@@ -160,19 +160,19 @@ useLocal :: MonadResolver m => Label -> m ()
 useLocal label = do
     local <- use (localNames . getMap . at label)
     case local of
-      Nothing -> terminate (AlreadyExistsName label)
+      Nothing -> terminate (mkErr $ AlreadyExistsName label)
       Just _  -> usedLocals %= Occ.insertOcc label (getPos label)
 
 useModule :: MonadResolver m => ModName -> m NameSpace
 useModule modName' = do
     moduleRes <- use (openedModules . at modName')
     case moduleRes of
-      Nothing  -> terminate (CannotFindModule modName')
+      Nothing  -> terminate (mkErr $ CannotFindModule modName')
       Just res -> pure res
 
 addGlobal :: MonadResolver m => Name k -> Visibility -> m ()
 addGlobal name vs = do
   result <- use (currentNamespace . names . getMap . at (Label name))
   case result of
-    Just _  -> terminate (AlreadyExistsName (Label name))
+    Just _  -> terminate (mkErr $ AlreadyExistsName (Label name))
     Nothing -> addDefinition (Label name) vs

@@ -117,13 +117,13 @@ PathHelper(Pred)
     | Pred { ([], $1) }
 
 PathEnd
-    : Upper           { \p -> Upper (mkPath p (mkConsName $1)) NoExt }
-    | Lower           { \p -> Lower (mkPath p (mkValName $1)) NoExt }
-    | Lower '.' Lower { \p -> withPosListR p $3 (Field (Lower (mkPath p (mkValName $1)) NoExt) (mkValName $3)) }
+    : Upper           { \p -> Upper (mkPathFromList p (mkConsName $1)) NoExt }
+    | Lower           { \p -> Lower (mkPathFromList p (mkValName $1)) NoExt }
+    | Lower '.' Lower { \p -> withPosListR p $3 (Field (Lower (mkPathFromList p (mkValName $1)) NoExt) (mkValName $3)) }
 
 PathExpr : PathHelper(PathEnd) { let (p , f) = $1 in f p }
 
-Path(Pred) : PathHelper(Pred) { let (p , f) = $1 in mkPath p f }
+Path(Pred) : PathHelper(Pred) { let (p , f) = $1 in mkPathFromList p f }
 
 -- Types
 
@@ -247,7 +247,7 @@ Program :: { Program Nm }
     | {- Empty UwU -}    { Program [] [] [] NoExt }
 {
 
-mkPath list last' =
+mkPathFromList list last' =
   case list of
     [] -> mkLocalPath last'
     (x : xs) -> mkQualifiedPath (mkQualified (mkModName (x :| xs)) last' (getPos x <> getPos last'))

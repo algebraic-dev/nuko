@@ -16,10 +16,9 @@ import Pretty.Tree         (PrettyTree(..))
 import Nuko.Names          (Label(..), NameSort (..), mkName, Ident, Attribute (Untouched))
 import Lens.Micro.Platform (makeLenses)
 
-
 import qualified Data.HashMap.Strict as HashMap
 
-newtype OccEnv a = OccEnv { _getMap :: (HashMap Label a) }
+newtype OccEnv a = OccEnv { _getMap :: HashMap Label a }
   deriving newtype (Semigroup, Monoid, Functor)
 
 makeLenses ''OccEnv

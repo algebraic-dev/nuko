@@ -5,28 +5,24 @@ import Relude.Monad                (Monad((>>=)), MonadIO, Maybe(..))
 import Relude.Functor              (fmap, (<$>), first)
 import Relude.Foldable             (Traversable(sequence, traverse), forM, for_)
 import Relude.Applicative          (Applicative(pure))
-
 import Data.These                  (These(..))
-
 import Test.Tasty                  (defaultMain, testGroup, TestName, TestTree)
 import Test.Tasty.Golden           (findByExtension, goldenVsString)
 import System.FilePath             (dropExtension, addExtension)
-import Data.Traversable (for)
-
+import Data.Traversable            (for)
 import Nuko.Syntax.Lexer.Support   (runLexer, Lexer)
-import Nuko.Syntax.Lexer           (scan)
 import Nuko.Syntax.Lexer.Tokens    (Token(TcEOF))
-import Nuko.Report.Range           (Ranged (info))
+import Nuko.Syntax.Lexer           (scan)
 import Nuko.Syntax.Parser          (parseProgram)
-
+import Nuko.Report.Range           (Ranged (info))
 import Text.Pretty.Simple          (pShowNoColor)
-
 import Pretty.Tree                 (PrettyTree(prettyShowTree))
-
 import Resolver.PreludeImporter
-
 import Nuko.Tree
-import Nuko.Tree ( Re, Tc, Program(typeDecls), TypeDecl )
+import Data.Aeson.Text
+import Data.Aeson
+import Data.Text.Lazy (toStrict)
+
 import qualified Data.HashMap.Strict           as HashMap
 import qualified Data.ByteString               as ByteString
 import qualified Data.Text.Lazy                as LazyT
@@ -52,26 +48,30 @@ stringifyErr (That e) = That e
 stringifyErr (This e) = This (fmap prettyShow e)
 stringifyErr (These e f) = These (fmap prettyShow e) f
 
-treeErr :: PrettyTree a => These [a] b -> These [Text] b
-treeErr (That e) = That e
-treeErr (This e) = This (fmap prettyShowTree e)
-treeErr (These e f) = These (fmap prettyShowTree e) f
+toStrictText :: ToJSON a => a -> Text
+toStrictText = toStrict . encodeToLazyText
 
-runThat :: Show a =>  (b -> Text) ->  (forall m. MonadIO m => ByteString -> m (These [a] b)) -> FilePath -> IO TestTree
+treeErr :: ToJSON a => These [a] b -> These [Text] b
+treeErr = first (fmap toStrictText)
+
+formatErr :: ToJSON a => These a b -> These Text b
+formatErr = first toStrictText
+
+runThat :: (b -> Text) ->  (forall m. MonadIO m => ByteString -> m (These [Text] b)) -> FilePath -> IO TestTree
 runThat fn that file = do
   content <- ByteString.readFile $ addExtension file ".nk"
   let golden = addExtension file ".golden"
   resThat <- that content
   pure $ goldenStr file golden $ case resThat of
     That e    -> "✓ That\n"  <> fn e
-    This e    -> "✗ This\n"  <> unlines (fmap prettyShow e)
-    These e f -> "• These\n" <> unlines (fmap prettyShow e) <> "\n" <> fn f
+    This e    -> "✗ This\n"  <> unlines e
+    These e f -> "• These\n" <> unlines e <> "\n" <> fn f
 
 runFile :: FilePath -> IO TestTree
-runFile = runThat prettyShowTree (pure . runLexer scanUntilEnd)
+runFile = runThat prettyShowTree (pure . treeErr . runLexer scanUntilEnd)
 
 runParser :: FilePath -> IO TestTree
-runParser = runThat prettyShowTree (pure . runLexer parseProgram)
+runParser = runThat prettyShowTree (pure . treeErr . runLexer parseProgram)
 
 runTestPath :: TestName -> FilePath -> (FilePath -> IO TestTree) -> IO TestTree
 runTestPath name path run = do

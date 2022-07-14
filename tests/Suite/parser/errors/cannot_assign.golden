@@ -1,16 +1,5 @@
 • These
-AssignInEndOfBlock
-    ( Range
-        { start = Pos
-            { line = 1
-            , column = 4
-            }
-        , end = Pos
-            { line = 1
-            , column = 13
-            }
-        }
-    )
+{"code":4,"place":"1:4-1:13","title":"You cannot assign a new variable in the end of a block!"}
 
  └Program
    ├typeDecls: Empty List

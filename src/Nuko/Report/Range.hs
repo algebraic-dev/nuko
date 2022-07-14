@@ -49,7 +49,7 @@ toLabel :: Range -> Text
 toLabel r = show r.start.line <> ":" <> show r.start.column <> "-" <> show r.end.line <> ":" <> show r.end.column
 
 copyPos :: (SetPosition a, HasPosition b) => b -> a -> a
-copyPos name name' = setPos (getPos name) name'
+copyPos name = setPos (getPos name)
 
 class SetPosition a where
   setPos :: Range -> a -> a

@@ -11,6 +11,8 @@ description: <https://github.com/githubuser/Nuko#readme>
 dependencies:
   - base >= 4.16.0.0
   - relude ^>= 1.1.0.0
+  - aeson
+
 
 default-extensions:
   - DuplicateRecordFields

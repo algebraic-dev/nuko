@@ -36,6 +36,7 @@ module Nuko.Names (
   getPathInfo,
   moduleLastIdent,
   getChildName,
+  mkPath,
 ) where
 
 import Relude            (Bool (..), Int, Semigroup(..), NonEmpty ((:|)), Maybe (..), last, show)
@@ -49,6 +50,7 @@ import Data.Text         (intercalate)
 import Pretty.Tree       (PrettyTree(..), Tree (..))
 import Data.Hashable     (Hashable(hash, hashWithSalt))
 import Nuko.Report.Range (Range, toLabel, HasPosition (getPos), emptyRange, SetPosition(..))
+import Pretty.Format     (Format(..))
 
 data ValName
 data TyName
@@ -86,8 +88,8 @@ data Label = forall a. Label { lName :: Name a }
 
 -- | The path of a module
 data ModName = ModName
-  { mHash'   :: {-# UNPACK #-}!Int
-  , mSegments :: (NonEmpty Ident)
+  { mHash'    :: {-# UNPACK #-}!Int
+  , mSegments :: NonEmpty Ident
   , mRange    :: Range
   } deriving stock Generic
 
@@ -124,13 +126,13 @@ mkName kind text attr = Name (hash text `hashWithSalt` hash kind) kind attr text
 mkLabel :: NameKind e -> Ident -> Attribute -> Label
 mkLabel kind text attr = Label (mkName kind text attr)
 
-mkModName :: (NonEmpty Ident) -> ModName
+mkModName :: NonEmpty Ident -> ModName
 mkModName path = ModName (hash path) path (getPos path)
 
-mkQualified :: Hashable a => ModName -> a -> Range -> (Qualified a)
+mkQualified :: Hashable a => ModName -> a -> Range -> Qualified a
 mkQualified mod text = Qualified (hash mod `hashWithSalt` text) mod text
 
-mkQualifiedWithPos :: (Hashable a, HasPosition a) => ModName -> a -> (Qualified a)
+mkQualifiedWithPos :: (Hashable a, HasPosition a) => ModName -> a -> Qualified a
 mkQualifiedWithPos mod text = Qualified (hash mod `hashWithSalt` text) mod text (getPos mod <> getPos text)
 
 attachModName :: Hashable a => HasPosition a => ModName -> a -> Qualified a
@@ -183,6 +185,10 @@ moduleLastIdent (ModName _ segments _) = last segments
 getChildName :: ModName -> ModName
 getChildName (ModName _ segments _) = mkModName (last segments :| [])
 
+mkPath :: (Hashable a, HasPosition a) => Maybe ModName -> a -> Path a
+mkPath Nothing ident = mkLocalPath ident
+mkPath (Just modName) ident = mkQualifiedPath (mkQualifiedWithPos modName ident)
+
 -- Instances for comparisons and hashing
 
 instance Hashable Label where
@@ -198,7 +204,7 @@ instance Hashable (NameKind k) where
     ValName   -> hash (1 :: Int)
     TyName    -> hash (2 :: Int)
     ConsName  -> hash (3 :: Int)
-  hashWithSalt salt n = salt `hashWithSalt` (hash n)
+  hashWithSalt salt n = salt `hashWithSalt` hash n
 
 instance Hashable (Name k) where
   hash (Name hash' _ _ _) = hash'
@@ -234,7 +240,7 @@ instance Eq (Path a) where
 
 -- Instances for pretty printing
 
-joinSegments :: (NonEmpty Ident) -> Text
+joinSegments :: NonEmpty Ident -> Text
 joinSegments segments = intercalate "." (toList $ fmap iText segments)
 
 showKind :: NameKind k -> Text
@@ -269,6 +275,34 @@ instance PrettyTree a => PrettyTree (Path a) where
 
 instance PrettyTree NameSort where
   prettyTree (NameSort a) = Node "NameSort" [showKind a] []
+
+instance Format Ident where
+  format ident = ident.iText
+
+instance Format (Name k) where
+  format name = format name.nIdent
+
+instance Format (NameKind k) where
+  format = \case
+    ValName   -> "value"
+    TyName   -> "type"
+    ConsName  -> "constructor"
+
+instance Format NameSort where
+  format (NameSort sort) = format sort
+
+instance Format Label where
+  format (Label name) = format name
+
+instance Format ModName where
+  format (ModName _ seg _) = joinSegments seg
+
+instance Format k => Format (Qualified k) where
+  format (Qualified _ modName n _) = format modName <> "." <> format n
+
+instance Format k => Format (Path k) where
+  format (Full _ qualified) = format qualified
+  format (Local _ name) = format name
 
 -- Instances for source code position
 

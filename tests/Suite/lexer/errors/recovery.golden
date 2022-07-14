@@ -1,28 +1,6 @@
 • These
-UnexpectedStr
-    ( Range
-        { start = Pos
-            { line = 1
-            , column = 1
-            }
-        , end = Pos
-            { line = 1
-            , column = 2
-            }
-        }
-    )
-UnexpectedStr
-    ( Range
-        { start = Pos
-            { line = 1
-            , column = 6
-            }
-        , end = Pos
-            { line = 1
-            , column = 7
-            }
-        }
-    )
+{"code":1,"place":"1:1-1:2","title":"Unexpected token"}
+{"code":1,"place":"1:6-1:7","title":"Unexpected token"}
 
  └List
    ├Ranged: 0:0-0:3 TcLet

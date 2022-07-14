@@ -1,6 +1,6 @@
 module Nuko.Driver (compile) where
 
-import Relude (undefined, ByteString, IO)
+import Relude (ByteString, IO, Applicative (pure))
 
 compile :: ByteString -> IO ()
-compile _ = undefined
+compile _ = pure ()

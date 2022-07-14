@@ -7,7 +7,7 @@ import Nuko.Tree
 import Nuko.Names
 import Nuko.Resolver.Env          (Visibility(..),NameSpace(..),ResolverState(..),MonadResolver, newScope, addModule, openName, newLocal, addGlobal, newNamespace)
 import Nuko.Resolver.Path         (resolvePath,resolveConsOrTy,resolveInNameSpace,getPublicLabels)
-import Nuko.Resolver.Error        (ResolveError(..))
+import Nuko.Resolver.Error        (mkErr, ResolveErrorReason (..))
 import Nuko.Utils                 (terminate)
 import Nuko.Syntax.Tree           ()
 import Nuko.Resolver.Tree         ()
@@ -51,8 +51,8 @@ resolveImport decl = do
       res <- importIn textual
       case res of
         Right res'      -> pure res'
-        Left CannotFind -> terminate (CannotFindModule mod')
-        Left Cyclic     -> terminate (CyclicImport mod')
+        Left CannotFind -> terminate (mkErr $ CannotFindModule mod')
+        Left Cyclic     -> terminate (mkErr $ CyclicImport mod')
 
     resolveByCase :: MonadResolver m => NameSpace -> ImportDepsKind Nm -> m (Qualified Label)
     resolveByCase ns = \case
@@ -81,15 +81,14 @@ initTyDecl (TypeDecl name' _ decl) = do
     initFields :: MonadResolver m => TypeDeclArg Nm -> m ()
     initFields = \case
       TypeSym _       -> pure ()
-      TypeProd fields -> traverse_ (\field -> addGlobal field Public) (fmap fst fields)
-      TypeSum fields  -> traverse_ (\field -> addGlobal field Public) (fmap fst fields)
-
+      TypeProd fields -> traverse_ (`addGlobal` Public) (fmap fst fields)
+      TypeSum fields  -> traverse_ (`addGlobal` Public) (fmap fst fields)
 
 resolveTypeDecl :: MonadResolver m => TypeDecl Nm -> m (TypeDecl Re)
 resolveTypeDecl (TypeDecl name' args decl) = do
   newScope $ do
     let argumentGroups = groupAllWith (iText . nIdent) args
-    for_ argumentGroups $ \group -> when (NonEmpty.length group > 1) (terminate (ConflictingTypes group))
+    for_ argumentGroups $ \group -> when (NonEmpty.length group > 1) (terminate (mkErr $ ConflictingTypes group))
     newArgs <- traverse newLocal args
     newDecl <- resolveDecl decl
     pure (TypeDecl name' newArgs newDecl)
@@ -146,7 +145,7 @@ resolvePat pat' = do
       PId name' ext'         -> do
         exists <- gets (HashSet.member name')
         if exists
-          then terminate (AlreadyExistsPat (Label name'))
+          then terminate (mkErr $ AlreadyExistsPat (Label name'))
           else modify (HashSet.insert name') $> PId name' ext'
 
 resolveExpr :: MonadResolver m => Expr Nm -> m (Expr Re)

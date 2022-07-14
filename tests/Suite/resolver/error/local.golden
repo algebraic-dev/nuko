@@ -1,3 +1,2 @@
 ✗ This
-" └CannotFindInModule (Ident: e 11:9-11:10) Nothing (NonEmpty (NameSort ValName))
-"
+{"code":102,"place":"11:9-11:10","title":"Cannot find value from e"}
