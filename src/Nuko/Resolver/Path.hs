@@ -15,7 +15,7 @@ import Nuko.Resolver.Error      (ResolveErrorReason (..), mkErr)
 import Nuko.Report.Range        (copyPos, getPos)
 import Nuko.Utils               (terminate)
 
-import Relude                   ((.), asum, NonEmpty, fst, ($), filter, Eq ((==)), Functor (fmap))
+import Relude                   ((.), asum, NonEmpty, fst, ($), filter, Eq ((==)), Functor (fmap), print, putTextLn, traceM, show)
 import Relude.Monad             (Maybe(..))
 import Relude.Functor           ((<$>), Functor ((<$)))
 import Relude.Applicative       (Applicative(pure))
@@ -25,6 +25,8 @@ import Relude.Foldable          (Traversable(..))
 import Lens.Micro.Platform      (use, at, view)
 
 import qualified Data.HashMap.Strict as HashMap
+import Pretty.Format
+import qualified Data.Text as Text
 
 occAt :: Functor f => Label -> (Maybe a2 -> f (Maybe a2)) -> OccEnv a2 -> f (OccEnv a2)
 occAt l = getMap . at l
@@ -32,15 +34,14 @@ occAt l = getMap . at l
 useLocalPath :: MonadResolver m => Name k -> m (Maybe (Path (Name k)))
 useLocalPath name' = do
   res <- use (localNames . occAt (Label name'))
-  pure (mkLocalPath name' <$ res)
+  pure (mkLocalPath . coerceLabel name'.nKind <$> res)
 
 useGlobal :: MonadResolver m => NameSpace -> Name k -> m (Maybe (Qualified (Name k), Visibility))
 useGlobal ns name' = do
   let visibilityRes = view (names . occAt (Label name')) ns
   pure ((attachModName ns._modName name', ) <$> visibilityRes)
 
--- | basically DEPRECATED, i'll add each name in the openedNames twice so it would make ambiguity checking
--- easier.
+-- | TODO: Add each name in the openedNames so it will make ambiguity checking easier.
 useGlobalPath :: MonadResolver m => NameSpace -> Name k -> m (Maybe (Path (Name k)))
 useGlobalPath ns name' = do
   result <- useGlobal ns name'

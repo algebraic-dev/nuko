@@ -218,6 +218,12 @@ instance Hashable (Qualified a) where
   hash (Qualified hash' _ _ _) = hash'
   hashWithSalt salt (Qualified hash' _ _ _) = hashWithSalt salt hash'
 
+instance Hashable (Path a) where
+  hash (Full hash' _) = hash'
+  hash (Local hash' _) = hash'
+  hashWithSalt salt (Full hash' _) = hashWithSalt salt hash'
+  hashWithSalt salt (Local hash' _) = hashWithSalt salt hash'
+
 instance Eq Label where
   (Label name) == (Label name') = name.nHash == name'.nHash
 
@@ -280,7 +286,8 @@ instance Format Ident where
   format ident = ident.iText
 
 instance Format (Name k) where
-  format name = format name.nIdent
+  format (Name _ _ Untouched ident) = format ident
+  format (Name _ _ (Was ident) _) = format ident
 
 instance Format (NameKind k) where
   format = \case

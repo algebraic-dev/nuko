@@ -111,6 +111,7 @@ Upper :: { Ident } : upper { mkIdent (getData $1) $1.position }
 
 UpperCons :: { Name ConsName } : Upper { mkConsName $1 }
 UpperTy :: { Name TyName } : Upper { mkTyName $1 }
+ValName :: { Name ValName } : Lower { mkValName $1 }
 
 PathHelper(Pred)
     : Upper '.' PathHelper(Pred) { let (p, f) = $3 in ($1 : p, f) }
@@ -172,7 +173,7 @@ App :: { NE.NonEmpty (Expr Nm) }
     | Atom      { $1 NE.:| [] }
 
 VarExpr :: { Var Nm }
-    : let Pat '=' Expr  { withPos $1 $4 $ Var $2 $4 }
+    : let ValName '=' Expr  { withPos $1 $4 $ Var $2 $4 }
 
 BlockExpr :: { Block Nm }
     : Expr       List1(sep) BlockExpr { BlBind $1 $3 }

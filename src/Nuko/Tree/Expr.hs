@@ -40,7 +40,7 @@ module Nuko.Tree.Expr (
 
 import Relude      (Show, Int, Maybe, NonEmpty, Text)
 import Pretty.Tree (PrettyTree(prettyTree), Tree (..))
-import Nuko.Names (TyName, ValName, ConsName)
+import Nuko.Names (TyName, ValName, ConsName, Name (..))
 
 data NoExt = NoExt deriving Show
 
@@ -68,7 +68,7 @@ data Pat x
   | PExt !(XPExt x)
 
 data Var x = Var
-  { pat :: Pat x
+  { pat :: Name ValName
   , val :: Expr x
   , ext :: !(XVar x)
   }

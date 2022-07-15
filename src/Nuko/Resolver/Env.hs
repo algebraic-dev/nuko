@@ -2,8 +2,10 @@ module Nuko.Resolver.Env (
   ResolverState(..),
   Visibility(..),
   NameSpace(..),
+  Query(..),
   Use(..),
   MonadResolver,
+  ImportErrorKind(..),
   useModule,
   modName,
   names,
@@ -28,7 +30,7 @@ import Nuko.Resolver.Occourence (OccEnv, empty, insertOcc, insertWith, getMap)
 import Nuko.Report.Range        (Range, HasPosition (..))
 import Nuko.Resolver.Error      (ResolveError (..), mkErr, ResolveErrorReason (..))
 import Nuko.Utils               (terminate)
-import Nuko.Names               (Qualified, ModName, Label(..), Ident(..), Name(..), genIdent, changeName, getChildName)
+import Nuko.Names               (Qualified, ModName, Label(..), Ident(..), Name(..), changeName, getChildName, mkIdent)
 
 import Relude.Container         (HashSet, HashMap)
 import Relude.Base              (Eq((==)))
@@ -36,11 +38,11 @@ import Relude.Bool              (otherwise)
 import Relude.Monoid            ((<>), Endo)
 import Relude.Applicative       (Applicative(pure))
 import Relude.Monad             (MonadState, maybe)
-import Relude                   (Show, Generic, (.), Text, Num ((+)), show, Int, const, Maybe (..), ($))
+import Relude                   (Show, Generic, (.), Text, Num ((+)), show, Int, const, Maybe (..), ($), Either)
 
 import Pretty.Tree              (PrettyTree)
 import Control.Monad.Chronicle  (MonadChronicle)
-import Control.Monad.Import     (MonadImport)
+import Control.Monad.Query     (MonadQuery)
 
 import Lens.Micro.Platform      (makeLenses, use, (.=), (%=), at)
 
@@ -84,8 +86,15 @@ instance PrettyTree Use where
 instance PrettyTree NameSpace where
 instance PrettyTree ResolverState where
 
+data ImportErrorKind
+  = CannotFind
+  | Cyclic
+
+data Query a where
+  GetModule :: ModName -> Query (Either ImportErrorKind NameSpace)
+
 type MonadResolver m =
-  ( MonadImport NameSpace m
+  ( MonadQuery Query m
   , MonadState ResolverState m
   , MonadChronicle (Endo [ResolveError]) m
   )
@@ -145,13 +154,14 @@ newLocal :: MonadState ResolverState m => Name k -> m (Name k)
 newLocal lName = do
     locals      <- use localNames
     let text     = lName.nIdent.iText
-    let newLabel = maybe lName (const (generateNewName locals lName text 0)) (Occ.lookupOcc (Label lName) locals)
+    let newLabel = maybe lName (const (generateNewName locals lName text 1)) (Occ.lookupOcc (Label lName) locals)
     localNames  %= Occ.insertOcc (Label lName) (Label newLabel)
+    localNames  %= Occ.insertOcc (Label newLabel) (Label newLabel)
     pure newLabel
   where
     generateNewName :: OccEnv a -> Name k -> Text -> Int -> Name k
     generateNewName used lName' name count =
-      let newName = changeName (genIdent (name <> "_" <> show count)) lName' in
+      let newName = changeName (mkIdent (name <> "_" <> show count) (getPos lName')) lName' in
       if Occ.member (Label newName) used
         then generateNewName used lName' name (count + 1)
         else newName

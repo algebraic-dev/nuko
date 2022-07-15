@@ -5,7 +5,7 @@ module Nuko.Resolver (
 
 import Nuko.Tree
 import Nuko.Names
-import Nuko.Resolver.Env          (Visibility(..),NameSpace(..),ResolverState(..),MonadResolver, newScope, addModule, openName, newLocal, addGlobal, newNamespace)
+import Nuko.Resolver.Env
 import Nuko.Resolver.Path         (resolvePath,resolveConsOrTy,resolveInNameSpace,getPublicLabels)
 import Nuko.Resolver.Error        (mkErr, ResolveErrorReason (..))
 import Nuko.Utils                 (terminate)
@@ -19,9 +19,8 @@ import Relude.Container           (HashSet)
 import Relude.List                (NonEmpty ((:|)))
 import Relude                     (traverse_, ($), Traversable (traverse), (.), ($>), fst, when, Ord ((>)), for_)
 
-import Data.Text                  (intercalate)
-import Data.List.NonEmpty         (groupAllWith, toList)
-import Control.Monad.Import       (ImportErrorKind(..), MonadImport (..))
+import Data.List.NonEmpty         (groupAllWith)
+import Control.Monad.Query       (MonadQuery (..))
 
 import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.HashSet as HashSet
@@ -46,13 +45,12 @@ resolveImport decl = do
       Nothing  -> addModule decl.path space
   where
     importModule :: MonadResolver m => ModName -> m NameSpace
-    importModule mod'@(ModName _ segments _) = do
-      let textual = intercalate "." (toList $ iText <$> segments)
-      res <- importIn textual
+    importModule mod' = do
+      res <- query (GetModule mod')
       case res of
-        Right res'      -> pure res'
+        Right res'-> pure res'
+        Left Cyclic -> terminate (mkErr $ CyclicImport mod')
         Left CannotFind -> terminate (mkErr $ CannotFindModule mod')
-        Left Cyclic     -> terminate (mkErr $ CyclicImport mod')
 
     resolveByCase :: MonadResolver m => NameSpace -> ImportDepsKind Nm -> m (Qualified Label)
     resolveByCase ns = \case
@@ -64,13 +62,13 @@ resolveImport decl = do
       resPath <- resolveByCase space path'
       case name' of
         Just alias -> openName (mkLabel TyName alias Untouched) resPath
-        Nothing    -> openName resPath.qInfo resPath
+        Nothing -> openName resPath.qInfo resPath
 
     resolveModifier :: MonadResolver m => NameSpace -> ImportModifier Nm -> m ()
     resolveModifier space = \case
-      ImpAs alias  -> addModule (mkModName (alias :| [])) space
+      ImpAs alias -> addModule (mkModName (alias :| [])) space
       ImpList imps -> traverse_ (resolveDeps space) imps
-      ImpStar      -> traverse_ (\occ -> openName occ (mkQualifiedWithPos space._modName occ)) (getPublicLabels space)
+      ImpStar -> traverse_ (\occ -> openName occ (mkQualifiedWithPos space._modName occ)) (getPublicLabels space)
 
 initTyDecl :: MonadResolver m => TypeDecl Nm -> m ()
 initTyDecl (TypeDecl name' _ decl) = do
@@ -80,9 +78,9 @@ initTyDecl (TypeDecl name' _ decl) = do
   where
     initFields :: MonadResolver m => TypeDeclArg Nm -> m ()
     initFields = \case
-      TypeSym _       -> pure ()
+      TypeSym _  -> pure ()
       TypeProd fields -> traverse_ (`addGlobal` Public) (fmap fst fields)
-      TypeSum fields  -> traverse_ (`addGlobal` Public) (fmap fst fields)
+      TypeSum fields -> traverse_ (`addGlobal` Public) (fmap fst fields)
 
 resolveTypeDecl :: MonadResolver m => TypeDecl Nm -> m (TypeDecl Re)
 resolveTypeDecl (TypeDecl name' args decl) = do
@@ -101,9 +99,9 @@ resolveTypeDecl (TypeDecl name' args decl) = do
 
     resolveDecl :: MonadResolver m => TypeDeclArg Nm -> m (TypeDeclArg Re)
     resolveDecl = \case
-      TypeSym type'   -> TypeSym  <$> resolveType type'
+      TypeSym type' -> TypeSym  <$> resolveType type'
       TypeProd fields -> TypeProd <$> traverse resolveField fields
-      TypeSum fields  -> TypeSum  <$> traverse resolveSumField fields
+      TypeSum fields -> TypeSum  <$> traverse resolveSumField fields
 
 initLetDecl :: MonadResolver m => LetDecl Nm -> m ()
 initLetDecl (LetDecl name' _ _ _ _) = addGlobal name' Public
@@ -124,11 +122,11 @@ resolveLit = \case
 
 resolveType :: MonadResolver m => Ty Nm -> m (Ty Re)
 resolveType = \case
-  TForall binder ty ext'        -> newScope $ newLocal binder >>= \name -> TForall name <$> resolveType ty <*> pure ext'
-  TId path' ext'                -> TId    <$> resolvePath path' <*> pure ext'
-  TApp ty' ty ext'              -> TApp   <$> resolveType ty' <*> traverse resolveType ty <*> pure ext'
-  TArrow from to ext'           -> TArrow <$> resolveType from <*> resolveType to <*> pure ext'
-  TPoly name ext'               -> pure (TPoly name ext')
+  TForall binder ty ext' -> newScope $ newLocal binder >>= \name -> TForall name <$> resolveType ty <*> pure ext'
+  TId path' ext' -> TId <$> resolvePath path' <*> pure ext'
+  TApp ty' ty ext' -> TApp <$> resolveType ty' <*> traverse resolveType ty <*> pure ext'
+  TArrow from to ext' -> TArrow <$> resolveType from <*> resolveType to <*> pure ext'
+  TPoly name ext' -> pure (TPoly name ext')
 
 resolvePat :: MonadResolver m => Pat Nm -> m (Pat Re)
 resolvePat pat' = do
@@ -138,11 +136,11 @@ resolvePat pat' = do
   where
     resolvePat' :: MonadResolver m => Pat Nm -> StateT (HashSet (Name ValName)) m (Pat Re)
     resolvePat' = \case
-      PWild ext'            -> pure $ PWild ext'
+      PWild ext' -> pure $ PWild ext'
       PCons path' pats ext' -> PCons <$> lift (resolvePath path') <*> traverse resolvePat' pats <*> pure ext'
-      PLit lit ext'         -> PLit   <$> lift (resolveLit lit) <*> pure ext'
-      PAnn pat'' ty ext'    -> PAnn  <$> resolvePat' pat''      <*> lift (resolveType ty) <*> pure ext'
-      PId name' ext'         -> do
+      PLit lit ext' -> PLit <$> lift (resolveLit lit) <*> pure ext'
+      PAnn pat'' ty ext' -> PAnn <$> resolvePat' pat'' <*> lift (resolveType ty) <*> pure ext'
+      PId name' ext' -> do
         exists <- gets (HashSet.member name')
         if exists
           then terminate (mkErr $ AlreadyExistsPat (Label name'))
@@ -150,22 +148,26 @@ resolvePat pat' = do
 
 resolveExpr :: MonadResolver m => Expr Nm -> m (Expr Re)
 resolveExpr = \case
-    Lit lit ext'           -> Lit <$> resolveLit lit <*> pure ext'
-    Lam pat' expr ext'     -> newScope (Lam <$> resolvePat pat' <*> resolveExpr expr <*> pure ext')
-    App expr args ext'     -> App <$> resolveExpr expr <*> traverse resolveExpr args <*> pure ext'
-    Lower path' ext'       -> Lower <$> resolvePath path' <*> pure ext'
-    Upper path' ext'       -> Upper <$> resolvePath path' <*> pure ext'
-    Field expr field ext'  -> Field <$> resolveExpr expr <*> pure field <*> pure ext'
+    Lower path' ext' -> Lower <$> resolvePath path' <*> pure ext'
+    Lit lit ext' -> Lit <$> resolveLit lit <*> pure ext'
+    Lam pat' expr ext' -> newScope (Lam <$> resolvePat pat' <*> resolveExpr expr <*> pure ext')
+    App expr args ext' -> App <$> resolveExpr expr <*> traverse resolveExpr args <*> pure ext'
+    Upper path' ext' -> Upper <$> resolvePath path' <*> pure ext'
+    Field expr field ext' -> Field <$> resolveExpr expr <*> pure field <*> pure ext'
     If cond if' else' ext' -> If <$> resolveExpr cond <*> resolveExpr if' <*> traverse resolveExpr else' <*> pure ext'
     Match scrut cases ext' -> Match <$> resolveExpr scrut <*> traverse resolveCase cases <*> pure ext'
-    Ann expr ty ext'       -> Ann <$> resolveExpr expr <*> resolveType ty <*> pure ext'
-    Block block ext'       -> newScope $ Block <$> resolveBlock block <*> pure ext'
+    Ann expr ty ext' -> Ann <$> resolveExpr expr <*> resolveType ty <*> pure ext'
+    Block block ext' -> newScope (Block <$> resolveBlock block <*> pure ext')
   where
     resolveCase :: MonadResolver m => (Pat Nm, Expr Nm) -> m (Pat Re, Expr Re)
     resolveCase (pat', expr) = newScope ((,) <$> resolvePat pat' <*> resolveExpr expr)
 
     resolveBlock :: MonadResolver m => Block Nm -> m (Block Re)
     resolveBlock = \case
-       BlVar (Var pat' var ext') rest -> BlVar  <$> (Var <$> resolvePat pat' <*> resolveExpr var <*> pure ext') <*> resolveBlock rest
-       BlBind expr rest               -> BlBind <$> resolveExpr expr <*> resolveBlock rest
-       BlEnd expr                     -> BlEnd  <$> resolveExpr expr
+       BlVar (Var pat' var ext') rest -> do
+         resExpr <- resolveExpr var
+         resPat  <- newLocal pat'
+         resBlock <- resolveBlock rest
+         pure (BlVar (Var resPat resExpr ext') resBlock)
+       BlBind expr rest -> BlBind <$> resolveExpr expr <*> resolveBlock rest
+       BlEnd expr -> BlEnd <$> resolveExpr expr
