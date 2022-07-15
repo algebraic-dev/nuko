@@ -1,0 +1,6 @@
+let a : Int = 
+  let a = 2
+  let a = 3
+  let b = 5
+  let a = \a => a
+  a

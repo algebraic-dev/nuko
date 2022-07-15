@@ -38,14 +38,12 @@
    | |     | └Block
    | |     |   ├BlVar
    | |     |   | ├Var
-   | |     |   | | ├pat:
-   | |     |   | | | └PId NoExt (Name: ValName b 6:6-6:7)
+   | |     |   | | ├pat: (Name: ValName b 6:6-6:7)
    | |     |   | | ├val: (Lit NoExt (LInt 6:10-6:11 3))
    | |     |   | | └ext: 6:2-6:11
    | |     |   | └BlVar
    | |     |   |   ├Var
-   | |     |   |   | ├pat:
-   | |     |   |   | | └PId NoExt (Name: ValName c 7:6-7:7)
+   | |     |   |   | ├pat: (Name: ValName c 7:6-7:7)
    | |     |   |   | ├val:
    | |     |   |   | | └App
    | |     |   |   | |   ├Lower
@@ -55,11 +53,11 @@
    | |     |   |   | |   ├NonEmpty
    | |     |   |   | |   | ├Lower
    | |     |   |   | |   | | ├Local:
-   | |     |   |   | |   | | | └Name: ValName a 7:15-7:16
+   | |     |   |   | |   | | | └Name: ValName a 5:11-5:12
    | |     |   |   | |   | | └NoExt
    | |     |   |   | |   | └Lower
    | |     |   |   | |   |   ├Local:
-   | |     |   |   | |   |   | └Name: ValName b 7:17-7:18
+   | |     |   |   | |   |   | └Name: ValName b 6:6-6:7
    | |     |   |   | |   |   └NoExt
    | |     |   |   | |   └7:10-7:18
    | |     |   |   | └ext: 7:2-7:18
@@ -67,18 +65,17 @@
    | |     |   |     └If
    | |     |   |       ├Lower
    | |     |   |       | ├Local:
-   | |     |   |       | | └Name: ValName c 8:5-8:6
+   | |     |   |       | | └Name: ValName c 7:6-7:7
    | |     |   |       | └NoExt
    | |     |   |       ├Lower
    | |     |   |       | ├Local:
-   | |     |   |       | | └Name: ValName b 9:9-9:10
+   | |     |   |       | | └Name: ValName b 6:6-6:7
    | |     |   |       | └NoExt
    | |     |   |       ├Just
    | |     |   |       | └Block
    | |     |   |       |   ├BlVar
    | |     |   |       |   | ├Var
-   | |     |   |       |   | | ├pat:
-   | |     |   |       |   | | | └PId NoExt (Name: ValName d 10:13-10:14)
+   | |     |   |       |   | | ├pat: (Name: ValName d 10:13-10:14)
    | |     |   |       |   | | ├val: (Lit NoExt (LInt 10:17-10:18 3))
    | |     |   |       |   | | └ext: 10:9-10:18
    | |     |   |       |   | └BlEnd
@@ -90,7 +87,7 @@
    | |     |   |       |   |     ├NonEmpty
    | |     |   |       |   |     | ├Lower
    | |     |   |       |   |     | | ├Local:
-   | |     |   |       |   |     | | | └Name: ValName d 11:14-11:15
+   | |     |   |       |   |     | | | └Name: ValName d 10:13-10:14
    | |     |   |       |   |     | | └NoExt
    | |     |   |       |   |     | └Lit NoExt (LInt 11:16-11:17 4)
    | |     |   |       |   |     └11:9-11:17

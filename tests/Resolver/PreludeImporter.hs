@@ -1,26 +1,24 @@
-{-# OPTIONS_GHC -Wno-orphans #-}
 module Resolver.PreludeImporter (
   resolveEntireProgram,
 ) where
 
-
-import Nuko.Resolver.Path
-import Nuko.Resolver.Env
-import Nuko.Resolver.Occourence
+import Nuko.Resolver.Env         (emptyState, Use(..), ResolverState(..), MonadResolver, NameSpace, Query(..), ImportErrorKind (..))
+import Nuko.Names                (mkQualifiedWithPos, mkTyName, genIdent, mkModName, Label(Label), ModName)
+import Nuko.Resolver.Occourence  (insertOcc)
 import Nuko.Resolver.Error       (ResolveError)
-import Nuko.Tree                 (Nm, Re, Program (..))
 import Nuko.Resolver             (initProgram, resolveProgram)
-import Nuko.Names
-import Control.Monad.Import      (MonadImport (importIn), ImportErrorKind (CannotFind))
+import Nuko.Tree                 (Nm, Re, Program (..))
+
+import Control.Monad.Query      (MonadQuery (query))
 import Relude.Monad              (Monad((>>=)), Maybe(..))
 import Relude.Monoid             (Endo(appEndo))
 import Relude.Functor            (first)
 import Relude.Applicative        (Applicative(pure))
-import Relude                    (($), (<$>), Either (..), HashMap, Text, Functor, ReaderT, MonadState)
+import Relude                    (($), (<$>), Either (..), HashMap, Functor, ReaderT, MonadState)
 import Data.These                (These)
 import Control.Monad.Chronicle   (MonadChronicle)
 import Relude.List.NonEmpty      (NonEmpty((:|)))
-import Data.Text
+import Data.Text                 (splitOn)
 
 import qualified Control.Monad.State      as State
 import qualified Control.Monad.Chronicle  as Chronicle
@@ -31,10 +29,8 @@ import qualified Control.Monad.Reader     as Reader
 newtype ConstImporter m a = ConstImporter { runImporter :: ReaderT (HashMap ModName NameSpace) m a }
   deriving newtype (Functor, Monad, Applicative, MonadState b, MonadChronicle b)
 
-instance Monad m => MonadImport NameSpace (ConstImporter m) where
-  importIn name = ConstImporter $ do
-    let (x : xs) = splitOn "." name
-    let modName = mkModName (genIdent <$> (x :| xs))
+instance Monad m => MonadQuery Query (ConstImporter m) where
+  query (GetModule modName) = ConstImporter $ do
     r <- Reader.asks (HashMap.lookup modName)
     case r of
       Just res -> pure (Right res)

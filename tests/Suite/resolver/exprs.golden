@@ -41,8 +41,7 @@
    | |     | └Block
    | |     |   ├BlVar
    | |     |   | ├Var
-   | |     |   | | ├pat:
-   | |     |   | | | └PId NoExt (Name: ValName a 3:6-3:7)
+   | |     |   | | ├pat: (Name: ValName a_1 3:6-3:7)
    | |     |   | | ├val: (Lit NoExt (LInt 3:10-3:11 3))
    | |     |   | | └ext: 3:2-3:11
    | |     |   | └BlEnd
@@ -54,11 +53,11 @@
    | |     |   |     ├NonEmpty
    | |     |   |     | ├Lower
    | |     |   |     | | ├Local:
-   | |     |   |     | | | └Name: ValName a 4:6-4:7
+   | |     |   |     | | | └Name: ValName a_1 3:6-3:7
    | |     |   |     | | └NoExt
    | |     |   |     | └Lower
    | |     |   |     |   ├Local:
-   | |     |   |     |   | └Name: ValName a 4:8-4:9
+   | |     |   |     |   | └Name: ValName a_1 3:6-3:7
    | |     |   |     |   └NoExt
    | |     |   |     └4:2-4:9
    | |     |   └3:2-4:9

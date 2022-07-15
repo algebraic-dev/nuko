@@ -1,0 +1,77 @@
+✓ That
+ └Prod
+   ├Program
+   | ├typeDecls: Empty List
+   | ├letDecls:
+   | | └List
+   | |   └LetDecl
+   | |     ├declName: (Name: ValName a 0:4-0:5)
+   | |     ├declArgs: Empty List
+   | |     ├declBody:
+   | |     | └Block
+   | |     |   ├BlVar
+   | |     |   | ├Var
+   | |     |   | | ├pat: (Name: ValName a 1:6-1:7)
+   | |     |   | | ├val: (Lit NoExt (LInt 1:10-1:11 2))
+   | |     |   | | └ext: 1:2-1:11
+   | |     |   | └BlVar
+   | |     |   |   ├Var
+   | |     |   |   | ├pat: (Name: ValName a_1 2:6-2:7)
+   | |     |   |   | ├val: (Lit NoExt (LInt 2:10-2:11 3))
+   | |     |   |   | └ext: 2:2-2:11
+   | |     |   |   └BlVar
+   | |     |   |     ├Var
+   | |     |   |     | ├pat: (Name: ValName b 3:6-3:7)
+   | |     |   |     | ├val: (Lit NoExt (LInt 3:10-3:11 5))
+   | |     |   |     | └ext: 3:2-3:11
+   | |     |   |     └BlVar
+   | |     |   |       ├Var
+   | |     |   |       | ├pat: (Name: ValName a_2 4:6-4:7)
+   | |     |   |       | ├val:
+   | |     |   |       | | └Lam
+   | |     |   |       | |   ├PId NoExt (Name: ValName a 4:11-4:12)
+   | |     |   |       | |   ├Lower
+   | |     |   |       | |   | ├Local:
+   | |     |   |       | |   | | └Name: ValName a_2 4:11-4:12
+   | |     |   |       | |   | └NoExt
+   | |     |   |       | |   └4:10-4:17
+   | |     |   |       | └ext: 4:2-4:17
+   | |     |   |       └BlEnd
+   | |     |   |         └Lower
+   | |     |   |           ├Local:
+   | |     |   |           | └Name: ValName a_2 4:6-4:7
+   | |     |   |           └NoExt
+   | |     |   └1:2-5:3
+   | |     ├declRet:
+   | |     | └TId
+   | |     |   ├Full: "Prelude" 0:8-0:11
+   | |     |   | └Name: TyName Int 0:8-0:11
+   | |     |   └NoExt
+   | |     └declExt: NoExt
+   | ├impDecls: Empty List
+   | └programExt: NoExt
+   └ResolverState
+     ├_openedNames:
+     | └HashMap
+     |   ├Prod
+     |   | ├Name: TyName Int 0:0-0:0
+     |   | └Single
+     |   |   └Qualified: Prelude 0:0-0:0
+     |   |     └Name: TyName Int 0:0-0:0
+     |   └Prod
+     |     ├Name: TyName String 0:0-0:0
+     |     └Single
+     |       └Qualified: Prelude 0:0-0:0
+     |         └Name: TyName String 0:0-0:0
+     ├_openedModules: HashMap
+     ├_localNames: HashMap
+     ├_usedLocals: HashMap
+     ├_currentNamespace:
+     | └NameSpace
+     |   ├_modName: (ModName: Main)
+     |   └_names:
+     |     └HashMap
+     |       └Prod
+     |         ├Name: ValName a 0:4-0:5
+     |         └Public
+     └_newNamespaces: HashMap

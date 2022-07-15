@@ -22,7 +22,7 @@ source-repository head
 
 library
   exposed-modules:
-      Control.Monad.Import
+      Control.Monad.Query
       Nuko.Driver
       Nuko.Names
       Nuko.Report.Range
@@ -42,6 +42,9 @@ library
       Nuko.Tree
       Nuko.Tree.Expr
       Nuko.Tree.TopLevel
+      Nuko.Typer.Env
+      Nuko.Typer.Error
+      Nuko.Typer.Types
       Nuko.Utils
       Pretty.Format
       Pretty.Tree

@@ -1,6 +1,7 @@
 module Main (main) where
 
-import Relude (IO, undefined)
+import Relude.Lifted.Terminal ( putStrLn )
+import Relude.Monad (MonadIO)
 
-main :: IO ()
-main = undefined
+main :: MonadIO m => m ()
+main = putStrLn "Oh no!"
