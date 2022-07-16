@@ -164,10 +164,10 @@ resolveExpr = \case
 
     resolveBlock :: MonadResolver m => Block Nm -> m (Block Re)
     resolveBlock = \case
-       BlVar (Var pat' var ext') rest -> do
-         resExpr <- resolveExpr var
-         resPat  <- newLocal pat'
-         resBlock <- resolveBlock rest
-         pure (BlVar (Var resPat resExpr ext') resBlock)
        BlBind expr rest -> BlBind <$> resolveExpr expr <*> resolveBlock rest
        BlEnd expr -> BlEnd <$> resolveExpr expr
+       BlVar (Var pat' var ext') rest -> do
+         resExpr <- resolveExpr var
+         resPat  <- resolvePat pat'
+         resBlock <- resolveBlock rest
+         pure (BlVar (Var resPat resExpr ext') resBlock)

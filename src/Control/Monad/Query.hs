@@ -2,7 +2,7 @@ module Control.Monad.Query (
   MonadQuery(..),
 ) where
 
-import Relude.Monad       (Monad(..), Either, StateT, ReaderT, ExceptT)
+import Relude.Monad       (Monad(..), StateT, ReaderT, ExceptT)
 import Relude             (MonadTrans (lift))
 
 class (Monad m) => MonadQuery q m | m -> q where

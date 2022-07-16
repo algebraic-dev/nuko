@@ -1,0 +1,135 @@
+module Nuko.Typer.Infer.Expr (
+  inferExpr,
+  checkExpr,
+) where
+
+import Relude                   (($), (<$>), Traversable (traverse), One (one))
+import Relude.Monad             (Maybe(..), (=<<))
+import Relude.Functor           (Bifunctor(first))
+import Relude.List.NonEmpty     (NonEmpty((:|)))
+import Relude.Applicative       (pure)
+
+import Control.Monad.Reader     (foldM)
+import Lens.Micro.Platform      (view)
+import Data.Traversable         (for)
+import Data.List.NonEmpty       ((<|))
+
+import Nuko.Typer.Env
+import Nuko.Resolver.Tree       ()
+import Nuko.Typer.Tree          ()
+import Nuko.Typer.Infer.Literal (inferLit, boolTy)
+import Nuko.Typer.Infer.Type    (inferTy)
+import Nuko.Typer.Infer.Pat     (inferPat)
+import Nuko.Typer.Error         (TypeError(..))
+import Nuko.Typer.Unify         (unify, destructFun)
+import Nuko.Typer.Types         (TTy(..), Relation(..))
+
+import Nuko.Tree.Expr           (Expr(..))
+import Nuko.Names               (Name, ValName, Path (..))
+import Nuko.Utils               (terminate)
+import Nuko.Tree                (Re, Tc, Block (..), Var (..))
+
+import qualified Data.HashMap.Strict as HashMap
+
+inferBlock :: MonadTyper m => Block Re -> m (Block Tc, TTy 'Virtual)
+inferBlock = \case
+  BlBind expr rest -> do
+    (resExpr,       _) <- inferExpr expr
+    (resBlock, resTy') <- inferBlock rest
+    pure (BlBind resExpr resBlock, resTy')
+  BlVar var rest   -> do
+    ((patRes, patTy), bindings) <- inferPat var.pat
+    (exprRes, valTy) <- inferExpr var.val
+    unify valTy patTy
+    (resBlock, resTy') <- addLocals bindings (inferBlock rest)
+    pure (BlVar (Var patRes exprRes var.ext) resBlock, resTy')
+  BlEnd expr       -> do
+    (resExpr, resTy) <- runInst $ inferExpr expr
+    pure (BlEnd resExpr, resTy)
+
+checkExpr :: MonadTyper m => Expr Re -> TTy 'Virtual -> m (Expr Tc)
+checkExpr expr tty = case (expr, tty) of
+  (_, TyForall _ f) -> do
+    ctxLvl <- view seScope
+    checkExpr expr (f (TyVar ctxLvl))
+  (Lam pat expr' e, TyFun argTy retTy) -> do
+    ((patRes, patTy), bindings) <- inferPat pat
+    unify patTy argTy
+    exprRes <- addLocals bindings (checkExpr expr' retTy)
+    pure (Lam patRes exprRes e)
+  _ -> do
+    (resExpr, inferedTy) <- inferExpr expr
+    instTy <- eagerInstantiate inferedTy
+    unify instTy tty
+    pure resExpr
+
+applyExpr :: MonadTyper m => TTy 'Virtual -> Expr Re -> m (Expr Tc, TTy 'Virtual)
+applyExpr fnTy expr = do
+  (argTy, resTy) <- destructFun fnTy
+  argRes <- checkExpr expr argTy
+  pure (argRes, resTy)
+
+accApplyExpr :: MonadTyper m => (NonEmpty (Expr Tc), TTy 'Virtual) -> Expr Re -> m (NonEmpty (Expr Tc), TTy 'Virtual)
+accApplyExpr (exprs, fnTy) expr = first (<| exprs) <$> applyExpr fnTy expr
+
+inferExpr :: MonadTyper m => Expr Re -> m (Expr Tc, TTy 'Virtual)
+inferExpr = \case
+  Lit lit ext -> do
+    (resLit, resTy) <- inferLit lit
+    pure (Lit resLit ext, resTy)
+  Lower path ext -> do
+    ty <- case path of
+      Local _ path' -> getLocal path'
+      Full _ qual   -> getTy tsVars qual
+    pure (Lower path ext, ty)
+  Upper path ext -> do
+    qualified <- qualifyPath path
+    dataInfo <- getTy tsConstructors qualified
+    pure (Upper path ext, dataInfo._constructorTy)
+  Ann exp ty ext -> do
+    (resTy, _) <- inferTy [] ty
+    exprRes <- checkExpr exp resTy
+    pure (Ann exprRes resTy ext, resTy)
+  Block block ext -> do
+    (blockRes, resTy) <- inferBlock block
+    pure (Block blockRes ext, resTy)
+  If con if' else' ext -> do
+    (conRes, conTy) <- inferExpr con
+    (ifRes, ifTy)  <- inferExpr if'
+    unify conTy boolTy
+    elseRes <- traverse (`checkExpr` ifTy) else'
+    pure (If conRes ifRes elseRes ext, ifTy)
+  Match scrut cas ext -> do
+    (scrutRes, scrutTy) <- inferExpr scrut
+    resTy <- genTyHole
+    casesRes <- for cas $ \(pat, expr) ->  do
+      ((resPat, patTy), bindings) <- inferPat pat
+      (resExpr, exprTy) <- addLocals bindings (inferExpr expr)
+      unify scrutTy patTy
+      unify resTy exprTy
+      pure (resPat, resExpr)
+    pure (Match scrutRes casesRes ext, resTy)
+  Lam pat expr ext -> do
+    ((resPat, patTy), bindings) <- inferPat pat
+    (resExpr, exprTy) <- runInst $ addLocals bindings (inferExpr expr)
+    pure (Lam resPat resExpr ext, TyFun patTy exprTy)
+  App expr (x :| xs) ext -> do
+    (fnExpr, fnTy) <- inferExpr expr
+    (argExpr, fnResTy) <- applyExpr fnTy x
+    (resArgs, resTy) <- foldM accApplyExpr (one argExpr, fnResTy) xs
+    pure (App fnExpr resArgs ext, resTy)
+  Field expr field ext -> do
+    (resExpr, resTy) <- inferExpr expr
+    (argFieldTy, resFieldTy) <- destructFun =<< getFieldByTy field resTy
+    unify argFieldTy resTy
+    pure (Field resExpr field ext, resFieldTy)
+
+getFieldByTy :: MonadTyper m => Name ValName -> TTy 'Virtual -> m (TTy 'Virtual)
+getFieldByTy field = \case
+  TyApp _ f _ -> getFieldByTy field f
+  TyIdent p   -> do
+    res <- getTy tsTypeFields p
+    case HashMap.lookup field res of
+      Just res' -> pure res'._fiResultType
+      Nothing   -> terminate (CannotInferField)
+  _ -> terminate (CannotInferField)

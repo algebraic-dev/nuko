@@ -15,9 +15,9 @@ import Nuko.Resolver.Error      (ResolveErrorReason (..), mkErr)
 import Nuko.Report.Range        (copyPos, getPos)
 import Nuko.Utils               (terminate)
 
-import Relude                   ((.), asum, NonEmpty, fst, ($), filter, Eq ((==)), Functor (fmap), print, putTextLn, traceM, show)
+import Relude                   ((.), asum, NonEmpty, fst, ($), filter, Eq ((==)), Functor (fmap))
 import Relude.Monad             (Maybe(..))
-import Relude.Functor           ((<$>), Functor ((<$)))
+import Relude.Functor           ((<$>))
 import Relude.Applicative       (Applicative(pure))
 import Relude.Container         (one, fromList)
 import Relude.Foldable          (Traversable(..))
@@ -25,8 +25,6 @@ import Relude.Foldable          (Traversable(..))
 import Lens.Micro.Platform      (use, at, view)
 
 import qualified Data.HashMap.Strict as HashMap
-import Pretty.Format
-import qualified Data.Text as Text
 
 occAt :: Functor f => Label -> (Maybe a2 -> f (Maybe a2)) -> OccEnv a2 -> f (OccEnv a2)
 occAt l = getMap . at l

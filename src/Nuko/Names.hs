@@ -57,10 +57,16 @@ data TyName
 data ConsName
 data MiscName
 
+-- | This is simply some aditional information
+data IdentAttr
+  = Generated
+  | FromSource
+
 data Ident = Ident
   { iHash   :: {-# UNPACK #-}!Int
   , iText   :: Text
   , iRange  :: Range
+  , iAttr   :: IdentAttr
   } deriving stock Generic
 
 data NameKind k where
@@ -115,10 +121,10 @@ getIdent :: Label -> Ident
 getIdent (Label name) = name.nIdent
 
 genIdent :: Text -> Ident
-genIdent text = Ident (hash text) text emptyRange
+genIdent text = Ident (hash text) text emptyRange Generated
 
 mkIdent :: Text -> Range -> Ident
-mkIdent text = Ident (hash text) text
+mkIdent text r = Ident (hash text) text r FromSource
 
 mkName :: NameKind e -> Ident -> Attribute -> Name e
 mkName kind text attr = Name (hash text `hashWithSalt` hash kind) kind attr text
@@ -196,8 +202,8 @@ instance Hashable Label where
   hashWithSalt salt (Label e) = hashWithSalt salt e
 
 instance Hashable Ident where
-  hash (Ident hash' _ _) = hash'
-  hashWithSalt salt (Ident hash' _ _) = hashWithSalt salt hash'
+  hash (Ident hash' _ _ _) = hash'
+  hashWithSalt salt (Ident hash' _ _ _) = hashWithSalt salt hash'
 
 instance Hashable (NameKind k) where
   hash = \case
@@ -231,7 +237,7 @@ instance Eq (Name k) where
   (Name h _ _ _) == (Name h' _ _ _) = h == h'
 
 instance Eq Ident where
-  (Ident hash' _ _) == (Ident hash'' _ _) = hash' == hash''
+  (Ident hash' _ _ _) == (Ident hash'' _ _ _) = hash' == hash''
 
 instance Eq ModName where
   (ModName hash' _ _) == (ModName hash'' _ _) = hash' == hash''
@@ -259,7 +265,7 @@ instance PrettyTree Label where
   prettyTree (Label n) = prettyTree n
 
 instance PrettyTree Ident where
-  prettyTree (Ident _ text range') =
+  prettyTree (Ident _ text range' _) =
     Node "Ident:" [text, toLabel range'] []
 
 instance PrettyTree ModName where
@@ -267,7 +273,7 @@ instance PrettyTree ModName where
     Node "ModName:" [joinSegments segments] []
 
 instance PrettyTree (Name k) where
-  prettyTree (Name _ kind _ (Ident _ text range')) =
+  prettyTree (Name _ kind _ (Ident _ text range' _)) =
       Node "Name:" [showKind kind, text, toLabel range'] []
 
 instance PrettyTree a => PrettyTree (Qualified a) where
@@ -314,7 +320,7 @@ instance Format k => Format (Path k) where
 -- Instances for source code position
 
 instance HasPosition Ident where
-  getPos (Ident _ _ range') = range'
+  getPos (Ident _ _ range' _) = range'
 
 instance HasPosition (Name k) where
   getPos (Name _ _ _ range') = getPos range'
@@ -333,7 +339,7 @@ instance HasPosition k => HasPosition (Path k) where
   getPos (Full _ name) = getPos name
 
 instance SetPosition Ident where
-  setPos r (Ident h k _) = Ident h k r
+  setPos r (Ident h k _ t) = Ident h k r t
 
 instance SetPosition (Name k) where
   setPos r (Name h k n i) = Name h k n (setPos r i)

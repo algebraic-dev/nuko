@@ -173,7 +173,7 @@ App :: { NE.NonEmpty (Expr Nm) }
     | Atom      { $1 NE.:| [] }
 
 VarExpr :: { Var Nm }
-    : let ValName '=' Expr  { withPos $1 $4 $ Var $2 $4 }
+    : let Pat '=' Expr  { withPos $1 $4 $ Var $2 $4 }
 
 BlockExpr :: { Block Nm }
     : Expr       List1(sep) BlockExpr { BlBind $1 $3 }
