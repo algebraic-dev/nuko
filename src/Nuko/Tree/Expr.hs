@@ -38,9 +38,9 @@ module Nuko.Tree.Expr (
   XTy,
 ) where
 
-import Relude      (Show, Int, Maybe, NonEmpty, Text)
+import Relude      (Show, Int, NonEmpty, Text)
 import Pretty.Tree (PrettyTree(prettyTree), Tree (..))
-import Nuko.Names (TyName, ValName, ConsName, Name (..))
+import Nuko.Names (TyName, ValName, ConsName)
 
 data NoExt = NoExt deriving Show
 
@@ -85,7 +85,7 @@ data Expr x
   | Lower (XPath x ValName) !(XLower x)
   | Upper (XPath x ConsName) !(XUpper x)
   | Field (Expr x) (XName x ValName) !(XField x)
-  | If (Expr x) (Expr x) (Maybe (Expr x)) !(XIf x)
+  | If (Expr x) (Expr x) (Expr x) !(XIf x)
   | Match (Expr x) (NonEmpty (Pat x, Expr x)) !(XMatch x)
   | Ann (Expr x) (XTy x) !(XAnn x)
   | Block (Block x) !(XBlock x)

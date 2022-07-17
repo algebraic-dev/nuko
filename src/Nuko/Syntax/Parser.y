@@ -145,13 +145,14 @@ Type
 -- Patterns
 
 AtomPat :: { Pat Nm }
-    : '_'                         { PWild $1.position }
-    | Lower                       { PId (mkValName $1) NoExt }
-    | Literal                     { PLit $1 NoExt }
-    | '(' Pat ')'                 { $2 }
+    : '_' { PWild $1.position }
+    | Lower { PId (mkValName $1) NoExt }
+    | Literal { PLit $1 NoExt }
+    | Path(UpperCons) { PCons $1 [] (getPos $1) }
+    | '(' Pat ')' { $2 }
 
 Pat :: { Pat Nm }
-    : Path(UpperCons) List(AtomPat) { withPosList $1 $2 $ PCons $1 $2 }
+    : Path(UpperCons) List1(AtomPat) { let t = toList $2 in withPosList $1 t $ PCons $1 t }
     | Pat ':' Type { withPos $1 $3 $ PAnn $1 $3 }
     | AtomPat { $1 }
 
@@ -187,7 +188,7 @@ End : end   { ()         }
 
 -- Match can be sucessed of a End so.. sometimes it will give an layout error
 ClosedExpr :: { Expr Nm }
-    : if ClosedExpr OptSep then ClosedExpr OptSep else ClosedExpr { withPos $1 $8 $ If $2 $5 (Just $8) }
+    : if ClosedExpr OptSep then ClosedExpr OptSep else ClosedExpr { withPos $1 $8 $ If $2 $5 $8 }
     | Atom App                                                    { withPos $1 $2 $ App $1 $2 }
     | match ClosedExpr with begin SepList1(sep, CaseClause) End   { withPos $1 $5 $ Match $2 $5 }
     | '\\' Pat '=>' ClosedExpr                                    { withPos $1 $4 $ Lam $2 $4 }

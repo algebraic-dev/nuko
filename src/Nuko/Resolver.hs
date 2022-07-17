@@ -134,8 +134,7 @@ resolveType = \case
 
 resolvePat :: MonadResolver m => Pat Nm -> m (Pat Re)
 resolvePat pat' = do
-    (res, bindings) <- runStateT (resolvePat' pat') HashSet.empty
-    traverse_ newLocal (HashSet.toList bindings)
+    (res, _) <- runStateT (resolvePat' pat') HashSet.empty
     pure res
   where
     resolvePat' :: MonadResolver m => Pat Nm -> StateT (HashSet (Name ValName)) m (Pat Re)
@@ -148,7 +147,9 @@ resolvePat pat' = do
         exists <- gets (HashSet.member name')
         if exists
           then terminate (mkErr $ AlreadyExistsPat (Label name'))
-          else modify (HashSet.insert name') $> PId name' ext'
+          else do
+            result <- lift (newLocal name')
+            modify (HashSet.insert result) $> PId result ext'
 
 resolveExpr :: MonadResolver m => Expr Nm -> m (Expr Re)
 resolveExpr = \case
@@ -158,7 +159,7 @@ resolveExpr = \case
     App expr args ext' -> App <$> resolveExpr expr <*> traverse resolveExpr args <*> pure ext'
     Upper path' ext' -> Upper <$> resolvePath path' <*> pure ext'
     Field expr field ext' -> Field <$> resolveExpr expr <*> pure field <*> pure ext'
-    If cond if' else' ext' -> If <$> resolveExpr cond <*> resolveExpr if' <*> traverse resolveExpr else' <*> pure ext'
+    If cond if' else' ext' -> If <$> resolveExpr cond <*> resolveExpr if' <*> resolveExpr else' <*> pure ext'
     Match scrut cases ext' -> Match <$> resolveExpr scrut <*> traverse resolveCase cases <*> pure ext'
     Ann expr ty ext' -> Ann <$> resolveExpr expr <*> resolveType ty <*> pure ext'
     Block block ext' -> newScope (Block <$> resolveBlock block <*> pure ext')

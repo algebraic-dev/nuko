@@ -292,8 +292,7 @@ instance Format Ident where
   format ident = ident.iText
 
 instance Format (Name k) where
-  format (Name _ _ Untouched ident) = format ident
-  format (Name _ _ (Was ident) _) = format ident
+  format (Name _ _ _ ident) = format ident
 
 instance Format (NameKind k) where
   format = \case
