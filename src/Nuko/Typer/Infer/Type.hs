@@ -4,7 +4,7 @@ module Nuko.Typer.Infer.Type (
   freeVars
 ) where
 
-import Relude               (id, snd, Bool, (<$>), fst, not, Num ((+), (-)), traceM, Semigroup ((<>)), show, traceShowM, HashMap, HashSet, undefined, Traversable (traverse), ($))
+import Relude               (id, snd, (<$>), HashSet, Traversable (traverse), ($))
 import Relude.Base          (Eq(..))
 import Relude.Unsafe        ((!!))
 import Relude.Applicative   (pure)

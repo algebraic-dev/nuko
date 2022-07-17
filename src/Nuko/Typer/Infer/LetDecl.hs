@@ -8,7 +8,7 @@ import Relude.Applicative       (pure)
 import Nuko.Resolver.Tree       ()
 import Nuko.Typer.Tree          ()
 
-import Nuko.Typer.Env           (tsVars, MonadTyper, addTy, DefInfo(..), newKindHole, addLocalTypes, addLocals)
+import Nuko.Typer.Env           (tsVars, MonadTyper, addTy, DefInfo(..), newKindHole, addLocalTypes, addLocals, newTyHole)
 
 import Nuko.Typer.Infer.Type    (inferOpenTy, freeVars)
 import Nuko.Typer.Unify         (unifyKind)
@@ -21,6 +21,7 @@ import Data.List (unzip, zip)
 import qualified Data.HashSet as HashSet
 import qualified Data.HashMap.Strict as HashMap
 import Nuko.Typer.Infer.Expr (checkExpr)
+import Nuko.Names (NameKind(..), coerceTo)
 
 initLetDecl :: MonadTyper m => LetDecl Re -> m DefInfo
 initLetDecl (LetDecl name args _ ret _) = do
@@ -45,8 +46,10 @@ initLetDecl (LetDecl name args _ ret _) = do
 inferLetDecl :: MonadTyper m => LetDecl Re -> DefInfo -> m (LetDecl Tc)
 inferLetDecl (LetDecl name' args arg _ ext) tyInfo = do
   addLocalTypes tyInfo._polymorphics $ do
-    let argNamesReal = zip (fst <$> args) tyInfo._argTypes
-    let argNames = HashMap.fromList $ zip (fst <$> args) (evaluate [] <$> tyInfo._argTypes)
+    let names = fst <$> args
+    let argNamesReal = zip names tyInfo._argTypes
+    polyTys <- traverse newTyHole (coerceTo TyName <$> names)
+    let argNames = HashMap.fromList $ zip (fst <$> args) (evaluate polyTys <$> tyInfo._argTypes)
     addLocals argNames $ do
       bodyRes <- checkExpr arg (evaluate [] tyInfo._retType)
       pure (LetDecl name' argNamesReal bodyRes tyInfo._retType ext)

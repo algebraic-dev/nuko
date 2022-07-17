@@ -38,8 +38,6 @@ strTy = preludeTy "String"
 boolTy :: TTy k
 boolTy = preludeTy "Bool"
 
-
-
 inferLit :: MonadTyper m => Literal Re -> m (Literal Tc, TTy 'Virtual)
 inferLit = \case
   LStr l e -> pure (LStr l e, strTy)

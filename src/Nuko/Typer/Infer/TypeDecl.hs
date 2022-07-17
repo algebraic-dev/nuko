@@ -64,7 +64,7 @@ inferTypeDecl (TypeDecl name' args arg) tyInfo =
       unifyKind kind KiStar
       -- TODO: check if FV is empty
       let names = fst <$> tyInfo._tyNames
-      let realTy = TyFun inferedTy tyInfo._resultantType
+      let realTy = TyFun tyInfo._resultantType inferedTy
       let generalizedTy = generalizeWith names realTy id
       addFieldToEnv name' fieldName (FieldInfo generalizedTy)
       pure (fieldName, realTy)
