@@ -3,7 +3,7 @@ module Nuko.Typer.Infer.Expr (
   checkExpr,
 ) where
 
-import Relude                   (($), (<$>), Traversable (traverse), One (one), Bool (..), fst)
+import Relude                   (($), (<$>), One (one), fst)
 import Relude.Monad             (Maybe(..), (=<<))
 import Relude.Functor           (Bifunctor(first))
 import Relude.List.NonEmpty     (NonEmpty((:|)))
@@ -22,7 +22,7 @@ import Nuko.Typer.Infer.Type    (inferClosedTy)
 import Nuko.Typer.Infer.Pat     (inferPat)
 import Nuko.Typer.Error         (TypeError(..))
 import Nuko.Typer.Unify         (unify, destructFun)
-import Nuko.Typer.Types         (TTy(..), Relation(..), quote)
+import Nuko.Typer.Types         (TTy(..), Relation(..), quote, derefTy)
 
 import Nuko.Tree.Expr           (Expr(..))
 import Nuko.Names               (Name, ValName, Path (..))
@@ -39,8 +39,7 @@ inferBlock = \case
     pure (BlBind resExpr resBlock, resTy')
   BlVar var rest   -> do
     ((patRes, patTy), bindings) <- inferPat var.pat
-    (exprRes, valTy) <- inferExpr var.val
-    unify valTy patTy
+    exprRes <- checkExpr var.val patTy
     (resBlock, resTy') <- addLocals bindings (inferBlock rest)
     pure (BlVar (Var patRes exprRes var.ext) resBlock, resTy')
   BlEnd expr       -> do
@@ -95,20 +94,19 @@ inferExpr = \case
     pure (Block blockRes ext, resTy)
   If con if' else' ext -> do
     (conRes, conTy) <- inferExpr con
-    (ifRes, ifTy)  <- inferExpr if'
     unify conTy boolTy
-    elseRes <- traverse (`checkExpr` ifTy) else'
+    (ifRes, ifTy)  <- runInst $ inferExpr if'
+    elseRes <- checkExpr else' ifTy
     pure (If conRes ifRes elseRes ext, ifTy)
   Match scrut cas ext -> do
     (scrutRes, scrutTy) <- inferExpr scrut
     resTy <- genTyHole
     casesRes <- for cas $ \(pat, expr) ->  do
       ((resPat, patTy), bindings) <- inferPat pat
-      (resExpr, exprTy) <- addLocals bindings (runInst $ inferExpr expr)
+      resExpr <- addLocals bindings (checkExpr expr resTy)
       unify scrutTy patTy
-      unify resTy exprTy
       pure (resPat, resExpr)
-    pure (Match scrutRes casesRes ext, resTy)
+    pure (Match scrutRes casesRes ext, derefTy resTy)
   Lam pat expr ext -> do
     ((resPat, patTy), bindings) <- inferPat pat
     (resExpr, exprTy) <- runInst $ addLocals bindings (inferExpr expr)

@@ -2,7 +2,7 @@ module Nuko.Typer.Infer.Pat (
   inferPat,
 ) where
 
-import Relude                   (($), Bool (True))
+import Relude                   (($))
 import Relude.Base              (Eq(..))
 import Relude.Applicative       (pure)
 import Relude.Monad             (Maybe(..), modify)

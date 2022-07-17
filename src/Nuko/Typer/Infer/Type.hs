@@ -17,16 +17,14 @@ import Data.List            (findIndex, zip)
 import Nuko.Typer.Error     (TypeError(..))
 import Nuko.Typer.Unify     (unifyKind)
 import Nuko.Typer.Types     (TKind(..), TTy(..), Relation(..), generalizeWith)
-import Nuko.Typer.Env       (getKind, newKindHole, MonadTyper, qualifyPath, addLocalTy, seTyEnv, seScope, addLocalTypes)
+import Nuko.Typer.Env       (getKind, newKindHole, MonadTyper, qualifyPath, addLocalTy, seTyEnv, addLocalTypes)
 import Nuko.Tree.Expr       (Ty(..))
 import Nuko.Utils           (terminate)
 import Nuko.Names           (genIdent, mkTyName, Label(Label), Name, TyName )
 import Nuko.Tree            (Re)
 
-import Lens.Micro.Platform (view, use, (%=), (.=))
-import Pretty.Format
+import Lens.Micro.Platform (view)
 import qualified Data.HashSet as HashSet
-import qualified Control.Monad as HashSet
 
 type PType x = (TTy x, TKind)
 

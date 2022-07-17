@@ -85,11 +85,15 @@ unify oTy oTy' = do
     unifyHoleTy :: MonadTyper m => TyHole -> Int -> TTy 'Virtual -> m ()
     unifyHoleTy hole scope ty = do
       start <- view seScope
-      preCheck scope start hole ty
-      writeIORef hole (Filled ty)
+      case ty of
+        TyHole hole' | hole == hole' -> pure ()
+        _ -> do
+          preCheck scope start hole ty
+          writeIORef hole (Filled ty)
 
     preCheck :: MonadTyper m => Int -> Int -> TyHole -> TTy 'Virtual -> m ()
-    preCheck scope start hole = go
+    preCheck scope start hole = 
+        go
       where
         go :: MonadTyper m => TTy 'Virtual -> m ()
         go uTy = do
