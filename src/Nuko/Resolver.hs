@@ -6,7 +6,7 @@ module Nuko.Resolver (
 import Nuko.Tree
 import Nuko.Names
 import Nuko.Resolver.Env
-import Nuko.Resolver.Path         (resolvePath,resolveConsOrTy,resolveInNameSpace,getPublicLabels)
+import Nuko.Resolver.Path         (resolvePath,resolveConsOrTy,resolveInNameSpace,getPublicLabels, useLocalPath)
 import Nuko.Resolver.Error        (mkErr, ResolveErrorReason (..))
 import Nuko.Utils                 (terminate)
 import Nuko.Syntax.Tree           ()
@@ -126,7 +126,11 @@ resolveType = \case
   TId path' ext' -> TId <$> resolvePath path' <*> pure ext'
   TApp ty' ty ext' -> TApp <$> resolveType ty' <*> traverse resolveType ty <*> pure ext'
   TArrow from to ext' -> TArrow <$> resolveType from <*> resolveType to <*> pure ext'
-  TPoly name ext' -> pure (TPoly name ext')
+  TPoly name ext' -> do
+    result <- useLocalPath name
+    case result of
+      Just res -> pure (TPoly res ext')
+      Nothing  -> pure (TPoly name ext')
 
 resolvePat :: MonadResolver m => Pat Nm -> m (Pat Re)
 resolvePat pat' = do

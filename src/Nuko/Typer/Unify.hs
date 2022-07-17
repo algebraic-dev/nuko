@@ -7,10 +7,10 @@ module Nuko.Typer.Unify (
 import Nuko.Typer.Types    (TTy(..), Relation (..), derefTy, TyHole)
 import Nuko.Typer.Kinds    (TKind(..), Hole(Filled, Empty), KiHole, derefKind)
 import Nuko.Typer.Error    (TypeError(..))
-import Nuko.Typer.Env      (MonadTyper, addLocalTy, seScope, newTyHoleWithScope, eagerInstantiate)
+import Nuko.Typer.Env      (MonadTyper, addLocalTy, seScope, newTyHoleWithScope, eagerInstantiate, newKindHole)
 import Nuko.Utils          (terminate)
 
-import Relude              (Int, Ord ((>=), (>)))
+import Relude              (Int, Ord ((>=), (>)), (&&), (<))
 import Relude.Base         ((==))
 import Relude.Bool         (when, not, Bool (..), otherwise)
 import Relude.Lifted       (readIORef, writeIORef)
@@ -72,7 +72,8 @@ unify oTy oTy' = do
           Filled f      -> unify f ty'
       (ty, ty'@TyHole {}) -> unify ty' ty
       (TyForall n f, TyForall _ f') -> do
-        addLocalTy n $ do
+        kind <- newKindHole n
+        addLocalTy n kind $ do
           scope <- view seScope
           unify (f (TyVar scope))  (f' (TyVar scope))
       (TyVar a, TyVar b) | a == b -> pure ()
@@ -82,17 +83,20 @@ unify oTy oTy' = do
       (ty, ty') ->terminate (Mismatch ty ty')
   where
     unifyHoleTy :: MonadTyper m => TyHole -> Int -> TTy 'Virtual -> m ()
-    unifyHoleTy hole scope ty = preCheck scope hole ty *> writeIORef hole (Filled ty)
+    unifyHoleTy hole scope ty = do
+      start <- view seScope
+      preCheck scope start hole ty
+      writeIORef hole (Filled ty)
 
-    preCheck :: MonadTyper m => Int -> TyHole -> TTy 'Virtual -> m ()
-    preCheck scope hole = go
+    preCheck :: MonadTyper m => Int -> Int -> TyHole -> TTy 'Virtual -> m ()
+    preCheck scope start hole = go
       where
         go :: MonadTyper m => TTy 'Virtual -> m ()
         go uTy = do
           curScope <- view seScope
           case derefTy uTy of
             TyVar lvl
-              | lvl >= scope -> terminate EscapingScope
+              | lvl >= scope && lvl < start -> terminate EscapingScope
               | otherwise    -> pure ()
             TyIdent _ -> pure ()
             TyApp _ l r  -> go l *> go r

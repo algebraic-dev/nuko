@@ -29,10 +29,10 @@ import qualified Data.HashMap.Strict as HashMap
 occAt :: Functor f => Label -> (Maybe a2 -> f (Maybe a2)) -> OccEnv a2 -> f (OccEnv a2)
 occAt l = getMap . at l
 
-useLocalPath :: MonadResolver m => Name k -> m (Maybe (Path (Name k)))
+useLocalPath :: MonadResolver m => Name k -> m (Maybe (Name k))
 useLocalPath name' = do
   res <- use (localNames . occAt (Label name'))
-  pure (mkLocalPath . coerceLabel name'.nKind <$> res)
+  pure (coerceLabel name'.nKind <$> res)
 
 useGlobal :: MonadResolver m => NameSpace -> Name k -> m (Maybe (Qualified (Name k), Visibility))
 useGlobal ns name' = do
@@ -60,7 +60,7 @@ useOpenedPath name' = do
 resolveName :: MonadResolver m => Name k -> m (Path (Name k))
 resolveName name' = do
   module' <- use currentNamespace
-  res  <- sequence [useLocalPath name', useGlobalPath module' name', useOpenedPath name']
+  res  <- sequence [(mkLocalPath <$>) <$> useLocalPath name', useGlobalPath module' name', useOpenedPath name']
   assertLookup (one (NameSort name'.nKind)) name'.nIdent Nothing (asum res)
 
 resolveInNameSpace :: MonadResolver m => NameSpace -> Name k -> m (Qualified (Name k))

@@ -8,7 +8,7 @@ module Nuko.Typer.Infer.Literal (
 
 import Relude.Applicative (Applicative(pure))
 import Relude.Container   (fromList)
-import Relude             (Maybe(Just), Text, (.))
+import Relude             (Text, (.))
 
 import Nuko.Typer.Tree    ()
 import Nuko.Typer.Env     (MonadTyper)

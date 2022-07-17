@@ -9,10 +9,11 @@ module Nuko.Typer.Types (
   quote,
   generalizeWith,
   printTy,
-  printRealTy
+  generalizeNames,
+  printRealTy,
 ) where
 
-import Relude             ((.), reverse, Num ((-), (+)), Text, Semigroup ((<>)), ($), Foldable (length), Ord ((>), (>=), (<)), (||))
+import Relude             ((.), reverse, Num ((-), (+)), Text, Semigroup ((<>)), ($), Foldable (length), Ord ((>=), (<)), (||), (<$>))
 import Relude.Lifted      (IORef, readIORef)
 import Relude.Numeric     (Int)
 import Relude.Unsafe      ((!!))
@@ -22,6 +23,7 @@ import GHC.IO             (unsafePerformIO)
 import Pretty.Format      (Format(..))
 import Pretty.Tree        (PrettyTree(prettyTree), Tree (..))
 import Nuko.Typer.Kinds   (Hole (..), TKind (..), derefKind)
+import Data.Text (intercalate)
 
 data Relation = Real | Virtual
 
@@ -81,10 +83,21 @@ generalizeWith xs ty fun =
     go [] tys        = fun $ evaluate (reverse tys) ty
     go (x : xs') tys = TyForall x (\f -> go xs' (f : tys))
 
-printRealTy :: TTy 'Real -> Text
-printRealTy = 
-     go []
+generalizeNames :: [Name TyName] -> TTy 'Virtual -> TTy 'Virtual
+generalizeNames xs ty =
+    go xs []
   where
+    go [] _          = ty
+    go (x : xs') tys = TyForall x (\f -> go xs' (f : tys))
+
+printRealTy :: TTy 'Real -> Text
+printRealTy =
+    go []
+  where
+    getSeq :: TTy 'Real -> ([Name TyName], TTy 'Real)
+    getSeq (TyForall x t) = let (n, f) = getSeq t in ((x : n), f)
+    getSeq other = ([], other)
+
     go :: [Name TyName] -> TTy 'Real -> Text
     go env = \case
       TyHole hole ->
@@ -100,7 +113,9 @@ printRealTy =
       TyApp _ a b@(TyFun {}) -> go env a <> " (" <> go env b <> ")"
       TyApp _ a b@(TyApp {}) -> go env a <> " (" <> go env b <> ")"
 
-      TyForall ident fn -> "forall " <> format ident <> ". " <> go (ident : env) fn
+      TyForall ident fn -> 
+        let (ident', fn') = getSeq (TyForall ident fn) in
+        "forall " <> (intercalate " " $ format <$> ident') <> ". " <> go (reverse ident' <> env) fn'
       TyFun t f   -> go env t <> " -> " <> go env f
       TyApp _ t f -> go env t <> " " <> go env f
       TyIdent t   -> format t

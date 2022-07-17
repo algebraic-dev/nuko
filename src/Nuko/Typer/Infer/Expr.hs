@@ -3,7 +3,7 @@ module Nuko.Typer.Infer.Expr (
   checkExpr,
 ) where
 
-import Relude                   (($), (<$>), Traversable (traverse), One (one))
+import Relude                   (($), (<$>), Traversable (traverse), One (one), Bool (..), fst)
 import Relude.Monad             (Maybe(..), (=<<))
 import Relude.Functor           (Bifunctor(first))
 import Relude.List.NonEmpty     (NonEmpty((:|)))
@@ -18,11 +18,11 @@ import Nuko.Typer.Env
 import Nuko.Resolver.Tree       ()
 import Nuko.Typer.Tree          ()
 import Nuko.Typer.Infer.Literal (inferLit, boolTy)
-import Nuko.Typer.Infer.Type    (inferTy)
+import Nuko.Typer.Infer.Type    (inferClosedTy)
 import Nuko.Typer.Infer.Pat     (inferPat)
 import Nuko.Typer.Error         (TypeError(..))
 import Nuko.Typer.Unify         (unify, destructFun)
-import Nuko.Typer.Types         (TTy(..), Relation(..))
+import Nuko.Typer.Types         (TTy(..), Relation(..), quote)
 
 import Nuko.Tree.Expr           (Expr(..))
 import Nuko.Names               (Name, ValName, Path (..))
@@ -80,16 +80,16 @@ inferExpr = \case
   Lower path ext -> do
     ty <- case path of
       Local _ path' -> getLocal path'
-      Full _ qual   -> getTy tsVars qual
+      Full _ qual   -> fst <$> getTy tsVars qual
     pure (Lower path ext, ty)
   Upper path ext -> do
     qualified <- qualifyPath path
     dataInfo <- getTy tsConstructors qualified
     pure (Upper path ext, dataInfo._constructorTy)
   Ann exp ty ext -> do
-    (resTy, _) <- inferTy [] ty
+    (resTy, _) <- inferClosedTy ty
     exprRes <- checkExpr exp resTy
-    pure (Ann exprRes resTy ext, resTy)
+    pure (Ann exprRes (quote 0 resTy) ext, resTy)
   Block block ext -> do
     (blockRes, resTy) <- inferBlock block
     pure (Block blockRes ext, resTy)
@@ -104,7 +104,7 @@ inferExpr = \case
     resTy <- genTyHole
     casesRes <- for cas $ \(pat, expr) ->  do
       ((resPat, patTy), bindings) <- inferPat pat
-      (resExpr, exprTy) <- addLocals bindings (inferExpr expr)
+      (resExpr, exprTy) <- addLocals bindings (runInst $ inferExpr expr)
       unify scrutTy patTy
       unify resTy exprTy
       pure (resPat, resExpr)

@@ -1,70 +1,79 @@
 module Nuko.Typer.Infer.Type (
-  inferTy,
-  inferRealTy
+  inferClosedTy,
+  inferOpenTy,
+  freeVars
 ) where
 
-import Relude               ((.), id)
+import Relude               (id, snd, Bool, (<$>), fst, not, Num ((+), (-)), traceM, Semigroup ((<>)), show, traceShowM, HashMap, HashSet, undefined, Traversable (traverse), ($))
 import Relude.Base          (Eq(..))
 import Relude.Unsafe        ((!!))
 import Relude.Applicative   (pure)
 import Relude.Monad         (Maybe(..))
 
-import Control.Monad.Reader (Monad, foldM, asks, MonadReader(local), MonadTrans(lift), ReaderT)
+import Control.Monad.Reader (foldM)
 import Data.List.NonEmpty   (NonEmpty(..))
-import Data.List            (findIndex)
+import Data.List            (findIndex, zip)
 
 import Nuko.Typer.Error     (TypeError(..))
 import Nuko.Typer.Unify     (unifyKind)
 import Nuko.Typer.Types     (TKind(..), TTy(..), Relation(..), generalizeWith)
-import Nuko.Typer.Env       (getKind, newKindHole, MonadTyper, qualifyPath)
+import Nuko.Typer.Env       (getKind, newKindHole, MonadTyper, qualifyPath, addLocalTy, seTyEnv, seScope, addLocalTypes)
 import Nuko.Tree.Expr       (Ty(..))
 import Nuko.Utils           (terminate)
 import Nuko.Names           (genIdent, mkTyName, Label(Label), Name, TyName )
 import Nuko.Tree            (Re)
 
-import qualified Control.Monad.State  as StateT
-import qualified Control.Monad.Reader as ReaderT
+import Lens.Micro.Platform (view, use, (%=), (.=))
+import Pretty.Format
+import qualified Data.HashSet as HashSet
+import qualified Control.Monad as HashSet
 
 type PType x = (TTy x, TKind)
 
-type InferTy m a = StateT.StateT [Name TyName] (ReaderT [(Name TyName, TKind)] m) a
+inferOpenTy :: MonadTyper m => Ty Re -> m (PType 'Real)
+inferOpenTy = inferRealTy
 
-runInferTy :: InferTy m a -> [(Name TyName, TKind)] -> m (a, [Name TyName])
-runInferTy act poly = ReaderT.runReaderT (StateT.runStateT act []) poly
+inferClosedTy :: MonadTyper m => Ty Re -> m (PType 'Virtual)
+inferClosedTy ast = do
+  let fv = HashSet.toList (freeVars ast)
+  holes <- traverse newKindHole fv
+  addLocalTypes (zip fv holes) $ do
+    (pTy, pKind) <- inferRealTy ast
+    pure (generalizeWith fv pTy id, pKind)
 
-heft :: Monad m => m a -> InferTy m a
-heft = lift . lift
-
-inferTy :: MonadTyper m => [(Name TyName, TKind)] -> Ty Re -> m (PType 'Virtual)
-inferTy poly ast = do
-  ((pTy, pKind), freeNames) <- inferRealTy poly ast
-  pure (generalizeWith freeNames pTy id, pKind)
+freeVars :: Ty Re -> HashSet (Name TyName)
+freeVars = \case
+  TId _ _ -> HashSet.empty
+  TPoly name _ -> HashSet.singleton name
+  TApp ty (x :| xs) _ -> HashSet.unions (freeVars <$> (ty : x : xs))
+  TArrow from to _ -> HashSet.union (freeVars from) (freeVars to)
+  TForall name ty _ -> HashSet.delete name (freeVars ty)
 
 -- TODO: Probably i can just remove poly and use a readerT instead?
-inferRealTy :: MonadTyper m => [(Name TyName, TKind)] -> Ty Re -> m (PType 'Real, [Name TyName])
-inferRealTy poly ast = runInferTy (go ast) poly
+-- TODO: Disallow Guarded polimorphic types
+inferRealTy :: MonadTyper m => Ty Re -> m (PType 'Real)
+inferRealTy ast = go ast
   where
-    findName :: MonadTyper m => Name TyName -> InferTy m (PType 'Real)
+    findName :: MonadTyper m => Name TyName -> m (PType 'Real)
     findName name = do
-      result <- asks (findIndex (\(k, _) -> k == name))
-      case result of
-        Nothing -> terminate (NameResolution (Label name))
+      env <- view seTyEnv
+      case findIndex (\(k, _) -> k == name) env of
         Just idx -> do
-          (_, kPair) <- asks (!! idx)
-          pure (TyVar idx, kPair)
+          pure (TyVar idx, snd (env !! idx))
+        Nothing -> terminate (NameResolution (Label name))
 
-    applyTy :: MonadTyper m => PType 'Real -> Ty Re -> InferTy m (PType 'Real)
+    applyTy :: MonadTyper m => PType 'Real -> Ty Re -> m (PType 'Real)
     applyTy (tyRes, tyKind) arg = do
       (argTyRes, argTyKind) <- go arg
-      resHole <- heft (newKindHole (mkTyName (genIdent "")))
-      heft (unifyKind tyKind (KiFun argTyKind resHole))
+      resHole <- newKindHole (mkTyName (genIdent ""))
+      unifyKind tyKind (KiFun argTyKind resHole)
       pure (TyApp resHole tyRes argTyRes, resHole)
 
-    go :: MonadTyper m => Ty Re -> InferTy m (PType 'Real)
+    go :: MonadTyper m => Ty Re -> m (PType 'Real)
     go = \case
       TId path _ -> do
-        kind <- heft (getKind path)
-        qualified <- heft (qualifyPath path)
+        kind <- getKind path
+        qualified <- qualifyPath path
         pure (TyIdent qualified, kind)
       TPoly name _ ->
         findName name
@@ -74,10 +83,10 @@ inferRealTy poly ast = runInferTy (go ast) poly
       TArrow from to _ -> do
         (vFrom, vFromKi) <- go from
         (vTo, vToKi) <- go to
-        heft (unifyKind vFromKi KiStar)
-        heft (unifyKind vToKi KiStar)
+        unifyKind vFromKi KiStar
+        unifyKind vToKi KiStar
         pure (TyFun vFrom vTo, KiStar)
       TForall name ty _ -> do
-        hole <- heft (newKindHole name)
-        (resTy, resKind) <- local ((name, hole) :) (go ty)
+        hole <- newKindHole name
+        (resTy, resKind) <- addLocalTy name hole (go ty)
         pure (TyForall name resTy, resKind)

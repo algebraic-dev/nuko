@@ -17,6 +17,7 @@ class Format a where
 
 instance Format Int where format = show
 instance Format Text where format = show
+instance (Format a, Format b) => Format (a,b) where format (a,b) = "(" <> format a <> ", " <> format b <> ")"
 
 formatOr :: Format a => NonEmpty a -> Text
 formatOr (ne :| []) = format ne

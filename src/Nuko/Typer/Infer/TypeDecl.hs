@@ -3,26 +3,19 @@ module Nuko.Typer.Infer.TypeDecl (
   inferTypeDecl
 ) where
 
-import Relude                   ((<$>), Traversable (traverse), Foldable (foldr, foldl'), snd, fst, error, traverse_, id, Num ((-)))
+import Nuko.Typer.Env
+
+import Relude                   ((<$>), Traversable (traverse), Foldable (foldr, foldl'), snd, fst, error, traverse_, Num ((-)), ($), id, Int, Maybe (Just))
 import Relude.Functor           (Functor (fmap))
 import Relude.Applicative       (pure)
 
-
 import Nuko.Resolver.Tree       ()
 import Nuko.Typer.Tree          ()
-
-import Nuko.Typer.Env
-  ( tsConstructors
-  , addTy, addFieldToEnv, addTyKind , qualifyPath, newKindHole
-  , DataConsInfo(DataConsInfo), FieldInfo(FieldInfo), TyInfoKind(IsTyDef), TyInfo(..), MonadTyper
-  )
-
-import Nuko.Typer.Infer.Type    (inferTy, inferRealTy)
+import Nuko.Typer.Infer.Type    (inferOpenTy)
 import Nuko.Typer.Unify         (unifyKind)
-import Nuko.Typer.Types         (generalizeWith, Relation(..), TTy(..), TKind(KiStar, KiFun) )
-
+import Nuko.Typer.Types         (generalizeWith, Relation(..), TTy(..), TKind(KiStar, KiFun))
 import Nuko.Tree                (Ty, TypeDeclArg(..), Tc, TypeDecl(..), Re)
-import Nuko.Names               (mkLocalPath, ConsName, Name, TyName, ValName)
+import Nuko.Names               (mkLocalPath, ConsName, Name (nIdent), TyName, ValName)
 
 import Relude.Extra (traverseToSnd)
 import Data.List (length, unzip)
@@ -34,46 +27,58 @@ getRet = \case
 
 mkTyApp :: TKind -> TTy 'Real -> [(Name TyName, TKind)] -> (TKind, TTy 'Real, [Name TyName])
 mkTyApp kind typeTy bindings = do
-  let names              = fst <$> bindings
-  let (resKind, resType) = foldl' (\(k, a) t -> (getRet k, TyApp k a (TyVar t))) (getRet kind, typeTy) [0 .. length names - 1]
-  (resKind, resType, names)
+    let names              = fst <$> bindings
+    let size               = length names - 1
+    let (resKind, resType) = foldl' destructTy (getRet kind, typeTy) [0..size]
+    (resKind, resType, names)
+  where
+    destructTy :: (TKind, TTy k) -> Int -> (TKind, TTy k)
+    destructTy (k, a) t = (getRet k, TyApp k a (TyVar t))
 
 initTypeDecl :: MonadTyper m => TypeDecl Re -> m TyInfo
 initTypeDecl decl = do
   indices <- traverse (traverseToSnd newKindHole) decl.tyArgs
+
+  -- The type kind
   let tyKind = foldr KiFun KiStar (fmap snd indices)
+
+  -- Label type
   typeTy <- TyIdent <$> qualifyPath (mkLocalPath decl.tyName)
+
+  -- The type application that should end with kind equals to *
   let (resKind, resType, _) = mkTyApp tyKind typeTy indices
   unifyKind resKind KiStar
-  let resInfo = TyInfo resType typeTy indices IsTyDef
+  let resInfo = TyInfo resType decl.tyName indices IsTyDef
   addTyKind decl.tyName tyKind resInfo
   pure resInfo
 
 inferTypeDecl :: MonadTyper m => TypeDecl Re -> TyInfo -> m (TypeDecl Tc)
-inferTypeDecl (TypeDecl name' args arg) tyInfo = do
-    decl <- inferBody arg
-    -- TODO: put it under scope
-    pure (TypeDecl name' args decl)
+inferTypeDecl (TypeDecl name' args arg) tyInfo =
+    addLocalTypes tyInfo._tyNames $ do
+      decl <- inferBody arg
+      pure (TypeDecl name' args decl)
   where
-    inferField :: MonadTyper m => (Name ValName, Ty Re) -> m (Name ValName, TTy 'Virtual)
+    inferField :: MonadTyper m => (Name ValName, Ty Re) -> m (Name ValName, TTy 'Real)
     inferField (fieldName, ty) = do
-      -- TODO: check if FV is empty
-      ((inferedTy, kind), fv) <- inferRealTy tyInfo._tyNames ty
+      (inferedTy, kind) <- inferOpenTy ty
       unifyKind kind KiStar
+      -- TODO: check if FV is empty
       let names = fst <$> tyInfo._tyNames
-      let generalizedTy = generalizeWith names (TyFun inferedTy tyInfo._resultantType) id
+      let realTy = TyFun inferedTy tyInfo._resultantType
+      let generalizedTy = generalizeWith names realTy id
       addFieldToEnv name' fieldName (FieldInfo generalizedTy)
-      pure (fieldName, generalizedTy)
+      pure (fieldName, realTy)
 
-    inferSumField :: MonadTyper m => (Name ConsName, [Ty Re]) -> m (Name ConsName, [TTy 'Virtual])
+    inferSumField :: MonadTyper m => (Name ConsName, [Ty Re]) -> m (Name ConsName, [TTy 'Real])
     inferSumField (consName, tys) = do
       -- TODO: inferTy generalizes so i have to take some care here.
-      (argTys, argKinds) <- unzip <$> traverse (inferTy tyInfo._tyNames) tys
+      (argTys, argKinds) <- unzip <$> traverse (inferOpenTy) tys
+
+      let names = fst <$> tyInfo._tyNames
+      let generalizedTy = generalizeWith names (foldr TyFun tyInfo._resultantType argTys) id
+      addTy tsConstructors (Just tyInfo._label.nIdent) consName (DataConsInfo generalizedTy (length tys))
 
       traverse_ (`unifyKind` KiStar) argKinds
-      let genRes f = foldr TyFun f argTys
-      let generalizedTy = generalizeWith (fst <$> tyInfo._tyNames) tyInfo._resultantType genRes
-      addTy tsConstructors consName (DataConsInfo generalizedTy (length tys))
       pure (consName, argTys)
 
     inferBody :: MonadTyper m => TypeDeclArg Re -> m (TypeDeclArg Tc)

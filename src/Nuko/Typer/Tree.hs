@@ -8,13 +8,13 @@ import Nuko.Report.Range  (Range, HasPosition(..))
 import Relude             (Semigroup((<>)), Void, Generic)
 import Pretty.Tree        (PrettyTree)
 import Nuko.Names         (Path, Name, Ident, ModName)
-import Nuko.Typer.Types   (TTy, Relation(Virtual))
+import Nuko.Typer.Types   (TTy, Relation(..))
 
 type instance XIdent Tc    = Ident
 type instance XModName Tc  = ModName
 type instance XName Tc k   = Name k
 type instance XPath Tc k   = Path (Name k)
-type instance XTy Tc       = TTy 'Virtual
+type instance XTy Tc       = TTy 'Real
 
 type instance XLInt Tc = Range
 type instance XLStr Tc = Range

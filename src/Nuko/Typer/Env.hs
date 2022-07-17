@@ -2,6 +2,7 @@ module Nuko.Typer.Env (
   DataConsInfo(..),
   FieldInfo(..),
   TypeSpace(..),
+  DefInfo(..),
   TyInfo(..),
   TyInfoKind(..),
   TypingEnv(..),
@@ -10,6 +11,7 @@ module Nuko.Typer.Env (
   addFieldToEnv,
   getKind,
   addTy,
+  qualifyLocal,
   updateTyKind,
   addTyKind,
   qualifyPath,
@@ -25,6 +27,7 @@ module Nuko.Typer.Env (
   tsConstructors,
   tsVars,
   seScope,
+  seTyEnv,
   addLocalTy,
   getKindMaybe,
   getTy,
@@ -32,15 +35,16 @@ module Nuko.Typer.Env (
   newTyHoleWithScope,
   tsTypeFields,
   runToIO,
-  emptyTypeSpace,
+  genKindHole,
+  addLocalTypes,
 ) where
 
 import Relude                  (Generic, Int, MonadIO, pure, (.), (<$>), ($), Monad ((>>=)), fst, Num ((+)), IO, Endo (appEndo), Bifunctor (first))
 import Relude.Monad            (MonadState, MonadReader (local), Maybe (..), asks, maybe)
-import Relude.Monoid           (Endo, (<>))
+import Relude.Monoid           ((<>))
 import Relude.Lifted           (newIORef)
 
-import Nuko.Names              (Name, ConsName, TyName, ValName, ModName (..), Label (..), Path (..), mkQualified, Qualified(..), getPathInfo, NameKind (TyName), mkName, genIdent, Attribute (Untouched))
+import Nuko.Names              (Name, ConsName, TyName, ValName, ModName (..), Label (..), Path (..), mkQualified, Qualified(..), getPathInfo, NameKind (TyName), mkName, genIdent, Attribute (Untouched), Ident, mkModName)
 import Nuko.Utils              (terminate)
 import Nuko.Typer.Types        (TTy (..), Relation (..), TKind, derefTy)
 import Nuko.Typer.Types        (Hole (..), TKind (..))
@@ -50,11 +54,11 @@ import Nuko.Resolver.Tree      ()
 
 import Pretty.Tree             (PrettyTree)
 import Data.HashMap.Strict     (HashMap)
+import Data.These              (These)
 import Lens.Micro.Platform     (makeLenses, over, Lens', use, (%=), at)
 import Control.Monad.Chronicle (MonadChronicle)
 
 import qualified Data.HashMap.Strict as HashMap
-import Data.These (These)
 import qualified Control.Monad.Trans.Chronicle as Chronicle
 import qualified Control.Monad.State.Strict as State
 import qualified Control.Monad.Reader as Reader
@@ -66,9 +70,16 @@ data TyInfoKind
 
 data TyInfo = TyInfo
   { _resultantType :: TTy 'Real
-  , _labelType :: TTy 'Real
+  , _label   :: Name TyName
   , _tyNames :: [(Name TyName, TKind)]
-  , _tyKind :: TyInfoKind
+  , _tyKind  :: TyInfoKind
+  } deriving Generic
+
+data DefInfo = DefInfo
+  { _diResultType :: TTy 'Virtual
+  , _polymorphics :: [(Name TyName, TKind)]
+  , _argTypes     :: [TTy 'Real]
+  , _retType      :: TTy 'Real
   } deriving Generic
 
 data FieldInfo = FieldInfo
@@ -83,7 +94,7 @@ data DataConsInfo = DataConsInfo
 data TypeSpace = TypeSpace
   { _tsTypes        :: HashMap (Qualified (Name TyName)) (TKind, TyInfo)
   , _tsConstructors :: HashMap (Qualified (Name ConsName)) DataConsInfo
-  , _tsVars         :: HashMap (Qualified (Name ValName)) (TTy 'Virtual)
+  , _tsVars         :: HashMap (Qualified (Name ValName)) (TTy 'Virtual, DefInfo)
   , _tsTypeFields   :: HashMap (Qualified (Name TyName)) (HashMap (Name ValName) FieldInfo)
   } deriving Generic
 
@@ -93,9 +104,9 @@ data TypingEnv = TypingEnv
   } deriving Generic
 
 data ScopeEnv = ScopeEnv
-  { _seVars  :: HashMap (Name ValName) (TTy 'Virtual)
-  , _seTyEnv :: [Name TyName]
-  , _seScope :: Int
+  { _seVars     :: HashMap (Name ValName) (TTy 'Virtual)
+  , _seTyEnv    :: [(Name TyName, TKind)]
+  , _seScope    :: Int
   } deriving Generic
 
 makeLenses ''DataConsInfo
@@ -108,6 +119,7 @@ instance PrettyTree TypingEnv where
 instance PrettyTree FieldInfo where
 instance PrettyTree TyInfoKind where
 instance PrettyTree DataConsInfo where
+instance PrettyTree DefInfo where
 instance PrettyTree TypeSpace where
 instance PrettyTree TyInfo where
 
@@ -147,10 +159,10 @@ getLocal name = do
     Just res -> pure res
     Nothing  -> terminate (NameResolution $ Label $ name)
 
-newTyHole :: MonadTyper m => Name TyName -> m (TTy 'Virtual)
+newTyHole :: MonadTyper m => Name TyName -> m (TTy k)
 newTyHole name = asks _seScope >>= newTyHoleWithScope name
 
-newTyHoleWithScope :: MonadTyper m => Name TyName -> Int -> m (TTy 'Virtual)
+newTyHoleWithScope :: MonadTyper m => Name TyName -> Int -> m (TTy k)
 newTyHoleWithScope name scope = TyHole <$> newIORef (Empty name scope)
 
 genTyHole :: MonadTyper m => m (TTy 'Virtual)
@@ -160,6 +172,9 @@ newKindHole :: MonadTyper m => Name TyName -> m TKind
 newKindHole name = do
   curScope <- asks _seScope
   KiHole <$> newIORef (Empty name curScope)
+
+genKindHole :: MonadTyper m => m TKind
+genKindHole = newKindHole (mkName TyName (genIdent "_") Untouched)
 
 eagerInstantiate :: MonadTyper m => TTy 'Virtual -> m (TTy 'Virtual)
 eagerInstantiate = \case
@@ -171,7 +186,7 @@ eagerInstantiate = \case
 qualifyLocal :: MonadTyper m => Name k -> m (Qualified (Name k))
 qualifyLocal name = do
   modName <- use teCurModule
-  pure (mkQualified modName name (getPos modName))
+  pure (mkQualified modName name (getPos name))
 
 qualifyPath :: MonadTyper m => Path (Name k) -> m (Qualified (Name k))
 qualifyPath (Local _ name) = qualifyLocal name
@@ -183,8 +198,11 @@ addTyKind name ki info = qualifyLocal name >>= \name' -> globalTypingEnv . tsTyp
 updateTyKind :: MonadTyper m => Qualified (Name TyName) -> ((TKind, TyInfo) -> Maybe (TKind, TyInfo)) -> m ()
 updateTyKind name f = globalTypingEnv . tsTypes %= HashMap.update f name
 
-addTy :: MonadTyper m => Lens' TypeSpace (HashMap (Qualified (Name k)) b) -> Name k -> b -> m ()
-addTy lens name ki = qualifyLocal name >>= \name' -> globalTypingEnv . lens %= HashMap.insert name' ki
+addTy :: MonadTyper m => Lens' TypeSpace (HashMap (Qualified (Name k)) b) -> Maybe Ident -> Name k -> b -> m ()
+addTy lens tyName name ki = do
+  qual@(Qualified _ (ModName _ e _) ident r') <- qualifyLocal name
+  let name' = maybe qual (\tyName' -> mkQualified (mkModName (e <> pure tyName')) ident r') tyName
+  globalTypingEnv . lens %= HashMap.insert name' ki
 
 getTy :: MonadTyper m => Lens' TypeSpace (HashMap (Qualified (Name k)) b) -> Qualified (Name k) -> m b
 getTy lens qualified = do
@@ -209,5 +227,8 @@ addFieldToEnv typeName fieldName fieldInfo = do
   qualified <- qualifyLocal typeName
   globalTypingEnv . tsTypeFields %= HashMap.insertWith ((<>)) qualified (HashMap.singleton fieldName fieldInfo)
 
-addLocalTy :: MonadTyper m => Name TyName -> m a -> m a
-addLocalTy name = local (over seTyEnv (name :) . over seScope (+ 1))
+addLocalTy :: MonadTyper m => Name TyName -> TKind -> m a -> m a
+addLocalTy name ty = local (over seTyEnv ((name, ty) :) . over seScope (+ 1))
+
+addLocalTypes :: MonadTyper m => [(Name TyName, TKind)] -> m a -> m a
+addLocalTypes names = local (over seTyEnv (names <>))

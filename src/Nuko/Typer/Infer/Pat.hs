@@ -2,7 +2,7 @@ module Nuko.Typer.Infer.Pat (
   inferPat,
 ) where
 
-import Relude                   (($))
+import Relude                   (($), Bool (True))
 import Relude.Base              (Eq(..))
 import Relude.Applicative       (pure)
 import Relude.Monad             (Maybe(..), modify)
@@ -16,11 +16,11 @@ import Control.Monad            (when)
 import Nuko.Resolver.Tree       ()
 import Nuko.Typer.Tree          ()
 import Nuko.Typer.Infer.Literal (inferLit)
-import Nuko.Typer.Infer.Type    (inferTy)
+import Nuko.Typer.Infer.Type    (inferClosedTy)
 import Nuko.Typer.Error         (TypeError(..))
 import Nuko.Typer.Unify         (unify, destructFun)
-import Nuko.Typer.Types         (TTy(..), Relation(..))
-import Nuko.Typer.Env           (genTyHole, getTy, newTyHole, tsConstructors, DataConsInfo(_parameters, _constructorTy), MonadTyper, qualifyPath)
+import Nuko.Typer.Types         (TTy(..), Relation(..), quote)
+import Nuko.Typer.Env           (getTy, newTyHole, tsConstructors, DataConsInfo(_parameters, _constructorTy), MonadTyper, qualifyPath)
 import Nuko.Tree.Expr           (Pat(..))
 import Nuko.Names               (coerceTo, genIdent, mkName, Attribute(Untouched), Label(Label), Name, NameKind(TyName), ValName)
 import Nuko.Utils               (terminate)
@@ -71,6 +71,6 @@ inferPat pat =
         pure (PLit resLit ext, resTy)
       PAnn pat' ty ext -> do
         (resPat, resPatTy) <- go pat'
-        (resTy, _) <- lift $ inferTy [] ty
+        (resTy, _) <- lift $ inferClosedTy ty
         lift $ unify resPatTy resTy
-        pure (PAnn resPat resTy ext, resTy)
+        pure (PAnn resPat (quote 0 resTy) ext, resTy)

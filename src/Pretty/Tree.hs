@@ -103,6 +103,9 @@ instance PrettyTree Text where
 instance (PrettyTree a, PrettyTree b) => PrettyTree (a, b) where
   prettyTree (a, b) = Node "Prod" [] [prettyTree a, prettyTree b]
 
+instance (PrettyTree a, PrettyTree b, PrettyTree c) => PrettyTree (a, b, c) where
+  prettyTree (a, b, c) = Node "Prod" [] [prettyTree a, prettyTree b, prettyTree c]
+
 instance (PrettyTree a, PrettyTree b) => PrettyTree (Either a b) where
   prettyTree (Left a) = Node "Left" [] [prettyTree a]
   prettyTree (Right a) = Node "Right" [] [prettyTree a]
