@@ -13,17 +13,17 @@ module Nuko.Typer.Types (
   printRealTy,
 ) where
 
-import Relude             ((.), reverse, Num ((-), (+)), Text, Semigroup ((<>)), ($), Foldable (length), Ord ((>=), (<)), (||), (<$>))
+import Relude             ((.), reverse, Num ((-), (+)), Text, Semigroup ((<>)), ($), Foldable (length, foldr), Ord ((>=), (<)), (||), (<$>))
 import Relude.Lifted      (IORef, readIORef)
 import Relude.Numeric     (Int)
 import Relude.Unsafe      ((!!))
 
+import Nuko.Typer.Kinds   (Hole (..), TKind (..), derefKind)
 import Nuko.Names         (Name (..), TyName, Qualified (..))
 import GHC.IO             (unsafePerformIO)
 import Pretty.Format      (Format(..))
 import Pretty.Tree        (PrettyTree(prettyTree), Tree (..))
-import Nuko.Typer.Kinds   (Hole (..), TKind (..), derefKind)
-import Data.Text (intercalate)
+import Data.Text          (intercalate)
 
 data Relation = Real | Virtual
 
@@ -40,6 +40,7 @@ data TTy (v :: Relation) where
   TyIdent   :: Qualified (Name TyName) -> TTy a
   TyFun     :: TTy a -> TTy a -> TTy a
   TyApp     :: TKind -> TTy a -> TTy a -> TTy a
+  TyErr     :: TTy a
 
 derefTy :: TTy 'Virtual -> TTy 'Virtual
 derefTy = \case
@@ -56,6 +57,7 @@ derefTy = \case
 
 evaluate :: [TTy 'Virtual] -> TTy 'Real -> TTy 'Virtual
 evaluate types = \case
+  TyErr -> TyErr
   TyHole hole -> TyHole hole
   TyForall ident fn -> TyForall ident (\f -> evaluate (f : types) fn)
   TyFun t f -> TyFun (evaluate types t) (evaluate types f)
@@ -68,6 +70,7 @@ evaluate types = \case
 
 quote :: Int -> TTy 'Virtual -> TTy 'Real
 quote lvl = \case
+  TyErr -> TyErr
   TyHole hole -> TyHole hole
   TyForall ident fn -> TyForall ident (quote (lvl + 1) (fn (TyVar lvl)))
   TyFun t f -> TyFun (quote lvl t) (quote lvl f)
@@ -83,12 +86,8 @@ generalizeWith xs ty fun =
     go [] tys        = fun $ evaluate (reverse tys) ty
     go (x : xs') tys = TyForall x (\f -> go xs' (f : tys))
 
-generalizeNames :: [Name TyName] -> TTy 'Virtual -> TTy 'Virtual
-generalizeNames xs ty =
-    go xs []
-  where
-    go [] _          = ty
-    go (x : xs') tys = TyForall x (\f -> go xs' (f : tys))
+generalizeNames :: [Name TyName] -> TTy 'Real -> TTy 'Real
+generalizeNames xs ty = foldr TyForall ty xs
 
 printRealTy :: TTy 'Real -> Text
 printRealTy =
@@ -100,6 +99,7 @@ printRealTy =
 
     go :: [Name TyName] -> TTy 'Real -> Text
     go env = \case
+      TyErr -> "ERR"
       TyHole hole ->
         case unsafePerformIO (readIORef hole) of
           Empty n i -> "[" <> format n <> "." <> format i <> "]"
@@ -113,7 +113,7 @@ printRealTy =
       TyApp _ a b@(TyFun {}) -> go env a <> " (" <> go env b <> ")"
       TyApp _ a b@(TyApp {}) -> go env a <> " (" <> go env b <> ")"
 
-      TyForall ident fn -> 
+      TyForall ident fn ->
         let (ident', fn') = getSeq (TyForall ident fn) in
         "forall " <> (intercalate " " $ format <$> ident') <> ". " <> go (reverse ident' <> env) fn'
       TyFun t f   -> go env t <> " -> " <> go env f

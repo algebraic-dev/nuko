@@ -23,6 +23,8 @@ preludePath = mkModName (fromList [genIdent "Prelude"])
 nameTy :: Text -> Name TyName
 nameTy = mkTyName . genIdent
 
+-- This is a placeholder.. in the future i'll try to make something
+-- to inject a module as the Prelude.
 preludeQual :: Text -> Qualified (Name TyName)
 preludeQual = mkQualifiedWithPos preludePath . nameTy
 
@@ -40,5 +42,5 @@ boolTy = preludeTy "Bool"
 
 inferLit :: MonadTyper m => Literal Re -> m (Literal Tc, TTy 'Virtual)
 inferLit = \case
-  LStr l e -> pure (LStr l e, strTy)
-  LInt l e -> pure (LInt l e, intTy)
+  LStr l e -> pure (LStr l (strTy, e), strTy)
+  LInt l e -> pure (LInt l (intTy, e), intTy)

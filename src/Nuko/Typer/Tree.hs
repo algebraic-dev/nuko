@@ -5,7 +5,7 @@ module Nuko.Typer.Tree where
 
 import Nuko.Tree
 import Nuko.Report.Range  (Range, HasPosition(..))
-import Relude             (Semigroup((<>)), Void, Generic)
+import Relude             (Semigroup((<>)), Void, Generic, snd)
 import Pretty.Tree        (PrettyTree)
 import Nuko.Names         (Path, Name, Ident, ModName)
 import Nuko.Typer.Types   (TTy, Relation(..))
@@ -16,32 +16,26 @@ type instance XName Tc k   = Name k
 type instance XPath Tc k   = Path (Name k)
 type instance XTy Tc       = TTy 'Real
 
-type instance XLInt Tc = Range
-type instance XLStr Tc = Range
+type instance XLInt Tc = (XTy Tc, Range)
+type instance XLStr Tc = (XTy Tc, Range)
 
-type instance XTId Tc = NoExt
-type instance XTPoly Tc = NoExt
-type instance XTCons Tc = Range
-type instance XTArrow Tc = Range
-type instance XTForall Tc = Range
-
-type instance XPWild Tc = Range
-type instance XPId Tc = NoExt
+type instance XPWild Tc = (XTy Tc, Range)
+type instance XPId Tc = XTy Tc
 type instance XPLit Tc = NoExt
-type instance XPAnn Tc = Range
-type instance XPCons Tc = Range
+type instance XPAnn Tc = (XTy Tc, Range)
+type instance XPCons Tc = (XTy Tc, Range)
 type instance XPExt Tc = Void
 
 type instance XLit Tc = NoExt
-type instance XLam Tc = Range
+type instance XLam Tc = (XTy Tc, Range)
 type instance XAnn Tc = Range
-type instance XApp Tc = Range
-type instance XLower Tc = NoExt
-type instance XUpper Tc = NoExt
-type instance XField Tc = Range
-type instance XIf Tc = Range
-type instance XMatch Tc = Range
-type instance XBlock Tc = Range
+type instance XApp Tc = (XTy Tc, Range)
+type instance XLower Tc = XTy Tc
+type instance XUpper Tc = XTy Tc
+type instance XField Tc = (XTy Tc, Range)
+type instance XIf Tc = (XTy Tc, Range)
+type instance XMatch Tc = (XTy Tc, Range)
+type instance XBlock Tc = (XTy Tc, Range)
 type instance XVar Tc = Range
 type instance XExt Tc = Void
 
@@ -67,7 +61,6 @@ instance PrettyTree (Block Tc) where
 instance PrettyTree (Var Tc) where
 instance PrettyTree (Literal Tc) where
 instance PrettyTree (Pat Tc) where
-instance PrettyTree (Ty Tc) where
 instance PrettyTree (Import Tc) where
 instance PrettyTree (ImportDepsKind Tc) where
 instance PrettyTree (ImportDeps Tc) where
@@ -82,28 +75,28 @@ instance HasPosition (Var Tc) where
 
 instance HasPosition (Literal Tc) where
   getPos = \case
-    LStr _ r -> r
-    LInt _ r -> r
+    LStr _ (_, r) -> r
+    LInt _ (_, r) -> r
 
 instance HasPosition (Pat Tc) where
   getPos = \case
-    PWild r     -> r
-    PCons _ _ r -> r
+    PWild (_, r) -> r
+    PCons _ _ (_, r) -> r
     PLit i _    -> getPos i
-    PAnn _ _ r  -> r
-    PId n _     -> getPos n
+    PAnn _ _ r  -> snd r
+    PId n _   -> getPos n
 
 instance HasPosition (Expr Tc) where
   getPos = \case
     Lit t _ -> getPos t
-    Lam _ _ r -> r
-    App _ _ r -> r
+    Lam _ _ (_, r) -> r
+    App _ _ (_, r) -> r
     Lower r _ -> getPos r
     Upper r _ -> getPos r
-    Field _ _ r -> r
-    If _ _ _ r -> r
-    Match _ _ r -> r
-    Block _  r -> r
+    Field _ _ (_, r) -> r
+    If _ _ _ (_, r) -> r
+    Match _ _ (_, r) -> r
+    Block _  (_, r) -> r
     Ann _ _ r  -> r
 
 instance HasPosition (Block Tc) where
@@ -111,11 +104,3 @@ instance HasPosition (Block Tc) where
     BlBind x r           -> getPos x <> getPos r
     BlVar (Var _ _ r1) r -> r1 <> getPos r
     BlEnd x              -> getPos x
-
-instance HasPosition (Ty Tc) where
-  getPos = \case
-    TId n _       -> getPos n
-    TPoly n _     -> getPos n
-    TApp  _ _ r   -> r
-    TArrow _ _ r  -> r
-    TForall _ _ r -> r

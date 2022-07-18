@@ -3,7 +3,7 @@ module Nuko.Typer.Infer.LetDecl (
   inferLetDecl
 ) where
 
-import Relude                   ((<$>), Traversable (traverse), Foldable (foldr), snd, id, traverse_, ($), fst, Maybe (Nothing))
+import Relude                   ((<$>), Traversable (traverse), Foldable (foldr), snd, traverse_, ($), fst, Maybe (Nothing))
 import Relude.Applicative       (pure)
 import Nuko.Resolver.Tree       ()
 import Nuko.Typer.Tree          ()
@@ -12,7 +12,7 @@ import Nuko.Typer.Env           (tsVars, MonadTyper, addTy, DefInfo(..), newKind
 
 import Nuko.Typer.Infer.Type    (inferOpenTy, freeVars)
 import Nuko.Typer.Unify         (unifyKind)
-import Nuko.Typer.Types         (generalizeWith, TTy(..), TKind(KiStar), evaluate )
+import Nuko.Typer.Types         (TTy(..), TKind(KiStar), evaluate, generalizeNames )
 
 import Nuko.Tree                (LetDecl(..), Tc, Re)
 
@@ -37,7 +37,7 @@ initLetDecl (LetDecl name args _ ret _) = do
 
     traverse_ (`unifyKind` KiStar) (retKind : argsKind)
     let realTy = foldr TyFun retRet argsReal
-    let generalizedTy = generalizeWith freeTys realTy id
+    let generalizedTy = generalizeNames freeTys realTy
 
     let info = DefInfo generalizedTy bindings argsReal retRet
     addTy tsVars Nothing name (generalizedTy, info)

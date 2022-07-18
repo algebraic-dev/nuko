@@ -3,7 +3,7 @@ module Nuko.Typer.Infer.Expr (
   checkExpr,
 ) where
 
-import Relude                   (($), (<$>), One (one), fst)
+import Relude                   (($), (<$>), One (one), fst, (.))
 import Relude.Monad             (Maybe(..), (=<<))
 import Relude.Functor           (Bifunctor(first))
 import Relude.List.NonEmpty     (NonEmpty((:|)))
@@ -22,7 +22,7 @@ import Nuko.Typer.Infer.Type    (inferClosedTy)
 import Nuko.Typer.Infer.Pat     (inferPat)
 import Nuko.Typer.Error         (TypeError(..))
 import Nuko.Typer.Unify         (unify, destructFun)
-import Nuko.Typer.Types         (TTy(..), Relation(..), quote, derefTy)
+import Nuko.Typer.Types         (TTy(..), Relation(..), quote, derefTy, evaluate)
 
 import Nuko.Tree.Expr           (Expr(..))
 import Nuko.Names               (Name, ValName, Path (..))
@@ -55,7 +55,7 @@ checkExpr expr tty = case (expr, tty) of
     ((patRes, patTy), bindings) <- inferPat pat
     unify patTy argTy
     exprRes <- addLocals bindings (checkExpr expr' retTy)
-    pure (Lam patRes exprRes e)
+    pure (Lam patRes exprRes (quote 0 (TyFun argTy retTy), e))
   _ -> do
     (resExpr, inferedTy) <- inferExpr expr
     instTy <- eagerInstantiate inferedTy
@@ -76,28 +76,28 @@ inferExpr = \case
   Lit lit ext -> do
     (resLit, resTy) <- inferLit lit
     pure (Lit resLit ext, resTy)
-  Lower path ext -> do
+  Lower path _ -> do
     ty <- case path of
       Local _ path' -> getLocal path'
-      Full _ qual   -> fst <$> getTy tsVars qual
-    pure (Lower path ext, ty)
-  Upper path ext -> do
+      Full _ qual   -> (evaluate [] . fst) <$> getTy tsVars qual
+    pure (Lower path (quote 0 ty), ty)
+  Upper path _ -> do
     qualified <- qualifyPath path
     dataInfo <- getTy tsConstructors qualified
-    pure (Upper path ext, dataInfo._constructorTy)
+    pure (Upper path dataInfo._constructorTy, evaluate [] dataInfo._constructorTy)
   Ann exp ty ext -> do
     (resTy, _) <- inferClosedTy ty
     exprRes <- checkExpr exp resTy
     pure (Ann exprRes (quote 0 resTy) ext, resTy)
   Block block ext -> do
     (blockRes, resTy) <- inferBlock block
-    pure (Block blockRes ext, resTy)
+    pure (Block blockRes (quote 0 resTy, ext), resTy)
   If con if' else' ext -> do
     (conRes, conTy) <- inferExpr con
     unify conTy boolTy
     (ifRes, ifTy)  <- runInst $ inferExpr if'
     elseRes <- checkExpr else' ifTy
-    pure (If conRes ifRes elseRes ext, ifTy)
+    pure (If conRes ifRes elseRes (quote 0 ifTy, ext), ifTy)
   Match scrut cas ext -> do
     (scrutRes, scrutTy) <- inferExpr scrut
     resTy <- genTyHole
@@ -106,21 +106,22 @@ inferExpr = \case
       resExpr <- addLocals bindings (checkExpr expr resTy)
       unify scrutTy patTy
       pure (resPat, resExpr)
-    pure (Match scrutRes casesRes ext, derefTy resTy)
+    let resDeref = derefTy resTy
+    pure (Match scrutRes casesRes (quote 0 resDeref, ext), derefTy resTy)
   Lam pat expr ext -> do
     ((resPat, patTy), bindings) <- inferPat pat
     (resExpr, exprTy) <- runInst $ addLocals bindings (inferExpr expr)
-    pure (Lam resPat resExpr ext, TyFun patTy exprTy)
+    pure (Lam resPat resExpr (quote 0 (TyFun patTy exprTy), ext), TyFun patTy exprTy)
   App expr (x :| xs) ext -> do
     (fnExpr, fnTy) <- inferExpr expr
     (argExpr, fnResTy) <- applyExpr fnTy x
     (resArgs, resTy) <- foldM accApplyExpr (one argExpr, fnResTy) xs
-    pure (App fnExpr resArgs ext, resTy)
+    pure (App fnExpr resArgs (quote 0 resTy, ext), resTy)
   Field expr field ext -> do
     (resExpr, resTy) <- inferExpr expr
     (argFieldTy, resFieldTy) <- destructFun =<< getFieldByTy field resTy
     unify argFieldTy resTy
-    pure (Field resExpr field ext, resFieldTy)
+    pure (Field resExpr field (quote 0 resFieldTy, ext), resFieldTy)
 
 getFieldByTy :: MonadTyper m => Name ValName -> TTy 'Virtual -> m (TTy 'Virtual)
 getFieldByTy field = \case
@@ -128,6 +129,6 @@ getFieldByTy field = \case
   TyIdent p   -> do
     res <- getTy tsTypeFields p
     case HashMap.lookup field res of
-      Just res' -> pure res'._fiResultType
+      Just res' -> pure (evaluate [] res'._fiResultType)
       Nothing   -> terminate (CannotInferField)
   _ -> terminate (CannotInferField)

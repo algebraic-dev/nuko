@@ -5,7 +5,7 @@ module Nuko.Typer.Infer.TypeDecl (
 
 import Nuko.Typer.Env
 
-import Relude                   ((<$>), Traversable (traverse), Foldable (foldr, foldl'), snd, fst, error, traverse_, Num ((-)), ($), id, Int, Maybe (Just))
+import Relude                   ((<$>), Traversable (traverse), Foldable (foldr, foldl'), snd, fst, error, traverse_, Num ((-)), ($), Int, Maybe (Just))
 import Relude.Functor           (Functor (fmap))
 import Relude.Applicative       (pure)
 
@@ -13,7 +13,7 @@ import Nuko.Resolver.Tree       ()
 import Nuko.Typer.Tree          ()
 import Nuko.Typer.Infer.Type    (inferOpenTy)
 import Nuko.Typer.Unify         (unifyKind)
-import Nuko.Typer.Types         (generalizeWith, Relation(..), TTy(..), TKind(KiStar, KiFun))
+import Nuko.Typer.Types         (Relation(..), TTy(..), TKind(KiStar, KiFun), generalizeNames)
 import Nuko.Tree                (Ty, TypeDeclArg(..), Tc, TypeDecl(..), Re)
 import Nuko.Names               (mkLocalPath, ConsName, Name (nIdent), TyName, ValName)
 
@@ -37,20 +37,30 @@ mkTyApp kind typeTy bindings = do
 
 initTypeDecl :: MonadTyper m => TypeDecl Re -> m TyInfo
 initTypeDecl decl = do
-  indices <- traverse (traverseToSnd newKindHole) decl.tyArgs
+    indices <- traverse (traverseToSnd newKindHole) decl.tyArgs
 
-  -- The type kind
-  let tyKind = foldr KiFun KiStar (fmap snd indices)
+    -- The type kind
+    let tyKind = foldr KiFun KiStar (fmap snd indices)
 
-  -- Label type
-  typeTy <- TyIdent <$> qualifyPath (mkLocalPath decl.tyName)
+    -- Label type
+    typeTy <- TyIdent <$> qualifyPath (mkLocalPath decl.tyName)
 
-  -- The type application that should end with kind equals to *
-  let (resKind, resType, _) = mkTyApp tyKind typeTy indices
-  unifyKind resKind KiStar
-  let resInfo = TyInfo resType decl.tyName indices IsTyDef
-  addTyKind decl.tyName tyKind resInfo
-  pure resInfo
+    -- The type application that should end with kind equals to *
+    let (resKind, resType, _) = mkTyApp tyKind typeTy indices
+    unifyKind resKind KiStar
+
+    let tyDef = getTyDef decl.tyDecl
+
+    let resInfo = TyInfo resType decl.tyName indices tyDef
+    addTyKind decl.tyName tyKind resInfo
+    pure resInfo
+  where
+    getTyDef :: TypeDeclArg Re -> TyInfoKind
+    getTyDef = \case
+      TypeSym  _      -> error "Not Implemented Yet!"
+      TypeProd fields -> IsProdType $ ProdTyInfo (fst <$> fields)
+      TypeSum fields  -> IsSumType  $ SumTyInfo (fst <$> fields)
+
 
 inferTypeDecl :: MonadTyper m => TypeDecl Re -> TyInfo -> m (TypeDecl Tc)
 inferTypeDecl (TypeDecl name' args arg) tyInfo =
@@ -64,8 +74,8 @@ inferTypeDecl (TypeDecl name' args arg) tyInfo =
       unifyKind kind KiStar
       -- TODO: check if FV is empty
       let names = fst <$> tyInfo._tyNames
-      let realTy = TyFun tyInfo._resultantType inferedTy
-      let generalizedTy = generalizeWith names realTy id
+      let realTy = TyFun inferedTy tyInfo._resultantType
+      let generalizedTy = generalizeNames names realTy
       addFieldToEnv name' fieldName (FieldInfo generalizedTy)
       pure (fieldName, realTy)
 
@@ -75,7 +85,7 @@ inferTypeDecl (TypeDecl name' args arg) tyInfo =
       (argTys, argKinds) <- unzip <$> traverse (inferOpenTy) tys
 
       let names = fst <$> tyInfo._tyNames
-      let generalizedTy = generalizeWith names (foldr TyFun tyInfo._resultantType argTys) id
+      let generalizedTy = generalizeNames names (foldr TyFun tyInfo._resultantType argTys)
       addTy tsConstructors (Just tyInfo._label.nIdent) consName (DataConsInfo generalizedTy (length tys))
 
       traverse_ (`unifyKind` KiStar) argKinds

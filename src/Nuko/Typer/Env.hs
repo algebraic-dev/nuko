@@ -6,6 +6,8 @@ module Nuko.Typer.Env (
   TyInfo(..),
   TyInfoKind(..),
   TypingEnv(..),
+  SumTyInfo(..),
+  ProdTyInfo(..),
   MonadTyper,
   emptyTypeSpace,
   addFieldToEnv,
@@ -39,7 +41,7 @@ module Nuko.Typer.Env (
   addLocalTypes,
 ) where
 
-import Relude                  (Generic, Int, MonadIO, pure, (.), (<$>), ($), Monad ((>>=)), fst, Num ((+)), IO, Endo (appEndo), Bifunctor (first))
+import Relude                  (Generic, Int, MonadIO, pure, (.), (<$>), ($), Monad ((>>=)), fst, Num ((+)), IO, Endo (appEndo), Bifunctor (first), NonEmpty)
 import Relude.Monad            (MonadState, MonadReader (local), Maybe (..), asks, maybe)
 import Relude.Monoid           ((<>))
 import Relude.Lifted           (newIORef)
@@ -63,38 +65,48 @@ import qualified Control.Monad.Trans.Chronicle as Chronicle
 import qualified Control.Monad.State.Strict as State
 import qualified Control.Monad.Reader as Reader
 
+data SumTyInfo = SumTyInfo
+  { _stiConstructors :: NonEmpty (Name ConsName)
+  } deriving Generic
+
+data ProdTyInfo = ProdTyInfo
+  { _ptiFields :: [Name ValName]
+  } deriving Generic
+
 data TyInfoKind
   = IsTySyn
-  | IsTyDef
+  | IsSumType SumTyInfo
+  | IsProdType ProdTyInfo
+  | IsBuiltIn -- TODO: Remove this in the future?
   deriving Generic
 
 data TyInfo = TyInfo
   { _resultantType :: TTy 'Real
-  , _label   :: Name TyName
-  , _tyNames :: [(Name TyName, TKind)]
-  , _tyKind  :: TyInfoKind
+  , _label         :: Name TyName
+  , _tyNames       :: [(Name TyName, TKind)]
+  , _tyKind        :: TyInfoKind
   } deriving Generic
 
 data DefInfo = DefInfo
-  { _diResultType :: TTy 'Virtual
+  { _diResultType :: TTy 'Real
   , _polymorphics :: [(Name TyName, TKind)]
   , _argTypes     :: [TTy 'Real]
   , _retType      :: TTy 'Real
   } deriving Generic
 
 data FieldInfo = FieldInfo
-  { _fiResultType :: TTy 'Virtual
+  { _fiResultType :: TTy 'Real
   } deriving Generic
 
 data DataConsInfo = DataConsInfo
-  { _constructorTy :: TTy 'Virtual
+  { _constructorTy :: TTy 'Real
   , _parameters    :: Int
   } deriving Generic
 
 data TypeSpace = TypeSpace
   { _tsTypes        :: HashMap (Qualified (Name TyName)) (TKind, TyInfo)
   , _tsConstructors :: HashMap (Qualified (Name ConsName)) DataConsInfo
-  , _tsVars         :: HashMap (Qualified (Name ValName)) (TTy 'Virtual, DefInfo)
+  , _tsVars         :: HashMap (Qualified (Name ValName)) (TTy 'Real, DefInfo)
   , _tsTypeFields   :: HashMap (Qualified (Name TyName)) (HashMap (Name ValName) FieldInfo)
   } deriving Generic
 
@@ -117,6 +129,8 @@ makeLenses ''ScopeEnv
 
 instance PrettyTree TypingEnv where
 instance PrettyTree FieldInfo where
+instance PrettyTree SumTyInfo where
+instance PrettyTree ProdTyInfo where
 instance PrettyTree TyInfoKind where
 instance PrettyTree DataConsInfo where
 instance PrettyTree DefInfo where

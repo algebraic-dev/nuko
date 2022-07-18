@@ -8,7 +8,7 @@ import Nuko.Typer.Types    (TTy(..), Relation (..), derefTy, TyHole)
 import Nuko.Typer.Kinds    (TKind(..), Hole(Filled, Empty), KiHole, derefKind)
 import Nuko.Typer.Error    (TypeError(..))
 import Nuko.Typer.Env      (MonadTyper, addLocalTy, seScope, newTyHoleWithScope, eagerInstantiate, newKindHole)
-import Nuko.Utils          (terminate)
+import Nuko.Utils          (terminate, flag)
 
 import Relude              (Int, Ord ((>=), (>)), (&&), (<))
 import Relude.Base         ((==))
@@ -65,6 +65,8 @@ unifyKind origK origiK1 = do
 unify :: MonadTyper m => TTy 'Virtual -> TTy 'Virtual -> m ()
 unify oTy oTy' = do
     case (derefTy oTy, derefTy oTy') of
+      (TyErr, _) -> pure ()
+      (_, TyErr) -> pure ()
       (TyHole hole, ty') -> do
         content <- readIORef hole
         case content of
@@ -80,7 +82,7 @@ unify oTy oTy' = do
       (TyFun f t, TyFun f' t') -> unify f f' *> unify t t'
       (TyApp k f t, TyApp k' f' t') -> unifyKind k k' *> unify f f' *> unify t t'
       (TyIdent a, TyIdent b) | a == b -> pure ()
-      (ty, ty') ->terminate (Mismatch ty ty')
+      (ty, ty') -> flag (Mismatch ty ty')
   where
     unifyHoleTy :: MonadTyper m => TyHole -> Int -> TTy 'Virtual -> m ()
     unifyHoleTy hole scope ty = do
@@ -92,13 +94,14 @@ unify oTy oTy' = do
           writeIORef hole (Filled ty)
 
     preCheck :: MonadTyper m => Int -> Int -> TyHole -> TTy 'Virtual -> m ()
-    preCheck scope start hole = 
+    preCheck scope start hole =
         go
       where
         go :: MonadTyper m => TTy 'Virtual -> m ()
         go uTy = do
           curScope <- view seScope
           case derefTy uTy of
+            TyErr -> pure ()
             TyVar lvl
               | lvl >= scope && lvl < start -> terminate EscapingScope
               | otherwise    -> pure ()

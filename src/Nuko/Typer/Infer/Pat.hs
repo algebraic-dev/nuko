@@ -19,7 +19,7 @@ import Nuko.Typer.Infer.Literal (inferLit)
 import Nuko.Typer.Infer.Type    (inferClosedTy)
 import Nuko.Typer.Error         (TypeError(..))
 import Nuko.Typer.Unify         (unify, destructFun)
-import Nuko.Typer.Types         (TTy(..), Relation(..), quote)
+import Nuko.Typer.Types         (TTy(..), Relation(..), quote, evaluate)
 import Nuko.Typer.Env           (getTy, newTyHole, tsConstructors, DataConsInfo(_parameters, _constructorTy), MonadTyper, qualifyPath)
 import Nuko.Tree.Expr           (Pat(..))
 import Nuko.Names               (coerceTo, genIdent, mkName, Attribute(Untouched), Label(Label), Name, NameKind(TyName), ValName)
@@ -56,16 +56,17 @@ inferPat pat =
     go = \case
       PWild ext -> do
         tyHole <- lift (newTyHole (mkName TyName (genIdent "_") Untouched))
-        pure (PWild ext, tyHole)
-      PId place ext -> do
+        pure (PWild (quote 0 tyHole, ext), tyHole)
+      PId place _ -> do
         (name, resTy) <- newId place
-        pure (PId name ext, resTy)
+        pure (PId name (quote 0 resTy), resTy)
       PCons path args ext -> do
         qualified <- lift (qualifyPath path)
         constInfo <- lift (getTy tsConstructors qualified)
         when (constInfo._parameters /= length args) $ terminate (ExpectedConst constInfo._parameters (length args))
-        (argsRes, resTy) <- foldM applyPat ([], constInfo._constructorTy) args
-        pure (PCons path argsRes ext, resTy)
+        let constTy = evaluate [] constInfo._constructorTy
+        (argsRes, resTy) <- foldM applyPat ([], constTy) args
+        pure (PCons path argsRes (quote 0 resTy, ext), resTy)
       PLit lit ext -> do
         (resLit, resTy) <- lift $ inferLit lit
         pure (PLit resLit ext, resTy)
@@ -73,4 +74,4 @@ inferPat pat =
         (resPat, resPatTy) <- go pat'
         (resTy, _) <- lift $ inferClosedTy ty
         lift $ unify resPatTy resTy
-        pure (PAnn resPat (quote 0 resTy) ext, resTy)
+        pure (PAnn resPat (quote 0 resTy) (quote 0 resTy, ext), resTy)
