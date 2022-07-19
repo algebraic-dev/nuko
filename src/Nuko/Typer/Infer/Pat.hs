@@ -20,14 +20,14 @@ import Nuko.Typer.Infer.Type    (inferClosedTy)
 import Nuko.Typer.Error         (TypeError(..))
 import Nuko.Typer.Unify         (unify, destructFun)
 import Nuko.Typer.Types         (TTy(..), Relation(..), quote, evaluate)
-import Nuko.Typer.Env           (getTy, newTyHole, tsConstructors, DataConsInfo(_parameters, _constructorTy), MonadTyper, qualifyPath)
+import Nuko.Typer.Env           (getTy, newTyHole, tsConstructors, DataConsInfo(_parameters, _constructorTy), MonadTyper, qualifyPath, terminateLocalized)
 import Nuko.Tree.Expr           (Pat(..))
 import Nuko.Names               (coerceTo, genIdent, mkName, Attribute(Untouched), Label(Label), Name, NameKind(TyName), ValName)
-import Nuko.Utils               (terminate)
 import Nuko.Tree                (Re, Tc)
 
 import qualified Control.Monad.State as State
 import qualified Data.HashMap.Strict as HashMap
+import Nuko.Report.Range (getPos)
 
 type InferPat m a = State.StateT (HashMap (Name ValName) (TTy 'Virtual)) m a
 
@@ -39,7 +39,7 @@ inferPat pat =
     newId name = do
       resTy <- use (at name)
       case resTy of
-        Just _  -> terminate (NameResolution (Label name))
+        Just _  -> lift $ terminateLocalized (NameResolution (Label name)) (Just $ getPos name)
         Nothing -> do
           resHole <- lift $ newTyHole (coerceTo TyName name)
           modify (HashMap.insert name resHole)
@@ -63,7 +63,8 @@ inferPat pat =
       PCons path args ext -> do
         qualified <- lift (qualifyPath path)
         constInfo <- lift (getTy tsConstructors qualified)
-        when (constInfo._parameters /= length args) $ terminate (ExpectedConst constInfo._parameters (length args))
+        when (constInfo._parameters /= length args) $
+          lift (terminateLocalized (ExpectedConst constInfo._parameters (length args)) (Just ext))
         let constTy = evaluate [] constInfo._constructorTy
         (argsRes, resTy) <- foldM applyPat ([], constTy) args
         pure (PCons path argsRes (quote 0 resTy, ext), resTy)

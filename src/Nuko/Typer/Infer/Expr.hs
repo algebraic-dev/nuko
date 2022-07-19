@@ -15,7 +15,6 @@ import Data.Traversable         (for)
 import Data.List.NonEmpty       ((<|))
 
 import Nuko.Typer.Env
-import Nuko.Resolver.Tree       ()
 import Nuko.Typer.Tree          ()
 import Nuko.Typer.Infer.Literal (inferLit, boolTy)
 import Nuko.Typer.Infer.Type    (inferClosedTy)
@@ -24,12 +23,13 @@ import Nuko.Typer.Error         (TypeError(..))
 import Nuko.Typer.Unify         (unify, destructFun)
 import Nuko.Typer.Types         (TTy(..), Relation(..), quote, derefTy, evaluate)
 
+import Nuko.Resolver.Tree       ()
 import Nuko.Tree.Expr           (Expr(..))
 import Nuko.Names               (Name, ValName, Path (..))
-import Nuko.Utils               (terminate)
 import Nuko.Tree                (Re, Tc, Block (..), Var (..))
 
 import qualified Data.HashMap.Strict as HashMap
+import Nuko.Report.Range (getPos)
 
 inferBlock :: MonadTyper m => Block Re -> m (Block Tc, TTy 'Virtual)
 inferBlock = \case
@@ -130,5 +130,5 @@ getFieldByTy field = \case
     res <- getTy tsTypeFields p
     case HashMap.lookup field res of
       Just res' -> pure (evaluate [] res'._fiResultType)
-      Nothing   -> terminate (CannotInferField)
-  _ -> terminate (CannotInferField)
+      Nothing   -> terminateLocalized (CannotInferField) (Just $ getPos field)
+  _ -> terminateLocalized (CannotInferField) (Just $ getPos field)

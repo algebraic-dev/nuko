@@ -17,14 +17,14 @@ import Data.List            (findIndex, zip)
 import Nuko.Typer.Error     (TypeError(..))
 import Nuko.Typer.Unify     (unifyKind)
 import Nuko.Typer.Types     (TKind(..), TTy(..), Relation(..), generalizeWith)
-import Nuko.Typer.Env       (getKind, newKindHole, MonadTyper, qualifyPath, addLocalTy, seTyEnv, addLocalTypes)
+import Nuko.Typer.Env       (getKind, newKindHole, MonadTyper, qualifyPath, addLocalTy, seTyEnv, addLocalTypes, terminateLocalized)
 import Nuko.Tree.Expr       (Ty(..))
-import Nuko.Utils           (terminate)
 import Nuko.Names           (genIdent, mkTyName, Label(Label), Name, TyName )
 import Nuko.Tree            (Re)
 
 import Lens.Micro.Platform (view)
 import qualified Data.HashSet as HashSet
+import Nuko.Report.Range (getPos)
 
 type PType x = (TTy x, TKind)
 
@@ -58,7 +58,7 @@ inferRealTy ast = go ast
       case findIndex (\(k, _) -> k == name) env of
         Just idx -> do
           pure (TyVar idx, snd (env !! idx))
-        Nothing -> terminate (NameResolution (Label name))
+        Nothing -> terminateLocalized (NameResolution (Label name)) (Just $ getPos name)
 
     applyTy :: MonadTyper m => PType 'Real -> Ty Re -> m (PType 'Real)
     applyTy (tyRes, tyKind) arg = do

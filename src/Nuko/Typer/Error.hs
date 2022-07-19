@@ -15,7 +15,7 @@ data TypeError
   | OccoursCheck (TTy 'Virtual) (TTy 'Virtual)
   | OccoursCheckKind TKind TKind
   | EscapingScope
-  | NotAFunction
+  | NotAFunction (TTy 'Virtual)
   | NameResolution Label
   | CyclicTypeDef [Label]
   | ExpectedConst Int Int
@@ -28,7 +28,7 @@ errorTitle = \case
   OccoursCheck {} -> Words [Raw "Infinite Type"]
   OccoursCheckKind {} -> Words [Raw "Infinite Kind"]
   EscapingScope {} -> Words [Raw "Escaping Scope"]
-  NotAFunction -> Words [Raw "The type is not a function type"]
+  NotAFunction t -> Words [Raw "The type", Raw (format t) , Raw " is not a function type"]
   NameResolution label -> Words [Raw "Compiler bug: Error resolution incomplete for", Raw (format label)]
   CyclicTypeDef {} -> Words [Raw "Cyclic type"]
   ExpectedConst expected got -> Words [Raw "Expected", Raw (format expected), Raw "arguments for the type constructor but got", Raw (format got)]
@@ -41,12 +41,11 @@ getDetails = \case
   OccoursCheck fst snd -> object ["fst" .= format fst, "snd" .= format snd]
   OccoursCheckKind fst snd -> object ["fst" .= format fst, "snd" .= format snd]
   EscapingScope {} -> object []
-  NotAFunction -> object []
+  NotAFunction _ -> object []
   NameResolution {} -> object []
   CyclicTypeDef {} -> object []
   ExpectedConst {} -> object []
   CannotInferField -> object []
-
 
 instance ToJSON TypeError where
   toJSON reason =
