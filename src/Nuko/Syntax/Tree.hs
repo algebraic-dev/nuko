@@ -33,6 +33,7 @@ type instance XPWild Nm = Range
 type instance XPId Nm = NoExt
 type instance XPLit Nm = NoExt
 type instance XPAnn Nm = Range
+type instance XPOr Nm = Range
 type instance XPCons Nm = Range
 type instance XPExt Nm = Void
 
@@ -96,7 +97,8 @@ instance HasPosition (Pat Nm) where
     PLit i _    -> getPos i
     PAnn _ _ r  -> r
     PId n _     -> getPos n
-
+    POr _ _ r   -> r
+  
 instance HasPosition (Expr Nm) where
   getPos = \case
     Lit t _ -> getPos t

@@ -32,6 +32,7 @@ type instance XPWild Re = Range
 type instance XPId Re = NoExt
 type instance XPLit Re = NoExt
 type instance XPAnn Re = Range
+type instance XPOr Re = Range
 type instance XPCons Re = Range
 type instance XPExt Re = Void
 

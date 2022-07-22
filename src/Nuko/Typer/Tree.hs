@@ -21,6 +21,8 @@ type instance XLStr Tc = (XTy Tc, Range)
 
 type instance XPWild Tc = (XTy Tc, Range)
 type instance XPId Tc = XTy Tc
+type instance XPId Tc = XTy Tc
+type instance XPOr Tc = (XTy Tc, Range)
 type instance XPLit Tc = NoExt
 type instance XPAnn Tc = (XTy Tc, Range)
 type instance XPCons Tc = (XTy Tc, Range)
@@ -83,6 +85,7 @@ instance HasPosition (Pat Tc) where
     PWild (_, r) -> r
     PCons _ _ (_, r) -> r
     PLit i _    -> getPos i
+    POr _ _ r  -> snd r
     PAnn _ _ r  -> snd r
     PId n _   -> getPos n
 

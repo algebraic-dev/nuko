@@ -146,7 +146,7 @@ resolvePat pat' = do
       PId name' ext' -> do
         exists <- gets (HashSet.member name')
         if exists
-          then terminate (mkErr $ AlreadyExistsPat (Label name'))
+          then terminate (mkErr $ AlreadyExistsPat name')
           else do
             result <- lift (newLocal name')
             modify (HashSet.insert result) $> PId result ext'

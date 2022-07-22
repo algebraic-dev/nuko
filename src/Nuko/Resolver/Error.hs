@@ -7,7 +7,7 @@ module Nuko.Resolver.Error (
 
 import Relude                    (Show, HashSet, Int, head)
 import Relude.List.NonEmpty      (NonEmpty)
-import Nuko.Names                (NameSort, Path, Label, Ident, Qualified, ModName, Name, TyName)
+import Nuko.Names                (NameSort, Path, Label, Ident, Qualified, ModName, Name, TyName, ValName)
 import Data.Aeson                (ToJSON(..), KeyValue ((.=)), object)
 import Pretty.Format             (Format(format), formatOr)
 import Nuko.Report.Text          (Mode (..), Color (..), Piece (..), colorlessFromFormat)
@@ -24,7 +24,8 @@ data ResolveErrorReason
   | AmbiguousNames Range (HashSet (Qualified Label))
   | AlreadyExistsName Label
   | ConflictingTypes (NonEmpty (Name TyName))
-  | AlreadyExistsPat Label
+  | AlreadyExistsPat (Name ValName)
+  | ShouldAppearOnOr (Name ValName)
 
 newtype ResolveError = ResolveError { reason :: ResolveErrorReason }
 
@@ -41,6 +42,7 @@ errorCode = \case
   AlreadyExistsName {} -> 105
   ConflictingTypes {} -> 106
   AlreadyExistsPat {} -> 107
+  ShouldAppearOnOr {} -> 108
 
 errorTitle :: ResolveErrorReason -> Mode
 errorTitle = \case
@@ -60,6 +62,8 @@ errorTitle = \case
      Words [Raw "You cannot use the type variable name", Marked Fst (format (head typ)) ,Raw "twice"]
   AlreadyExistsPat pat ->
     Words [Raw "You cannot use the name", Marked Fst (format pat) ,Raw "twice in a pattern"]
+  ShouldAppearOnOr name ->
+    Words [Raw "The pattern", Marked Fst (format name), Raw "should appear on each side of the or pattern"]
 
 getErrorSite :: ResolveErrorReason -> Range
 getErrorSite = \case
@@ -71,6 +75,7 @@ getErrorSite = \case
   AlreadyExistsName path -> getPos path
   ConflictingTypes path -> getPos (head path)
   AlreadyExistsPat path -> getPos path
+  ShouldAppearOnOr path -> getPos path
 
 instance ToJSON ResolveError where
   toJSON (ResolveError reason) =

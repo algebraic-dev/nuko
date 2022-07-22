@@ -22,6 +22,7 @@ module Nuko.Tree.Expr (
   XField,
   XAnn,
   XPAnn,
+  XPOr,
   XIf,
   XMatch,
   XName,
@@ -65,6 +66,7 @@ data Pat x
   | PCons (XPath x ConsName) [Pat x] !(XPCons x)
   | PLit (Literal x) !(XPLit x)
   | PAnn (Pat x) (XTy x) !(XPAnn x)
+  | POr (Pat x) (Pat x) !(XPOr x)
   | PExt !(XPExt x)
 
 data Var x = Var
@@ -113,6 +115,7 @@ type family XPWild x
 type family XPId x
 type family XPAnn x
 type family XPCons x
+type family XPOr x
 type family XPExt x
 type family XPLit x
 

@@ -74,7 +74,7 @@ import qualified Data.List.NonEmpty      as NE
     sep      { Ranged TcSep _ }
     end      { Ranged TcEnd _ }
 
-%right '->'
+%right '->' '|'
 
 %%
 
@@ -151,10 +151,14 @@ AtomPat :: { Pat Nm }
     | Path(UpperCons) { PCons $1 [] (getPos $1) }
     | '(' Pat ')' { $2 }
 
-Pat :: { Pat Nm }
+MiniPat :: { Pat Nm }
     : Path(UpperCons) List1(AtomPat) { let t = toList $2 in withPosList $1 t $ PCons $1 t }
-    | Pat ':' Type { withPos $1 $3 $ PAnn $1 $3 }
+    | MiniPat ':' Type { withPos $1 $3 $ PAnn $1 $3 }
     | AtomPat { $1 }
+
+Pat :: { Pat Nm }
+    : MiniPat '|' Pat  { withPos $1 $3 $ POr $1 $3 }
+    | MiniPat          { $1 }
 
 -- Expressions
 
