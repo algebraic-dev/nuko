@@ -26,6 +26,7 @@ data ResolveErrorReason
   | ConflictingTypes (NonEmpty (Name TyName))
   | AlreadyExistsPat (Name ValName)
   | ShouldAppearOnOr (Name ValName)
+  | CannotIntroduceNewVariables (Name ValName)
 
 newtype ResolveError = ResolveError { reason :: ResolveErrorReason }
 
@@ -43,6 +44,7 @@ errorCode = \case
   ConflictingTypes {} -> 106
   AlreadyExistsPat {} -> 107
   ShouldAppearOnOr {} -> 108
+  CannotIntroduceNewVariables {} -> 109
 
 errorTitle :: ResolveErrorReason -> Mode
 errorTitle = \case
@@ -64,6 +66,8 @@ errorTitle = \case
     Words [Raw "You cannot use the name", Marked Fst (format pat) ,Raw "twice in a pattern"]
   ShouldAppearOnOr name ->
     Words [Raw "The pattern", Marked Fst (format name), Raw "should appear on each side of the or pattern"]
+  CannotIntroduceNewVariables name ->
+    Words [Raw "Cannot introduce the variable", Marked Fst (format name), Raw "in the left side of a Or Pattern"]
 
 getErrorSite :: ResolveErrorReason -> Range
 getErrorSite = \case
@@ -76,6 +80,7 @@ getErrorSite = \case
   ConflictingTypes path -> getPos (head path)
   AlreadyExistsPat path -> getPos path
   ShouldAppearOnOr path -> getPos path
+  CannotIntroduceNewVariables path -> getPos path
 
 instance ToJSON ResolveError where
   toJSON (ResolveError reason) =

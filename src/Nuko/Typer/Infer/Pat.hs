@@ -15,6 +15,7 @@ import Control.Monad            (when)
 
 import Nuko.Resolver.Tree       ()
 import Nuko.Typer.Tree          ()
+
 import Nuko.Typer.Infer.Literal (inferLit)
 import Nuko.Typer.Infer.Type    (inferClosedTy)
 import Nuko.Typer.Error         (TypeError(..))
@@ -22,12 +23,11 @@ import Nuko.Typer.Unify         (unify, destructFun)
 import Nuko.Typer.Types         (TTy(..), Relation(..), quote, evaluate)
 import Nuko.Typer.Env           (getTy, newTyHole, tsConstructors, DataConsInfo(_parameters, _constructorTy), MonadTyper, qualifyPath, terminateLocalized)
 import Nuko.Tree.Expr           (Pat(..))
-import Nuko.Names               (coerceTo, genIdent, mkName, Attribute(Untouched), Label(Label), Name, NameKind(TyName), ValName)
+import Nuko.Names               (coerceTo, genIdent, mkName, Attribute(Untouched), Name, NameKind(TyName), ValName)
 import Nuko.Tree                (Re, Tc)
 
 import qualified Control.Monad.State as State
 import qualified Data.HashMap.Strict as HashMap
-import Nuko.Report.Range (getPos)
 
 type InferPat m a = State.StateT (HashMap (Name ValName) (TTy 'Virtual)) m a
 
@@ -39,8 +39,8 @@ inferPat pat =
     newId name = do
       resTy <- use (at name)
       case resTy of
-        Just _  -> lift $ terminateLocalized (NameResolution (Label name)) (Just $ getPos name)
-        Nothing -> do
+        Just ty' -> pure (name, ty')
+        Nothing  -> do
           resHole <- lift $ newTyHole (coerceTo TyName name)
           modify (HashMap.insert name resHole)
           pure (name, resHole)
@@ -76,3 +76,8 @@ inferPat pat =
         (resTy, _) <- lift $ inferClosedTy ty
         lift $ unify resPatTy resTy
         pure (PAnn resPat (quote 0 resTy) (quote 0 resTy, ext), resTy)
+      POr pat' pat'' ext -> do
+        (resPat, resPatTy) <- go pat'
+        (resPat', resPatTy') <- go pat''
+        lift $ unify resPatTy resPatTy'
+        pure (POr resPat resPat' (quote 0 resPatTy, ext), resPatTy)

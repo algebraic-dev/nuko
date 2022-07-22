@@ -8,22 +8,25 @@ import Nuko.Names
 import Nuko.Resolver.Env
 import Nuko.Resolver.Path         (resolvePath,resolveConsOrTy,resolveInNameSpace,getPublicLabels, useLocalPath)
 import Nuko.Resolver.Error        (mkErr, ResolveErrorReason (..))
-import Nuko.Utils                 (terminate)
+import Nuko.Utils                 (terminate, flag)
 import Nuko.Syntax.Tree           ()
 import Nuko.Resolver.Tree         ()
 
 import Relude.Applicative         (Applicative(..))
 import Relude.Functor             (Functor (fmap), (<$>))
-import Relude.Monad               (Maybe(..), Either(..), gets, StateT (runStateT), modify, MonadTrans (lift), Monad ((>>=)))
-import Relude.Container           (HashSet)
+import Relude.Monad               (Maybe(..), Either(..), gets, Monad ((>>=)))
+import Relude.Container           (HashSet, HashMap, Hashable)
 import Relude.List                (NonEmpty ((:|)))
-import Relude                     (traverse_, ($), Traversable (traverse), (.), ($>), fst, when, Ord ((>)), for_)
+import Relude                     (traverse_, ($), Traversable (traverse), (.), fst, when, Ord ((>)), for_, not, Eq)
 
+import Data.Traversable           (for)
 import Data.List.NonEmpty         (groupAllWith)
-import Control.Monad.Query       (MonadQuery (..))
+import Control.Monad.Query        (MonadQuery (..))
+import Control.Monad              (foldM)
 
-import qualified Data.List.NonEmpty as NonEmpty
-import qualified Data.HashSet as HashSet
+import qualified Data.List.NonEmpty  as NonEmpty
+import qualified Data.HashSet        as HashSet
+import qualified Data.HashMap.Strict as HashMap
 
 initProgram :: MonadResolver m => Program Nm -> m ()
 initProgram (Program tyDecls' letDecls' _ _) = do
@@ -134,22 +137,41 @@ resolveType = \case
 
 resolvePat :: MonadResolver m => Pat Nm -> m (Pat Re)
 resolvePat pat' = do
-    (res, _) <- runStateT (resolvePat' pat') HashSet.empty
-    pure res
+    newNames <- removeDuplicates HashSet.empty pat'
+    renamed <- for (HashSet.toList newNames) (\name -> (name, ) <$> newLocal name)
+    renamePat (HashMap.fromList renamed) pat'
   where
-    resolvePat' :: MonadResolver m => Pat Nm -> StateT (HashSet (Name ValName)) m (Pat Re)
-    resolvePat' = \case
-      PWild ext' -> pure $ PWild ext'
-      PCons path' pats ext' -> PCons <$> lift (resolvePath path') <*> traverse resolvePat' pats <*> pure ext'
-      PLit lit ext' -> PLit <$> lift (resolveLit lit) <*> pure ext'
-      PAnn pat'' ty ext' -> PAnn <$> resolvePat' pat'' <*> lift (resolveType ty) <*> pure ext'
+    diff :: (Eq a, Hashable a) => HashSet a -> HashSet a -> HashSet a
+    diff = HashSet.difference
+
+    removeDuplicates :: MonadResolver m => HashSet (Name ValName) -> Pat Nm -> m (HashSet (Name ValName))
+    removeDuplicates newNames = \case
+      PWild _ -> pure newNames
+      PLit {} -> pure newNames
+      PAnn pat _ _ -> removeDuplicates newNames pat
+      PCons _ pats _ -> foldM removeDuplicates newNames pats
+      PId name' _ | not $ HashSet.member name' newNames -> pure (HashSet.insert name' newNames)
+      PId name' _ -> do
+        flag $ mkErr (AlreadyExistsPat name')
+        pure newNames
+      POr l r _ -> do
+        newNamesL <- removeDuplicates newNames l
+        newNamesR <- removeDuplicates newNames r
+        for_ (diff newNamesL newNamesR) (flag . mkErr . ShouldAppearOnOr)
+        for_ (diff newNamesR newNamesL) (flag . mkErr . CannotIntroduceNewVariables)
+        pure newNamesL
+
+    renamePat :: MonadResolver m => HashMap (Name ValName) (Name ValName) -> Pat Nm -> m (Pat Re)
+    renamePat map = \case
       PId name' ext' -> do
-        exists <- gets (HashSet.member name')
-        if exists
-          then terminate (mkErr $ AlreadyExistsPat name')
-          else do
-            result <- lift (newLocal name')
-            modify (HashSet.insert result) $> PId result ext'
+        case HashMap.lookup name' map of
+          Just renamed -> pure (PId renamed ext')
+          Nothing -> pure $ PId name' ext' -- In case of failures of removeDuplicates
+      PWild ext' -> pure $ PWild ext'
+      PCons path' pats ext' -> PCons <$> resolvePath path' <*> traverse (renamePat map) pats <*> pure ext'
+      PLit lit ext' -> PLit <$> resolveLit lit <*> pure ext'
+      PAnn pat'' ty ext' -> PAnn <$> renamePat map pat'' <*> resolveType ty <*> pure ext'
+      POr l r ext' -> POr <$> renamePat map l <*> renamePat map r <*> pure ext'
 
 resolveExpr :: MonadResolver m => Expr Nm -> m (Expr Re)
 resolveExpr = \case
