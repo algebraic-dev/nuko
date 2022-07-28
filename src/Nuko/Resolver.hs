@@ -7,7 +7,7 @@ import Nuko.Tree
 import Nuko.Names
 import Nuko.Resolver.Env
 import Nuko.Resolver.Path         (resolvePath,resolveConsOrTy,resolveInNameSpace,getPublicLabels, useLocalPath)
-import Nuko.Resolver.Error        (mkErr, ResolveErrorReason (..))
+import Nuko.Resolver.Error        (ResolveErrorReason (..))
 import Nuko.Utils                 (terminate, flag)
 import Nuko.Syntax.Tree           ()
 import Nuko.Resolver.Tree         ()
@@ -53,8 +53,8 @@ resolveImport decl = do
       res <- query (GetModule mod')
       case res of
         Right res'-> pure res'
-        Left Cyclic -> terminate (mkErr $ CyclicImport mod')
-        Left CannotFind -> terminate (mkErr $ CannotFindModule mod')
+        Left Cyclic -> terminate =<< mkErr (CyclicImport mod')
+        Left CannotFind -> terminate =<< mkErr (CannotFindModule mod')
 
     resolveByCase :: MonadResolver m => NameSpace -> ImportDepsKind Nm -> m (Qualified Label)
     resolveByCase ns = \case
@@ -90,7 +90,7 @@ resolveTypeDecl :: MonadResolver m => TypeDecl Nm -> m (TypeDecl Re)
 resolveTypeDecl (TypeDecl name' args decl) = do
   newScope $ do
     let argumentGroups = groupAllWith (iText . nIdent) args
-    for_ argumentGroups $ \group -> when (NonEmpty.length group > 1) (terminate (mkErr $ ConflictingTypes group))
+    for_ argumentGroups $ \group -> when (NonEmpty.length group > 1) (terminate =<< mkErr (ConflictingTypes group))
     newArgs <- traverse newLocal args
     newDecl <- resolveDecl decl
     pure (TypeDecl name' newArgs newDecl)
@@ -160,13 +160,13 @@ resolvePat pat' = do
       PCons _ pats _ -> foldM removeDuplicates newNames pats
       PId name' _ | not $ HashSet.member name' newNames -> pure (HashSet.insert name' newNames)
       PId name' _ -> do
-        flag $ mkErr (AlreadyExistsPat name')
+        flag =<< mkErr (AlreadyExistsPat name')
         pure newNames
       POr l r _ -> do
         newNamesL <- removeDuplicates newNames l
         newNamesR <- removeDuplicates newNames r
-        for_ (diff newNamesL newNamesR) (flag . mkErr . ShouldAppearOnOr)
-        for_ (diff newNamesR newNamesL) (flag . mkErr . CannotIntroduceNewVariables)
+        for_ (diff newNamesL newNamesR) (\res -> flag =<< mkErr (ShouldAppearOnOr res))
+        for_ (diff newNamesR newNamesL) (\res -> flag =<< mkErr (CannotIntroduceNewVariables res))
         pure newNamesL
 
     renamePat :: MonadResolver m => HashMap (Name ValName) (Name ValName) -> Pat Nm -> m (Pat Re)

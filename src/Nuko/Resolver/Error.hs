@@ -1,8 +1,6 @@
 module Nuko.Resolver.Error (
   ResolveErrorReason(..),
-  ResolveError(..),
-  Case(..),
-  mkErr
+  Case(..)
 ) where
 
 import Relude                    (Show, HashSet, Int, head)
@@ -11,7 +9,7 @@ import Nuko.Names                (NameSort, Path, Label, Ident, Qualified, ModNa
 import Data.Aeson                (ToJSON(..), KeyValue ((.=)), object)
 import Pretty.Format             (Format(format), formatOr)
 import Nuko.Report.Text          (Mode (..), Color (..), Piece (..), colorlessFromFormat)
-import Nuko.Report.Range (Range, HasPosition (..), toLabel)
+import Nuko.Report.Range         (Range, HasPosition (..), toLabel)
 
 data Case = UpperCase | LowerCase
   deriving Show
@@ -27,11 +25,6 @@ data ResolveErrorReason
   | AlreadyExistsPat (Name ValName)
   | ShouldAppearOnOr (Name ValName)
   | CannotIntroduceNewVariables (Name ValName)
-
-newtype ResolveError = ResolveError { reason :: ResolveErrorReason }
-
-mkErr :: ResolveErrorReason -> ResolveError
-mkErr = ResolveError
 
 errorCode :: ResolveErrorReason -> Int
 errorCode = \case
@@ -82,8 +75,8 @@ getErrorSite = \case
   ShouldAppearOnOr path -> getPos path
   CannotIntroduceNewVariables path -> getPos path
 
-instance ToJSON ResolveError where
-  toJSON (ResolveError reason) =
+instance ToJSON ResolveErrorReason where
+  toJSON reason =
     object [ "code" .= errorCode reason
            , "place" .= toLabel (getErrorSite reason)
            , "title" .= colorlessFromFormat (errorTitle reason)

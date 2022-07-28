@@ -11,9 +11,11 @@ import Nuko.Typer.Error  (TypeError)
 import Data.Aeson        (ToJSON(toJSON), KeyValue ((.=)), object)
 import Pretty.Format     (Format(format))
 import Relude            ((<$>), ($))
+import Nuko.Resolver.Error (ResolveErrorReason)
 
 data ErrorKind
   = SyntaxError SyntaxError
+  | ResolveError ResolveErrorReason
   | TypingError TypeError
 
 data CompilerError = CompilerError
@@ -26,6 +28,7 @@ instance ToJSON ErrorKind where
   toJSON = \case
     SyntaxError e -> toJSON e
     TypingError e -> toJSON e
+    ResolveError e -> toJSON e
 
 instance ToJSON CompilerError where
   toJSON err =

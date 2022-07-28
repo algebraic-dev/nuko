@@ -13,6 +13,7 @@ import Prelude (undefined)
 import Data.Text.Read       (decimal)
 import Nuko.Utils           (flag)
 
+import Nuko.Syntax.Error
 import Nuko.Syntax.Lexer.Support
 import Nuko.Syntax.Lexer.Tokens
 import Nuko.Report.Range
@@ -152,7 +153,7 @@ handleEOF = do
     code <- popCode
     when (code == str) $ do
         pos <- State.gets (currentPos . input)
-        flag (UnfinishedStr pos)
+        flag =<< mkErr (UnfinishedStr pos)
     case layout of
         Nothing -> popCode *> ghostRange TcEOF
         Just _  -> popLayout *> ghostRange TcEnd
@@ -164,7 +165,7 @@ scan = do
         case alexScan inputCode code of
             AlexEOF              -> handleEOF
             AlexError inp        -> do
-                flag (UnexpectedStr (oneColRange (currentPos inp)))
+                flag =<< mkErr (UnexpectedStr (oneColRange (currentPos inp)))
                 case alexGetByte inp of
                     Just (_, inp) -> setInput inp >> scan
                     Nothing -> handleEOF

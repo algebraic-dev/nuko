@@ -1,6 +1,7 @@
 module Nuko.Syntax.Error (
   SyntaxError(..),
   Case(..),
+  getErrorSite,
 ) where
 
 import Relude                   (Show, Int)

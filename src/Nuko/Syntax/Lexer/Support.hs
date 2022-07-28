@@ -2,7 +2,6 @@ module Nuko.Syntax.Lexer.Support (
   AlexInput(..),
   LexerState(..),
   Lexer(..),
-  SyntaxError(..),
   alexGetByte,
   alexInputPrevChar,
   initialState,
@@ -21,23 +20,26 @@ module Nuko.Syntax.Lexer.Support (
   ghostRange,
   runLexer,
   flagLocal,
+  mkErr,
 ) where
 
-import Relude.Monad       (Monad((>>)), Maybe, MonadState, fromMaybe)
+import Relude.Monad       (Monad((>>)), Maybe, MonadState, fromMaybe, gets)
 import Relude.Monoid      (Semigroup((<>)), Endo(appEndo))
 import Relude.Applicative (Applicative(pure))
 import Relude.Functor     (Functor(fmap), Bifunctor(first), (<$>))
 import Relude.Bool        (Bool(..) )
 import Relude.String      (Text, ByteString)
 import Relude.List        (NonEmpty(..), uncons, head)
-import Relude             (fst, snd, ($), Int, Word8, (.),  const)
+import Relude             (fst, snd, ($), Int, Word8, (.),  const, Maybe (..), (=<<))
 
 import Data.These               (These)
 import Data.ByteString.Internal (w2c)
 import Control.Monad.Chronicle  (MonadChronicle, Chronicle)
 import Nuko.Report.Range        (Pos, Ranged, Range)
-import Nuko.Syntax.Error        (SyntaxError(..))
 import Nuko.Utils               (flag)
+import Nuko.Report.Message      (CompilerError(CompilerError), ErrorKind(..))
+import Nuko.Syntax.Error        (SyntaxError, getErrorSite)
+import Nuko.Names               (ModName)
 
 import qualified Control.Monad.Chronicle as Chronicle
 import qualified Control.Monad.State     as State
@@ -67,24 +69,26 @@ alexInputPrevChar = lastInput
 -- | Lexer state to store the input, each code (the place like (<thing>)
 -- that it is in the lexer) and each "layout" place to work by indentation.
 data LexerState = LexerState
-    { input     :: AlexInput
+    { modName   :: ModName
+    , input     :: AlexInput
     , codes     :: NonEmpty Int
     , layout    :: [Int]
     , buffer    :: Text
     , nonLw     :: Bool
     }
 
-initialState :: ByteString -> LexerState
-initialState str = -- 10 is the ascii for \n
-  LexerState { input    = AlexInput (Range.Pos 0 0) 10 str
+initialState :: ModName -> ByteString -> LexerState
+initialState modName str = -- 10 is the ascii for \n
+  LexerState { modName  = modName
+             , input    = AlexInput (Range.Pos 0 0) 10 str
              , codes    = 0 :| []
              , buffer   = ""
              , layout   = []
              , nonLw    = False
              }
 
-newtype Lexer a = Lexer { getLexer :: State.StateT LexerState (Chronicle (Endo [SyntaxError])) a }
-  deriving newtype (Functor, Applicative, Monad, MonadState LexerState, MonadChronicle (Endo [SyntaxError]))
+newtype Lexer a = Lexer { getLexer :: State.StateT LexerState (Chronicle (Endo [CompilerError])) a }
+  deriving newtype (Functor, Applicative, Monad, MonadState LexerState, MonadChronicle (Endo [CompilerError]))
 
 -- Stack code manipulation things to jump to string, comments and these things.
 
@@ -120,7 +124,12 @@ emit fn text pos = do
 flagLocal :: (Range -> SyntaxError) -> Pos -> Lexer ()
 flagLocal fn pos = do
   lastPos <- State.gets (currentPos . input)
-  flag (fn (Range.Range pos lastPos))
+  flag =<< mkErr (fn (Range.Range pos lastPos))
+
+mkErr :: SyntaxError -> Lexer CompilerError
+mkErr err = do
+  name <- gets $ modName
+  pure $ CompilerError (Just name) (Just (getErrorSite err)) (SyntaxError err)
 
 token :: a -> Text -> Pos -> Lexer (Ranged a)
 token = emit . const
@@ -144,8 +153,8 @@ ghostRange t = do
     pos <- State.gets (currentPos . input)
     pure $ Range.Ranged t (Range.Range pos pos)
 
-runLexer :: Lexer a -> ByteString -> These [SyntaxError] a
-runLexer lex' input' =
+runLexer :: Lexer a -> ModName -> ByteString -> These [CompilerError] a
+runLexer lex' modName input' =
   first
     (`appEndo` [])
-    (Chronicle.runChronicle $ State.evalStateT lex'.getLexer (initialState input'))
+    (Chronicle.runChronicle $ State.evalStateT lex'.getLexer (initialState modName input'))

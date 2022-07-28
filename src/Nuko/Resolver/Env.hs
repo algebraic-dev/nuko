@@ -23,12 +23,13 @@ module Nuko.Resolver.Env (
   openName,
   newLocal,
   useLocal,
-  addGlobal
+  addGlobal,
+  mkErr
 ) where
 
 import Nuko.Resolver.Occourence (OccEnv, empty, insertOcc, insertWith, getMap)
 import Nuko.Report.Range        (Range, HasPosition (..))
-import Nuko.Resolver.Error      (ResolveError (..), mkErr, ResolveErrorReason (..))
+import Nuko.Resolver.Error      (ResolveErrorReason (..))
 import Nuko.Utils               (terminate)
 import Nuko.Names               (Qualified, ModName, Label(..), Ident(..), Name(..), changeName, getChildName, mkIdent)
 
@@ -37,8 +38,8 @@ import Relude.Base              (Eq((==)))
 import Relude.Bool              (otherwise)
 import Relude.Monoid            ((<>), Endo)
 import Relude.Applicative       (Applicative(pure))
-import Relude.Monad             (MonadState, maybe)
-import Relude                   (Show, Generic, (.), Text, Num ((+)), show, Int, const, Maybe (..), ($), Either)
+import Relude.Monad             (MonadState, maybe, (=<<))
+import Relude                   (Show, Generic, (.), Text, Num ((+)), show, Int, const, Maybe (..), Either)
 
 import Pretty.Tree              (PrettyTree)
 import Control.Monad.Chronicle  (MonadChronicle)
@@ -49,6 +50,7 @@ import Lens.Micro.Platform      (makeLenses, use, (.=), (%=), at)
 import qualified Data.HashSet             as HashSet
 import qualified Data.HashMap.Strict      as HashMap
 import qualified Nuko.Resolver.Occourence as Occ
+import Nuko.Report.Message (CompilerError (CompilerError), ErrorKind (..))
 
 data Visibility
   = Public
@@ -96,8 +98,13 @@ data Query a where
 type MonadResolver m =
   ( MonadQuery Query m
   , MonadState ResolverState m
-  , MonadChronicle (Endo [ResolveError]) m
+  , MonadChronicle (Endo [CompilerError]) m
   )
+
+mkErr :: MonadResolver m => ResolveErrorReason -> m CompilerError
+mkErr reason = do
+  namespace <- use (currentNamespace . modName)
+  pure (CompilerError (Just namespace) Nothing (ResolveError reason))
 
 joinUses :: Use -> Use -> Use
 joinUses a' b' = case (a', b') of
@@ -170,19 +177,19 @@ useLocal :: MonadResolver m => Label -> m ()
 useLocal label = do
     local <- use (localNames . getMap . at label)
     case local of
-      Nothing -> terminate (mkErr $ AlreadyExistsName label)
+      Nothing -> terminate =<< mkErr (AlreadyExistsName label)
       Just _  -> usedLocals %= Occ.insertOcc label (getPos label)
 
 useModule :: MonadResolver m => ModName -> m NameSpace
 useModule modName' = do
     moduleRes <- use (openedModules . at modName')
     case moduleRes of
-      Nothing  -> terminate (mkErr $ CannotFindModule modName')
+      Nothing  -> terminate =<< mkErr (CannotFindModule modName')
       Just res -> pure res
 
 addGlobal :: MonadResolver m => Name k -> Visibility -> m ()
 addGlobal name vs = do
   result <- use (currentNamespace . names . getMap . at (Label name))
   case result of
-    Just _  -> terminate (mkErr $ AlreadyExistsName (Label name))
+    Just _  -> terminate =<< mkErr (AlreadyExistsName (Label name))
     Nothing -> addDefinition (Label name) vs

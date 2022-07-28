@@ -184,7 +184,7 @@ BlockExpr :: { Block Nm }
     : Expr       List1(sep) BlockExpr { BlBind $1 $3 }
     | VarExpr    List1(sep) BlockExpr { BlVar $1 $3 }
     | Expr                            { BlEnd $1 }
-    | VarExpr                         {% flag (AssignInEndOfBlock $1.ext)
+    | VarExpr                         {% (flag =<< mkErr (AssignInEndOfBlock $1.ext))
                                       >> pure (BlEnd $1.val) }
 
 End : end   { ()         }
@@ -233,8 +233,8 @@ ImpPath :: { ModName }
     : SepList1('.', Upper) { mkModName $1 }
 
 ImpDeps :: { ImportDeps Nm }
-    : Upper as Lower {% terminate (WrongUsageOfCase LowerCase $3.iRange) }
-    | Lower as Upper {% terminate (WrongUsageOfCase UpperCase $3.iRange) }
+    : Upper as Lower {% terminate =<< mkErr (WrongUsageOfCase LowerCase $3.iRange) }
+    | Lower as Upper {% terminate =<< mkErr (WrongUsageOfCase UpperCase $3.iRange) }
     | Upper as Upper { ImportDeps (ImpDepUpper $1) (Just $3) }
     | Lower as Lower { ImportDeps (ImpDepLower $1) (Just $3) }
     | Upper          { ImportDeps (ImpDepUpper $1) Nothing }
@@ -284,6 +284,6 @@ getInt = \case
     _ -> error "Chiyoku.. you have to be more careful when you try to use this function!"
 
 lexer      = (scan >>=)
-parseError = terminate . UnexpectedToken
+parseError err = terminate =<< mkErr (UnexpectedToken err)
 
 }
