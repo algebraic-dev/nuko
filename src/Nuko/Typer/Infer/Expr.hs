@@ -3,7 +3,7 @@ module Nuko.Typer.Infer.Expr (
   checkExpr,
 ) where
 
-import Relude                   (($), (<$>), One (one), fst, (.))
+import Relude                   (($), (<$>), One (one), fst, (.), Foldable (toList), when, not, putTextLn, show, Semigroup ((<>)), ToText (toText))
 import Relude.Monad             (Maybe(..), (=<<))
 import Relude.Functor           (Bifunctor(first))
 import Relude.List.NonEmpty     (NonEmpty((:|)))
@@ -30,6 +30,10 @@ import Nuko.Tree                (Re, Tc, Block (..), Var (..))
 
 import qualified Data.HashMap.Strict as HashMap
 import Nuko.Report.Range (getPos)
+import Nuko.Typer.Match (isExhaustive, checkUseful, addRow, matrixFromColumn, toMatchPat)
+import Nuko.Utils (flag)
+import Nuko.Resolver.Error (mkErr)
+import Pretty.Format
 
 inferBlock :: MonadTyper m => Block Re -> m (Block Tc, TTy 'Virtual)
 inferBlock = \case
@@ -83,8 +87,8 @@ inferExpr = \case
     pure (Lower path (quote 0 ty), ty)
   Upper path _ -> do
     qualified <- qualifyPath path
-    dataInfo <- getTy tsConstructors qualified
-    pure (Upper path dataInfo._constructorTy, evaluate [] dataInfo._constructorTy)
+    (consTy, _) <- getTy tsConstructors qualified
+    pure (Upper path consTy, evaluate [] consTy)
   Ann exp ty ext -> do
     (resTy, _) <- inferClosedTy ty
     exprRes <- checkExpr exp resTy
@@ -107,6 +111,23 @@ inferExpr = \case
       unify scrutTy patTy
       pure (resPat, resExpr)
     let resDeref = derefTy resTy
+
+    
+
+    -- Exhaustiveness
+    let pats = toList $ fst <$> casesRes
+    case pats of
+      (x : xs) -> do
+        let fn = \matrix pat -> do
+              res <- checkUseful matrix pat
+              putTextLn $ "Resultado:" <> (show res) <> "|" <> format (toMatchPat pat)
+              pure (addRow matrix pat)
+        _ <- foldM fn (matrixFromColumn [x]) xs
+        pure ()
+    --exhaustive <- isExhaustive pats
+
+    --when (not exhaustive) $ terminateLocalized NotExhaustive (Just (getPos (scrut)))
+
     pure (Match scrutRes casesRes (quote 0 resDeref, ext), derefTy resTy)
   Lam pat expr ext -> do
     ((resPat, patTy), bindings) <- inferPat pat

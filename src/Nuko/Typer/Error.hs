@@ -20,6 +20,7 @@ data TypeError
   | CyclicTypeDef [Label]
   | ExpectedConst Int Int
   | CannotInferField
+  | NotExhaustive
 
 errorTitle :: TypeError -> Mode
 errorTitle = \case
@@ -33,6 +34,7 @@ errorTitle = \case
   CyclicTypeDef {} -> Words [Raw "Cyclic type"]
   ExpectedConst expected got -> Words [Raw "Expected", Raw (format expected), Raw "arguments for the type constructor but got", Raw (format got)]
   CannotInferField -> Words [Raw "Cannot infer field for type"]
+  NotExhaustive -> Words [Raw "Patterns are not exhaustive"]
 
 getDetails :: TypeError -> Value
 getDetails = \case
@@ -46,6 +48,7 @@ getDetails = \case
   CyclicTypeDef {} -> object []
   ExpectedConst {} -> object []
   CannotInferField -> object []
+  NotExhaustive -> object []
 
 instance ToJSON TypeError where
   toJSON reason =

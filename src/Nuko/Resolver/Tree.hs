@@ -96,6 +96,7 @@ instance HasPosition (Pat Re) where
     PLit i _    -> getPos i
     PAnn _ _ r  -> r
     PId n _     -> getPos n
+    POr _ _ r   -> r
 
 instance HasPosition (Expr Re) where
   getPos = \case

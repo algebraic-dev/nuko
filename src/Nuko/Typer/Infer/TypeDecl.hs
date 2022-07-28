@@ -19,6 +19,7 @@ import Nuko.Names               (mkLocalPath, ConsName, Name (nIdent), TyName, V
 
 import Relude.Extra (traverseToSnd)
 import Data.List (length, unzip)
+import Relude.Monad ((>>=))
 
 getRet :: TKind -> TKind
 getRet = \case
@@ -49,17 +50,19 @@ initTypeDecl decl = do
     let (resKind, resType, _) = mkTyApp tyKind typeTy indices
     unifyKind resKind KiStar
 
-    let tyDef = getTyDef decl.tyDecl
+    tyDef <- getTyDef decl.tyDecl
 
     let resInfo = TyInfo resType decl.tyName indices tyDef
     addTyKind decl.tyName tyKind resInfo
     pure resInfo
   where
-    getTyDef :: TypeDeclArg Re -> TyInfoKind
+    getTyDef :: MonadTyper m => TypeDeclArg Re -> m TyInfoKind
     getTyDef = \case
       TypeSym  _      -> error "Not Implemented Yet!"
-      TypeProd fields -> IsProdType $ ProdTyInfo (fst <$> fields)
-      TypeSum fields  -> IsSumType  $ SumTyInfo (fst <$> fields)
+      TypeProd fields -> pure $ IsProdType $ ProdTyInfo (fst <$> fields)
+      TypeSum fields  -> do
+        fieldsRes <- traverse ((\(n, r) -> (, length r) <$> qualifyTyName (Just decl.tyName.nIdent) n)) fields
+        pure (IsSumType $ SumTyInfo fieldsRes)
 
 
 inferTypeDecl :: MonadTyper m => TypeDecl Re -> TyInfo -> m (TypeDecl Tc)
@@ -86,7 +89,9 @@ inferTypeDecl (TypeDecl name' args arg) tyInfo =
 
       let names = fst <$> tyInfo._tyNames
       let generalizedTy = generalizeNames names (foldr TyFun tyInfo._resultantType argTys)
-      addTy tsConstructors (Just tyInfo._label.nIdent) consName (DataConsInfo generalizedTy (length tys))
+
+      path <- qualifyLocal name'
+      addTy tsConstructors (Just tyInfo._label.nIdent) consName (generalizedTy, DataConsInfo (length tys) path)
 
       traverse_ (`unifyKind` KiStar) argKinds
       pure (consName, argTys)

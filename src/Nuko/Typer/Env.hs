@@ -9,6 +9,7 @@ module Nuko.Typer.Env (
   SumTyInfo(..),
   ProdTyInfo(..),
   MonadTyper,
+  qualifyTyName,
   terminateLocalized,
   flagLocalized,
   emptyTypeSpace,
@@ -25,10 +26,11 @@ module Nuko.Typer.Env (
   genTyHole,
   getLocal,
   addLocals,
-  constructorTy,
   parameters,
   fiResultType,
   tsConstructors,
+  tsTypes,
+  globalTypingEnv,
   tsVars,
   seScope,
   seTyEnv,
@@ -69,7 +71,7 @@ import qualified Control.Monad.State.Strict as State
 import qualified Control.Monad.Reader as Reader
 
 data SumTyInfo = SumTyInfo
-  { _stiConstructors :: NonEmpty (Name ConsName)
+  { _stiConstructors :: NonEmpty (Qualified (Name ConsName), Int)
   } deriving Generic
 
 data ProdTyInfo = ProdTyInfo
@@ -102,13 +104,13 @@ data FieldInfo = FieldInfo
   } deriving Generic
 
 data DataConsInfo = DataConsInfo
-  { _constructorTy :: TTy 'Real
-  , _parameters    :: Int
+  { _parameters    :: Int
+  , _tyName        :: Qualified (Name TyName)
   } deriving Generic
 
 data TypeSpace = TypeSpace
   { _tsTypes        :: HashMap (Qualified (Name TyName)) (TKind, TyInfo)
-  , _tsConstructors :: HashMap (Qualified (Name ConsName)) DataConsInfo
+  , _tsConstructors :: HashMap (Qualified (Name ConsName)) (TTy 'Real, DataConsInfo)
   , _tsVars         :: HashMap (Qualified (Name ValName)) (TTy 'Real, DefInfo)
   , _tsTypeFields   :: HashMap (Qualified (Name TyName)) (HashMap (Name ValName) FieldInfo)
   } deriving Generic
@@ -238,10 +240,14 @@ addTyKind name ki info = qualifyLocal name >>= \name' -> globalTypingEnv . tsTyp
 updateTyKind :: MonadTyper m => Qualified (Name TyName) -> ((TKind, TyInfo) -> Maybe (TKind, TyInfo)) -> m ()
 updateTyKind name f = globalTypingEnv . tsTypes %= HashMap.update f name
 
-addTy :: MonadTyper m => Lens' TypeSpace (HashMap (Qualified (Name k)) b) -> Maybe Ident -> Name k -> b -> m ()
-addTy lens tyName name ki = do
+qualifyTyName ::MonadTyper m =>  Maybe Ident -> Name k -> m (Qualified (Name k))
+qualifyTyName tyName' name = do
   qual@(Qualified _ (ModName _ e _) ident r') <- qualifyLocal name
-  let name' = maybe qual (\tyName' -> mkQualified (mkModName (e <> pure tyName')) ident r') tyName
+  pure $ maybe qual (\tyName'' -> mkQualified (mkModName (e <> pure tyName'')) ident r') tyName'
+
+addTy :: MonadTyper m => Lens' TypeSpace (HashMap (Qualified (Name k)) b) -> Maybe Ident -> Name k -> b -> m ()
+addTy lens tyName' name ki = do
+  name' <- qualifyTyName tyName' name
   globalTypingEnv . lens %= HashMap.insert name' ki
 
 getTy :: MonadTyper m => Lens' TypeSpace (HashMap (Qualified (Name k)) b) -> Qualified (Name k) -> m b

@@ -22,11 +22,12 @@ import Relude                     (traverse_, ($), Traversable (traverse), (.), 
 import Data.Traversable           (for)
 import Data.List.NonEmpty         (groupAllWith)
 import Control.Monad.Query        (MonadQuery (..))
-import Control.Monad              (foldM)
+import Control.Monad              (foldM, (=<<))
 
 import qualified Data.List.NonEmpty  as NonEmpty
 import qualified Data.HashSet        as HashSet
 import qualified Data.HashMap.Strict as HashMap
+import Nuko.Report.Range (getPos, HasPosition)
 
 initProgram :: MonadResolver m => Program Nm -> m ()
 initProgram (Program tyDecls' letDecls' _ _) = do
@@ -144,6 +145,13 @@ resolvePat pat' = do
     diff :: (Eq a, Hashable a) => HashSet a -> HashSet a -> HashSet a
     diff = HashSet.difference
 
+    localRem :: (MonadResolver m, Hashable a, HasPosition a) => Path a -> m (Path a)
+    localRem (Local _ name) = do
+      curName <- gets (_modName . _currentNamespace)
+      let res = mkQualifiedPath (mkQualified curName name (getPos name))
+      pure res
+    localRem other       = pure other
+
     removeDuplicates :: MonadResolver m => HashSet (Name ValName) -> Pat Nm -> m (HashSet (Name ValName))
     removeDuplicates newNames = \case
       PWild _ -> pure newNames
@@ -168,7 +176,7 @@ resolvePat pat' = do
           Just renamed -> pure (PId renamed ext')
           Nothing -> pure $ PId name' ext' -- In case of failures of removeDuplicates
       PWild ext' -> pure $ PWild ext'
-      PCons path' pats ext' -> PCons <$> resolvePath path' <*> traverse (renamePat map) pats <*> pure ext'
+      PCons path' pats ext' -> PCons <$> (localRem =<< resolvePath path') <*> traverse (renamePat map) pats <*> pure ext'
       PLit lit ext' -> PLit <$> resolveLit lit <*> pure ext'
       PAnn pat'' ty ext' -> PAnn <$> renamePat map pat'' <*> resolveType ty <*> pure ext'
       POr l r ext' -> POr <$> renamePat map l <*> renamePat map r <*> pure ext'
