@@ -9,32 +9,30 @@ import Nuko.Tree.Expr (Pat (..))
 import Nuko.Tree (Tc)
 import Nuko.Report.Range (Range(..), HasPosition (getPos))
 
-import Relude (snd, (<$>), Int, concatMap, error, Maybe (..), Foldable (length), traverse, uncurry, not, putTextLn, traceM, ToString (toString))
-import Relude.Bool (Bool(..), (||))
-import Relude.Base (Eq((==)))
-import Relude.Bool (otherwise)
-import Relude.List ( NonEmpty, replicate )
-import Relude.Monoid ( Semigroup((<>)) )
-import Relude.Function ( ($), (.) )
-import Relude.Applicative (pure, (<*>))
+import Relude              (snd, (<$>), Int, concatMap, error, Maybe (..), Foldable (..), traverse, uncurry, not, maybe, fromMaybe, splitAt, Num ((-)))
+import Relude.Bool         (Bool(..), (||), when)
+import Relude.Base         (Eq((==)))
+import Relude.Bool         (otherwise)
+import Relude.List         (NonEmpty, replicate, filter )
+import Relude.Monoid       (Semigroup((<>)) )
+import Relude.Function     (($), (.) )
+import Relude.Applicative  (pure)
 
 import Lens.Micro.Platform (use, at)
-import Data.List (nub, or)
+import Data.List           (nub, all, null, foldr1, findIndex, (!!))
 import Pretty.Format (Format(..))
 
 import qualified Data.Text as Text
+import qualified Data.HashSet as HashSet
 
 -- Implementation of http://moscova.inria.fr/%7Emaranget/papers/warn/warn.pdf
 -- But modified to look like the rust version.
 
 type ConsNm = Path (Name ConsName)
 
-data Witness
-  = NoMatter Bool
-  | With [Witness]
-
-
 data At = At Range | Created
+
+data Used = IORef Bool
 
 data Match
   = Wild At
@@ -42,6 +40,10 @@ data Match
   | Cons ConsNm [Match] At
 
 newtype Matrix = Matrix { unpackMatrix ::  [[Match]] }
+
+data Witness
+  = Witness (Maybe [Match])
+  | NoMatter Bool
 
 instance Format Match where
   format = \case
@@ -53,6 +55,12 @@ instance Format Match where
 instance Format Matrix where
   format (Matrix []) = "||"
   format (Matrix x) = Text.intercalate "\n" ((\t -> "| " <> t <> " |") <$> Text.intercalate ", " <$> ((format <$>) <$> x))
+
+instance Format Witness where
+  format (NoMatter True)      = "<Yes>"
+  format (NoMatter False)     = "<No>"
+  format (Witness Nothing)    = "<Exhaustive>"
+  format (Witness (Just res)) = "<" <> Text.intercalate ", " (format <$> res) <> ">"
 
 toMatchPat :: Pat Tc -> Match
 toMatchPat = \case
@@ -115,32 +123,84 @@ defaultMatrix (Matrix s) = Matrix $ concatMap getRow s where
     Wild _   :rest -> [rest]
     Or p q _ :rest -> unpackMatrix $ defaultMatrix (Matrix [p:rest, q:rest])
 
-isUseful :: MonadTyper m => Matrix -> [Match] -> m Bool
-isUseful (Matrix [])              _    = pure True
-isUseful (Matrix [[]])            []   = pure False
-isUseful (Matrix x)               []   = error "Oh no!"
-isUseful patMatrix (Or p q _ : rest)   = (||) <$> isUseful patMatrix (p:rest) <*> isUseful patMatrix (q:rest)
+mkUseless :: Bool -> Witness
+mkUseless cond = if cond then Witness Nothing else NoMatter False
 
-isUseful patMatrix (Cons t p _ : rest) = do
+mkUseful :: Bool -> Witness
+mkUseful cond = if cond then Witness (Just []) else NoMatter True
+
+extend :: Witness -> Witness -> Witness
+extend (NoMatter a) (NoMatter b)      = NoMatter $ a || b
+extend (Witness Nothing) (Witness  _) = Witness Nothing
+extend (Witness _) (Witness Nothing)  = Witness Nothing
+extend (Witness (Just a)) (Witness (Just b)) = Witness (Just $ a <> b)
+extend _ _                            = error "Like.. it's not possible right now"
+
+witnessUseful :: Witness -> Bool
+witnessUseful (NoMatter res)    = res
+witnessUseful (Witness Nothing) = True
+witnessUseful (Witness _)       = False
+
+specializeUseful :: MonadTyper m => Bool -> Matrix -> [Match] -> Qualified (Name ConsName) -> Int -> m Witness
+specializeUseful retWitness patMatrix rest name size =
+  isUseful retWitness
+    (specialize (mkQualifiedPath name) size patMatrix)
+    (replicate size (Wild Created) <> rest)
+
+isUseful :: MonadTyper m => Bool -> Matrix -> [Match] -> m Witness
+isUseful retWitness (Matrix [])              [] = pure $ mkUseful retWitness
+isUseful retWitness (Matrix x) [] | all null x  = pure $ mkUseless retWitness
+isUseful _          (Matrix _)               [] = error "Oh no!"
+
+isUseful retWitness patMatrix (Or p q _ : rest) = do
+  res1 <- isUseful retWitness patMatrix (p:rest)
+  res2 <- isUseful retWitness patMatrix (q:rest)
+  pure (extend res1 res2)
+
+isUseful retWitness patMatrix (Cons t p _ : rest) = do
   cInfo <- getConsInfo t
-  isUseful (specialize t cInfo._parameters patMatrix) (p <> rest)
+  isUseful retWitness (specialize t cInfo._parameters patMatrix) (p <> rest)
 
-isUseful patMatrix (Wild _ : rest) = do
+isUseful retWitness patMatrix (Wild _ : rest) = do
   let used = getUsedCons patMatrix
-  putTextLn $ "Matrix:\n" <> format patMatrix
   case used of
     (x : _) -> do
-      all <- getAllCons x
-      case length all == length used of
-        True  -> do
-          let run name size = isUseful (specialize (mkQualifiedPath name) size patMatrix) (replicate size (Wild Created) <> rest)
-          or <$> traverse (uncurry run) all
-        False -> isUseful (defaultMatrix patMatrix) rest
-    [] -> do
-      isUseful (defaultMatrix patMatrix) rest
+      all' <- getAllCons x
+      if length all' == length used
+        then completeWitness (toList all')
+        else notCompleteWitness used (toList all')
+    [] -> notCompleteWitness used []
+  where
+    mkCons :: (Qualified (Name ConsName), Int) -> Match
+    mkCons (name, size) = Cons (mkQualifiedPath name) (replicate size (Wild Created)) Created
+
+    notCompleteWitness used all' = do
+      witness <- isUseful retWitness (defaultMatrix patMatrix) rest
+      case (witness, used) of
+        (Witness (Just pats), []) -> pure (Witness (Just (Wild Created : pats)))
+        (Witness (Just pats),  _) -> do
+          let hashUsed = HashSet.fromList used
+          let notUsed = filter (\(name, _) -> not $ HashSet.member (mkQualifiedPath name) hashUsed) all'
+          case notUsed of
+            [] -> error "Compiler error: Probably it should not be empty? anyways it happened on the pattern match checking."
+            (x:xs) ->
+              let orMatch = foldr (\cons match -> Or (mkCons cons) match Created) (mkCons x) xs in
+              pure (Witness (Just $ orMatch : pats))
+        _ -> pure witness
+
+    completeWitness all' = do
+      witnessList <- traverse (uncurry (specializeUseful retWitness patMatrix rest)) all'
+      let idx     = fromMaybe (length witnessList - 1) (findIndex (not . witnessUseful) (toList witnessList))
+      let witness = toList witnessList !! idx
+      let (name, size) = all' !! idx
+      case witness of
+        Witness (Just pats) -> do
+          let (args, ret) = splitAt size pats
+          pure $ Witness (Just (Cons (mkQualifiedPath name) args Created : ret))
+        _ -> pure witness
 
 checkUseful :: MonadTyper m => Matrix -> Pat Tc -> m Bool
-checkUseful pats pat = isUseful pats [toMatchPat pat]
+checkUseful pats pat = witnessUseful <$> isUseful False pats [toMatchPat pat]
 
-isExhaustive :: MonadTyper m => [Pat Tc] -> m Bool
-isExhaustive pats = not <$> isUseful (matrixFromColumn pats) [Wild Created]
+isExhaustive :: MonadTyper m => [Pat Tc] -> m Witness
+isExhaustive pats = isUseful True (matrixFromColumn pats) [Wild Created]
