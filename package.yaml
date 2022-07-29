@@ -13,7 +13,6 @@ dependencies:
   - relude ^>= 1.1.0.0
   - aeson
 
-
 default-extensions:
   - DuplicateRecordFields
   - OverloadedRecordDot
@@ -43,6 +42,8 @@ default-extensions:
   - ImpredicativeTypes
   - StrictData
   - DeriveFunctor
+  - PatternSynonyms
+  - ScopedTypeVariables
 
 ghc-options:
   - -Weverything
@@ -72,6 +73,8 @@ library:
     - containers
     - unordered-containers
     - hashable
+    - text
+    - pretty-terminal
 
 executables:
   Nuko-exe:
