@@ -11,7 +11,7 @@ import Nuko.Typer.Env      (MonadTyper, addLocalTy, seScope, newTyHoleWithScope,
 
 import Relude              (Int, Ord ((>=), (>)), (&&), (<))
 import Relude.Base         ((==))
-import Relude.Bool         (when, not, Bool (..), otherwise, unless)
+import Relude.Bool         (when, Bool (..), otherwise, unless)
 import Relude.Lifted       (readIORef, writeIORef)
 import Relude.Function     (($))
 import Relude.Applicative  (pure, (*>))
@@ -74,14 +74,14 @@ unify range rt rty = track (InUnify range rt rty) $ go rt rty
     go :: MonadTyper m => TTy 'Virtual -> TTy 'Virtual -> m ()
     go oTy oTy' = track (InUnify range oTy oTy') $ do
       case (derefTy oTy, derefTy oTy') of
-        (TyErr, _) -> pure ()
-        (_, TyErr) -> pure ()
         (TyHole hole, ty') -> do
           content <- readIORef hole
           case content of
             Empty _ scope -> unifyHoleTy hole scope ty'
             Filled f      -> go f ty'
         (ty, ty'@TyHole {}) -> go ty' ty
+        (TyErr, _) -> pure ()
+        (_, TyErr) -> pure ()
         (TyForall n f, TyForall _ f') -> do
           kind <- newKindHole n
           addLocalTy n kind $ do

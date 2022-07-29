@@ -3,32 +3,37 @@ module Nuko.Typer.Match (
   addRow,
   matrixFromColumn,
   toMatchPat,
-  isExhaustive
+  isExhaustive,
+  checkPatterns
 ) where
 
 -- The Pattern matching analysis is part of the type checker.
 
-import Nuko.Names          (Path, Name, ConsName, Qualified (..), TyName, mkQualifiedPath)
+import Nuko.Names          (Path, Name, ConsName, Qualified (..), TyName, mkQualifiedPath, getPathInfo)
 import Nuko.Typer.Tree     ()
-import Nuko.Typer.Env      (MonadTyper, qualifyPath, tsConstructors, globalTypingEnv, tsTypes, SumTyInfo(..), TyInfoKind (..), TyInfo(..), DataConsInfo(..))
+import Nuko.Typer.Env      (MonadTyper, qualifyPath, tsConstructors, globalTypingEnv, tsTypes, SumTyInfo(..), TyInfoKind (..), TyInfo(..), DataConsInfo(..), emitDiagnostic)
 import Nuko.Tree.Expr      (Pat (..))
 import Nuko.Tree           (Tc)
 import Nuko.Report.Range   (Range(..), HasPosition (getPos))
 
-import Relude              (snd, (<$>), Int, concatMap, error, Maybe (..), Foldable (..), traverse, uncurry, not, fromMaybe, splitAt, Num ((-)))
-import Relude.Bool         (Bool(..), (||), otherwise)
+import Relude              (snd, (<$>), Int, concatMap, error, Maybe (..), Foldable (..), traverse, uncurry, not, fromMaybe, splitAt, Num ((-)), Text, One (one))
+import Relude.Bool         (Bool(..), (||), otherwise, when)
 import Relude.Base         (Eq((==)))
-import Relude.List         (NonEmpty, replicate, filter)
+import Relude.List         (NonEmpty (..), replicate, filter)
 import Relude.Monoid       (Semigroup((<>)))
 import Relude.Function     (($), (.))
 import Relude.Applicative  (pure)
 
 import Lens.Micro.Platform (use, at)
-import Data.List           (nub, all, findIndex, (!!))
+import Data.List           (nub, all, findIndex, (!!), take)
 import Pretty.Format       (Format(..))
 
 import qualified Data.Text    as Text
 import qualified Data.HashSet as HashSet
+import Control.Monad (foldM)
+import Nuko.Report.Message (Severity(..))
+import Nuko.Typer.Error (TypeError(..))
+import Data.List.NonEmpty ((<|))
 
 -- Implementation of http://moscova.inria.fr/%7Emaranget/papers/warn/warn.pdf
 -- But modified to look like the rust version.
@@ -53,7 +58,7 @@ instance Format Match where
     Wild _ -> "_"
     Or a b _ -> "(" <> format a <> "|" <> format b <> ")"
     Cons t [] _ -> "(" <> format t <> ")"
-    Cons t e _ -> "(" <> format t <> " " <> Text.intercalate " " (format <$> e) <> ")"
+    Cons t e _ -> "(" <> format (getPathInfo t) <> " " <> Text.intercalate " " (format <$> e) <> ")"
 
 instance Format Matrix where
   format (Matrix []) = "||"
@@ -183,7 +188,7 @@ isUseful retWitness patMatrix (Wild _ : rest) = do
         (Witness (Just pats), []) -> pure (Witness (Just (Wild Created : pats)))
         (Witness (Just pats),  _) -> do
           let hashUsed = HashSet.fromList used
-          let notUsed = filter (\(name, _) -> not $ HashSet.member (mkQualifiedPath name) hashUsed) all'
+          let notUsed = take 3 $ filter (\(name, _) -> not $ HashSet.member (mkQualifiedPath name) hashUsed) all'
           case notUsed of
             [] -> error "Compiler error: Probably it should not be empty? anyways it happened on the pattern match checking."
             (x:xs) ->
@@ -207,3 +212,28 @@ checkUseful pats pat = witnessUseful <$> isUseful False pats [toMatchPat pat]
 
 isExhaustive :: MonadTyper m => [Pat Tc] -> m Witness
 isExhaustive pats = isUseful True (matrixFromColumn pats) [Wild Created]
+
+desestructOr :: Match -> (NonEmpty Text)
+desestructOr (Or a b _) = format a <| desestructOr b
+desestructOr alt        = one (format alt)
+
+checkPatterns :: MonadTyper m => Range -> (NonEmpty (Pat Tc)) -> m ()
+checkPatterns range (x :| xs) = do
+    let emptyMatrix = Matrix [[toMatchPat x]]
+    finalMatrix    <- foldM go emptyMatrix xs
+    witness        <- isUseful True finalMatrix [Wild Created]
+    case witness of
+      Witness (Just (match:_)) -> emitDiagnostic Error (NotExhaustive range (desestructOr match)) range
+      Witness Nothing         -> pure ()
+      _ -> error "Compiler error: Check patterns returned a strange result!"
+
+  where
+    go :: MonadTyper m => Matrix -> Pat Tc -> m Matrix
+    go matrix@(Matrix list) pat = do
+      let match = toMatchPat pat
+      result <- isUseful False matrix [match]
+
+      when (not $ witnessUseful result) $ do
+        emitDiagnostic Warning (UselessClause (getPos pat)) (getPos pat)
+
+      pure (Matrix (list <> [[match]]))

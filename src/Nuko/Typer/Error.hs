@@ -3,11 +3,11 @@ module Nuko.Typer.Error (
 ) where
 
 import Nuko.Report.Text
-import Relude           (Int)
-import Nuko.Typer.Types (TTy, Relation (..), TKind)
-import Nuko.Names       (Label(..))
-import Data.Aeson.Types (ToJSON(toJSON), (.=), object, Value)
-import Pretty.Format (format)
+import Relude            (Int, NonEmpty, Text)
+import Nuko.Typer.Types  (TTy, Relation (..), TKind)
+import Nuko.Names        (Label(..))
+import Data.Aeson.Types  (ToJSON(toJSON), (.=), object, Value)
+import Pretty.Format     (format, formatAnd)
 import Nuko.Report.Range (Range)
 
 data TypeError
@@ -21,7 +21,8 @@ data TypeError
   | CyclicTypeDef Range [Label]
   | ExpectedConst Range Int Int
   | CannotInferField Range
-  | NotExhaustive Range
+  | NotExhaustive Range (NonEmpty Text)
+  | UselessClause Range
 
 errorTitle :: TypeError -> Mode
 errorTitle = \case
@@ -36,6 +37,7 @@ errorTitle = \case
   ExpectedConst _ expected got -> Words [Raw "Expected", Raw (format expected), Raw "arguments for the type constructor but got", Raw (format got)]
   CannotInferField {} -> Words [Raw "Cannot infer field for type"]
   NotExhaustive {}  -> Words [Raw "Patterns are not exhaustive"]
+  UselessClause {}  -> Words [Raw "The pattern is useless is useless for the rest of the match!"]
 
 getDetails :: TypeError -> Value
 getDetails = \case
@@ -50,6 +52,7 @@ getDetails = \case
   ExpectedConst {} -> object []
   CannotInferField {} -> object []
   NotExhaustive {} -> object []
+  UselessClause {} -> object []
 
 instance PrettyDiagnostic TypeError where
   prettyDiagnostic err = case err of
@@ -57,14 +60,14 @@ instance PrettyDiagnostic TypeError where
       DetailedDiagnosticInfo
         (Words [Raw "Type mismatch"])
         [(Fst, Words [Raw "Expected:", Marked Fst (format expected)])
-        ,(Snd, Words [Raw "Got:", Marked Snd (format got)])]
+        ,(Snd, Words [Raw "     Got:", Marked Snd (format got)])]
         []
         [Ann Fst (Words [Raw (format got)]) r]
     KindMismatch r got expected ->
       DetailedDiagnosticInfo
         (Words [Raw "Kind mismatch"])
         [(Fst, Words [Raw "Expected:", Marked Fst (format expected)])
-        ,(Snd, Words [Raw "Got:", Marked Snd (format got)])]
+        ,(Snd, Words [Raw "     Got:", Marked Snd (format got)])]
         []
         [Ann Fst (Words [Raw (format got)]) r]
     OccoursCheck range _ _ ->
@@ -84,8 +87,10 @@ instance PrettyDiagnostic TypeError where
                           [Ann Fst (Words [Raw "Here!"]) range]
     CannotInferField range ->
         mkBasicDiagnostic [Raw "Cannot discover a type that this field have!"] [Ann Fst (Words [Raw "Here!"]) range]
-    NotExhaustive range ->
-        mkBasicDiagnostic [Raw "Non exhaustive pattern matching"] [Ann Fst (Words [Raw "Here!"]) range]
+    NotExhaustive range like ->
+        mkBasicDiagnostic [Raw "This pattern match does not match", Raw (formatAnd like)] [Ann Fst (Words [Raw "Here!"]) range]
+    UselessClause range ->
+        mkBasicDiagnostic [Raw "The clause is useless for the other ones!"] [Ann For (Words [Raw "Here!"]) range]
 
 instance ToJSON TypeError where
   toJSON reason =

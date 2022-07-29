@@ -3,13 +3,13 @@ module Nuko.Typer.Infer.Expr (
   checkExpr,
 ) where
 
-import Relude                   (($), (<$>), One (one), fst, (.), Foldable (toList), putTextLn, show, Semigroup ((<>)))
+import Relude                   (($), (<$>), One (one), fst, (.))
 import Relude.Monad             (Maybe(..), (=<<))
 import Relude.Functor           (Bifunctor(first))
 import Relude.List.NonEmpty     (NonEmpty((:|)))
 import Relude.Applicative       (pure)
 
-import Control.Monad.Reader     (foldM, foldM_)
+import Control.Monad.Reader     (foldM)
 import Lens.Micro.Platform      (view)
 import Data.Traversable         (for)
 import Data.List.NonEmpty       ((<|))
@@ -28,10 +28,9 @@ import Nuko.Tree.Expr           (Expr(..))
 import Nuko.Names               (Name, ValName, Path (..))
 import Nuko.Tree                (Re, Tc, Block (..), Var (..))
 import Nuko.Report.Range        (getPos, Range (..))
-import Nuko.Typer.Match         (checkUseful, addRow, matrixFromColumn, toMatchPat, isExhaustive)
-import Pretty.Format            (Format(format))
 
 import qualified Data.HashMap.Strict as HashMap
+import Nuko.Typer.Match (checkPatterns)
 
 inferBlock :: MonadTyper m => Block Re -> m (Block Tc, TTy 'Virtual)
 inferBlock = \case
@@ -42,6 +41,7 @@ inferBlock = \case
   BlVar var rest   -> do
     ((patRes, patTy), bindings) <- inferPat var.pat
     exprRes <- checkExpr var.val patTy
+    checkPatterns (getPos var) (one patRes)
     (resBlock, resTy') <- addLocals bindings (inferBlock rest)
     pure (BlVar (Var patRes exprRes var.ext) resBlock, resTy')
   BlEnd expr       -> do
@@ -56,6 +56,7 @@ checkExpr expr tty = case (expr, tty) of
   (Lam pat expr' e, TyFun argTy retTy) -> do
     ((patRes, patTy), bindings) <- inferPat pat
     unify (getPos pat) patTy argTy
+    checkPatterns (getPos pat) (one patRes)
     exprRes <- addLocals bindings (checkExpr expr' retTy)
     pure (Lam patRes exprRes (quote 0 (TyFun argTy retTy), e))
   _ -> do
@@ -100,33 +101,21 @@ inferExpr = \case
     (ifRes, ifTy)  <- runInst $ inferExpr if'
     elseRes <- checkExpr else' ifTy
     pure (If conRes ifRes elseRes (quote 0 ifTy, extension), ifTy)
-  Match scrut cas extension -> do
-    (scrutRes, scrutTy) <- inferExpr scrut
+  Match scrut cas range -> do
+    (scrutRes, nonInstScrutTy) <- inferExpr scrut
+    scrutTy <- eagerInstantiate nonInstScrutTy
     resTy <- genTyHole
     casesRes <- for cas $ \(pat, expr) ->  do
       ((resPat, patTy), bindings) <- inferPat pat
+      unify (getPos resPat) patTy scrutTy
       resExpr <- addLocals bindings (checkExpr expr resTy)
-      unify (getPos scrut) scrutTy patTy
       pure (resPat, resExpr)
+    checkPatterns range (fst <$> casesRes)
     let resDeref = derefTy resTy
-
-    -- Exhaustiveness
-    let pats = toList $ fst <$> casesRes
-    case pats of
-      (x : xs) -> do
-        foldM_ (\matrix pat -> do
-              res <- checkUseful matrix pat
-              putTextLn $ "Resultado:" <> show res <> " | " <> format (toMatchPat pat)
-              pure (addRow matrix pat)) (matrixFromColumn [x]) xs
-      _ -> pure ()
-
-    exhaustive <- isExhaustive pats
-    putTextLn $ format exhaustive
-    --when (not exhaustive) $ endDiagnostic NotExhaustive (Just (getPos (scrut)))
-
-    pure (Match scrutRes casesRes (quote 0 resDeref, extension), derefTy resTy)
+    pure (Match scrutRes casesRes (quote 0 resDeref, range), derefTy resTy)
   Lam pat expr extension -> do
     ((resPat, patTy), bindings) <- inferPat pat
+    checkPatterns (getPos pat) (one (resPat))
     (resExpr, exprTy) <- runInst $ addLocals bindings (inferExpr expr)
     pure (Lam resPat resExpr (quote 0 (TyFun patTy exprTy), extension), TyFun patTy exprTy)
   App expr (x :| xs) extension -> do
@@ -136,6 +125,7 @@ inferExpr = \case
     (resArgs, resTy) <- foldM (accApplyExpr fnRange) (one argExpr, fnResTy) xs
     pure (App fnExpr resArgs (quote 0 resTy, extension), resTy)
   Field expr field extension -> do
+    -- TODO: Probably will have problems with eager instantiation
     (resExpr, resTy) <- inferExpr expr
     (argFieldTy, resFieldTy) <- destructFun (getPos field) =<< getFieldByTy field resTy
     unify (getPos expr) argFieldTy resTy

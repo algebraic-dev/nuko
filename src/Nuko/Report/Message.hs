@@ -4,16 +4,15 @@ module Nuko.Report.Message (
   Severity(..),
 ) where
 
-import Nuko.Names        (ModName)
-import Nuko.Report.Range (Range, toLabel)
-import Nuko.Syntax.Error (SyntaxError)
-import Nuko.Typer.Error  (TypeError)
-import Data.Aeson        (ToJSON(toJSON), KeyValue ((.=)), object)
-import Pretty.Format     (Format(format))
-import Relude            (($))
+import Nuko.Names          (ModName)
+import Nuko.Report.Range   (Range, toLabel)
+import Nuko.Syntax.Error   (SyntaxError)
+import Nuko.Typer.Error    (TypeError)
+import Data.Aeson          (ToJSON(toJSON), KeyValue ((.=)), object)
+import Pretty.Format       (Format(format))
 import Nuko.Resolver.Error (ResolveErrorReason)
-import Data.Text (Text)
-import Nuko.Report.Text (Severity(..), PrettyDiagnostic(..))
+import Data.Text           (Text)
+import Nuko.Report.Text    (Severity(..), PrettyDiagnostic(..))
 
 data DiagnosticInfo
   = SyntaxError SyntaxError

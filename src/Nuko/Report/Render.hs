@@ -68,6 +68,7 @@ getColorFromMark = \case
   Fst -> Pretty.Red
   Snd -> Pretty.Blue
   Thr -> Pretty.Green
+  For -> Pretty.Yellow
 
 getPieceText :: (Text -> Text) -> Piece -> Builder
 getPieceText trans = \case
@@ -124,7 +125,7 @@ renderPosition :: [Text] -> Annotation -> Builder
 renderPosition source ann = do
     let lineText = format (range.start.line + 1)
     let padding  = pad (indent - length lineText - 1)
-    let tip      = maybe "" (("\n" <> pad indent <> fromText (faint "| ") <> pad range.start.column <> fromText (boldColor "└──")) <>) text
+    let tip      = maybe "" (("\n" <> pad indent <> fromText (faint "| ") <> pad range.start.column <> fromText (boldColor $ replicate (List.maximum [colSize, 1]) "^" <> " ")) <>) text
     let resLine  = padding <> fromText lineText <> " | " <> modifyLine source range boldColor <> tip
     mconcat
       [ renderLine source (range.start.line - 1)
@@ -135,6 +136,8 @@ renderPosition source ann = do
   where
     boldColor :: Text -> Text
     boldColor t = Pretty.style Pretty.Bold $ Pretty.color color t
+    line     = source !! range.start.line
+    colSize  = if range.start.line == range.end.line then range.end.column - range.start.column else length line - range.start.column
     color = getColorFromMark $ case ann of {Ann color' _ _ -> color'; NoAnn color' _ -> color' }
     range = case ann of {Ann _ _ range' -> range'; NoAnn _ range' -> range' }
     text  = renderMode boldColor <$> case ann of {Ann _ text' _ -> Just text'; NoAnn {} -> Nothing }

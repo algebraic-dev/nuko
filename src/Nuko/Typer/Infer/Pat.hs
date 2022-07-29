@@ -1,5 +1,6 @@
 module Nuko.Typer.Infer.Pat (
   inferPat,
+  checkPat
 ) where
 
 import Relude                   (($))
@@ -9,7 +10,7 @@ import Relude.Monad             (Maybe(..), modify)
 import Relude.Container         (HashMap)
 
 import Control.Monad.Reader     (foldM, MonadTrans(lift))
-import Lens.Micro.Platform      (use, at)
+import Lens.Micro.Platform      (use, at, view)
 import Data.List                (length)
 import Control.Monad            (when)
 
@@ -21,7 +22,7 @@ import Nuko.Typer.Infer.Type    (inferClosedTy)
 import Nuko.Typer.Error         (TypeError(..))
 import Nuko.Typer.Unify         (unify, destructFun)
 import Nuko.Typer.Types         (TTy(..), Relation(..), quote, evaluate)
-import Nuko.Typer.Env           (getTy, newTyHole, tsConstructors, DataConsInfo(_parameters), MonadTyper, qualifyPath, endDiagnostic)
+import Nuko.Typer.Env           (getTy, newTyHole, tsConstructors, DataConsInfo(_parameters), MonadTyper, qualifyPath, endDiagnostic, seScope, eagerInstantiate)
 import Nuko.Tree.Expr           (Pat(..))
 import Nuko.Names               (coerceTo, genIdent, mkName, Attribute(Untouched), Name, NameKind(TyName), ValName)
 import Nuko.Tree                (Re, Tc)
@@ -31,6 +32,17 @@ import qualified Data.HashMap.Strict as HashMap
 import Nuko.Report.Range (Range, HasPosition (getPos))
 
 type InferPat m a = State.StateT (HashMap (Name ValName) (TTy 'Virtual)) m a
+
+checkPat :: MonadTyper m => Pat Re -> TTy 'Virtual -> m (HashMap (Name ValName) (TTy 'Virtual))
+checkPat pat ty = case (pat, ty) of
+  (_, TyForall _ f) -> do
+    ctxLvl <- view seScope
+    checkPat pat (f (TyVar ctxLvl))
+  _ -> do
+    ((resPat, inferedTy), bindings) <- inferPat pat
+    instTy <- eagerInstantiate inferedTy
+    unify (getPos resPat) instTy ty
+    pure bindings
 
 inferPat :: MonadTyper m => Pat Re -> m ((Pat Tc, TTy 'Virtual), HashMap (Name ValName) (TTy 'Virtual))
 inferPat pat =

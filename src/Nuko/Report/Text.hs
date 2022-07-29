@@ -25,6 +25,7 @@ data Color
   = Fst
   | Snd
   | Thr
+  | For
 
 newtype Mode
   = Words [Piece]
