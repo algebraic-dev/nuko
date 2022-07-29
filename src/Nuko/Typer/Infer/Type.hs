@@ -17,7 +17,7 @@ import Data.List            (findIndex, zip)
 import Nuko.Typer.Error     (TypeError(..))
 import Nuko.Typer.Unify     (unifyKind)
 import Nuko.Typer.Types     (TKind(..), TTy(..), Relation(..), generalizeWith)
-import Nuko.Typer.Env       (getKind, newKindHole, MonadTyper, qualifyPath, addLocalTy, seTyEnv, addLocalTypes, terminateLocalized)
+import Nuko.Typer.Env       (getKind, newKindHole, MonadTyper, qualifyPath, addLocalTy, seTyEnv, addLocalTypes, endDiagnostic)
 import Nuko.Tree.Expr       (Ty(..))
 import Nuko.Names           (genIdent, mkTyName, Label(Label), Name, TyName )
 import Nuko.Tree            (Re)
@@ -58,7 +58,7 @@ inferRealTy ast = go ast
       case findIndex (\(k, _) -> k == name) env of
         Just idx -> do
           pure (TyVar idx, snd (env !! idx))
-        Nothing -> terminateLocalized (NameResolution (Label name)) (Just $ getPos name)
+        Nothing -> endDiagnostic (NameResolution (Label name)) (getPos name)
 
     applyTy :: MonadTyper m => PType 'Real -> Ty Re -> m (PType 'Real)
     applyTy (tyRes, tyKind) arg = do

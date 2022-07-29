@@ -23,8 +23,8 @@ data Pos = Pos
   } deriving Show
 
 data Range = Range
-  { start :: {-# UNPACK #-} Pos
-  , end :: {-# UNPACK #-} Pos
+  { start :: Pos
+  , end :: Pos
   } deriving Show
 
 data Ranged a = Ranged

@@ -8,6 +8,7 @@ module Nuko.Syntax.Parser where
 
 import Relude
 
+import Nuko.Report.Message  (Severity(..))
 import Nuko.Syntax.Lexer.Support
 import Nuko.Syntax.Lexer.Tokens
 import Nuko.Syntax.Lexer
@@ -20,6 +21,7 @@ import Nuko.Names
 import Nuko.Tree
 import Data.Text (Text)
 import Data.Bifunctor
+
 
 import qualified Prelude                 as Prelude
 import qualified Control.Monad.Chronicle as Chronicle
@@ -184,7 +186,7 @@ BlockExpr :: { Block Nm }
     : Expr       List1(sep) BlockExpr { BlBind $1 $3 }
     | VarExpr    List1(sep) BlockExpr { BlVar $1 $3 }
     | Expr                            { BlEnd $1 }
-    | VarExpr                         {% (flag =<< mkErr (AssignInEndOfBlock $1.ext))
+    | VarExpr                         {% (emitDiagnostic Error (AssignInEndOfBlock $1.ext))
                                       >> pure (BlEnd $1.val) }
 
 End : end   { ()         }
@@ -233,8 +235,8 @@ ImpPath :: { ModName }
     : SepList1('.', Upper) { mkModName $1 }
 
 ImpDeps :: { ImportDeps Nm }
-    : Upper as Lower {% terminate =<< mkErr (WrongUsageOfCase LowerCase $3.iRange) }
-    | Lower as Upper {% terminate =<< mkErr (WrongUsageOfCase UpperCase $3.iRange) }
+    : Upper as Lower {% terminateWith (WrongUsageOfCase LowerCase $3.iRange) }
+    | Lower as Upper {% terminateWith (WrongUsageOfCase UpperCase $3.iRange) }
     | Upper as Upper { ImportDeps (ImpDepUpper $1) (Just $3) }
     | Lower as Lower { ImportDeps (ImpDepLower $1) (Just $3) }
     | Upper          { ImportDeps (ImpDepUpper $1) Nothing }
@@ -284,6 +286,6 @@ getInt = \case
     _ -> error "Chiyoku.. you have to be more careful when you try to use this function!"
 
 lexer      = (scan >>=)
-parseError err = terminate =<< mkErr (UnexpectedToken err)
+parseError = terminateWith . UnexpectedToken
 
 }

@@ -24,9 +24,10 @@ module Nuko.Resolver.Env (
   newLocal,
   useLocal,
   addGlobal,
-  mkErr
+  mkDiagnostic
 ) where
 
+import Nuko.Report.Message 
 import Nuko.Resolver.Occourence (OccEnv, empty, insertOcc, insertWith, getMap)
 import Nuko.Report.Range        (Range, HasPosition (..))
 import Nuko.Resolver.Error      (ResolveErrorReason (..))
@@ -50,7 +51,6 @@ import Lens.Micro.Platform      (makeLenses, use, (.=), (%=), at)
 import qualified Data.HashSet             as HashSet
 import qualified Data.HashMap.Strict      as HashMap
 import qualified Nuko.Resolver.Occourence as Occ
-import Nuko.Report.Message (CompilerError (CompilerError), ErrorKind (..))
 
 data Visibility
   = Public
@@ -78,6 +78,7 @@ data ResolverState = ResolverState
   -- ^ Used to tracking locals.
   , _currentNamespace :: NameSpace
   , _newNamespaces    :: HashMap ModName NameSpace
+  , _reFilename         :: Text
   } deriving Generic
 
 makeLenses ''NameSpace
@@ -98,13 +99,14 @@ data Query a where
 type MonadResolver m =
   ( MonadQuery Query m
   , MonadState ResolverState m
-  , MonadChronicle (Endo [CompilerError]) m
+  , MonadChronicle (Endo [Diagnostic]) m
   )
 
-mkErr :: MonadResolver m => ResolveErrorReason -> m CompilerError
-mkErr reason = do
+mkDiagnostic :: MonadResolver m => Severity -> Range -> ResolveErrorReason -> m Diagnostic
+mkDiagnostic severity range reason = do
   namespace <- use (currentNamespace . modName)
-  pure (CompilerError (Just namespace) Nothing (ResolveError reason))
+  filename  <- use reFilename
+  pure (Diagnostic namespace filename severity range (ResolveError reason))
 
 joinUses :: Use -> Use -> Use
 joinUses a' b' = case (a', b') of
@@ -135,7 +137,7 @@ newNamespace newModuleName action = do
 
   pure result
 
-emptyState :: ModName -> ResolverState
+emptyState :: ModName -> Text -> ResolverState
 emptyState moduleName = ResolverState Occ.empty HashMap.empty Occ.empty Occ.empty (emptyNamespace moduleName) HashMap.empty
 
 newScope :: MonadState ResolverState m => m a -> m a
@@ -177,19 +179,19 @@ useLocal :: MonadResolver m => Label -> m ()
 useLocal label = do
     local <- use (localNames . getMap . at label)
     case local of
-      Nothing -> terminate =<< mkErr (AlreadyExistsName label)
+      Nothing -> terminate =<< mkDiagnostic Error (getPos label) (AlreadyExistsName label)
       Just _  -> usedLocals %= Occ.insertOcc label (getPos label)
 
 useModule :: MonadResolver m => ModName -> m NameSpace
 useModule modName' = do
     moduleRes <- use (openedModules . at modName')
     case moduleRes of
-      Nothing  -> terminate =<< mkErr (CannotFindModule modName')
+      Nothing  -> terminate =<< mkDiagnostic Error (getPos modName')  (CannotFindModule modName')
       Just res -> pure res
 
 addGlobal :: MonadResolver m => Name k -> Visibility -> m ()
 addGlobal name vs = do
   result <- use (currentNamespace . names . getMap . at (Label name))
   case result of
-    Just _  -> terminate =<< mkErr (AlreadyExistsName (Label name))
+    Just _  -> terminate =<< mkDiagnostic Error (getPos name) (AlreadyExistsName (Label name))
     Nothing -> addDefinition (Label name) vs

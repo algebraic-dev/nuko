@@ -7,15 +7,16 @@ module Nuko.Typer.Unify (
 import Nuko.Typer.Types    (TTy(..), Relation (..), derefTy, TyHole)
 import Nuko.Typer.Kinds    (TKind(..), Hole(Filled, Empty), KiHole, derefKind)
 import Nuko.Typer.Error    (TypeError(..))
-import Nuko.Typer.Env      (MonadTyper, addLocalTy, seScope, newTyHoleWithScope, eagerInstantiate, newKindHole, flagLocalized, terminateLocalized)
+import Nuko.Typer.Env      (MonadTyper, addLocalTy, seScope, newTyHoleWithScope, eagerInstantiate, newKindHole, emitDiagnostic, endDiagnostic)
 
-import Relude              (Int, Ord ((>=), (>)), (&&), (<), Maybe (..))
+import Relude              (Int, Ord ((>=), (>)), (&&), (<), Maybe (..), undefined)
 import Relude.Base         ((==))
 import Relude.Bool         (when, not, Bool (..), otherwise)
 import Relude.Lifted       (readIORef, writeIORef)
 import Relude.Function     (($))
 import Relude.Applicative  (pure, (*>))
 import Lens.Micro.Platform (view)
+import Nuko.Report.Message (Severity(Error))
 
 destructFun :: MonadTyper m => TTy 'Virtual -> m (TTy 'Virtual, TTy 'Virtual)
 destructFun ty = do
@@ -31,7 +32,7 @@ destructFun ty = do
           writeIORef hole (Filled (TyFun argTy resTy))
           pure (argTy, resTy)
         Filled f -> destructFun f
-    t -> terminateLocalized (NotAFunction t) Nothing
+    t -> endDiagnostic (NotAFunction t) undefined
 
 unifyKind :: MonadTyper m => TKind -> TKind -> m ()
 unifyKind origK origiK1 = do
@@ -46,7 +47,7 @@ unifyKind origK origiK1 = do
             writeIORef hole (Filled k')
       (ty, KiHole hole) -> unifyKind (KiHole hole) ty
       (KiFun a b, KiFun a' b') -> unifyKind a a' *> unifyKind b b'
-      (k, k') -> flagLocalized (KindMismatch k k') Nothing
+      (k, k') -> emitDiagnostic Error (KindMismatch k k') undefined
   where
     isEq hole ty = case ty of { KiHole hole' -> hole == hole'; _ -> False }
 
@@ -55,7 +56,7 @@ unifyKind origK origiK1 = do
       KiFun a b -> preCheck hole a *> preCheck hole b
       KiStar -> pure ()
       KiHole hole' -> do
-        when (hole == hole') (terminateLocalized (OccoursCheckKind (KiHole hole) (KiHole hole')) Nothing)
+        when (hole == hole') (endDiagnostic (OccoursCheckKind (KiHole hole) (KiHole hole')) undefined)
         content <- readIORef hole'
         case content of
           Empty _ _ -> pure ()
@@ -81,7 +82,7 @@ unify oTy oTy' = do
       (TyFun f t, TyFun f' t') -> unify f f' *> unify t t'
       (TyApp k f t, TyApp k' f' t') -> unifyKind k k' *> unify f f' *> unify t t'
       (TyIdent a, TyIdent b) | a == b -> pure ()
-      (ty, ty') -> flagLocalized (Mismatch ty ty') Nothing
+      (ty, ty') -> emitDiagnostic Error (Mismatch ty ty') undefined
   where
     unifyHoleTy :: MonadTyper m => TyHole -> Int -> TTy 'Virtual -> m ()
     unifyHoleTy hole scope ty = do
@@ -102,14 +103,14 @@ unify oTy oTy' = do
           case derefTy uTy of
             TyErr -> pure ()
             TyVar lvl
-              | lvl >= scope && lvl < start -> terminateLocalized EscapingScope Nothing
+              | lvl >= scope && lvl < start -> endDiagnostic EscapingScope undefined
               | otherwise    -> pure ()
             TyIdent _ -> pure ()
             TyApp _ l r  -> go l *> go r
             TyFun l r    -> go l *> go r
             TyForall _ t -> go (t (TyVar curScope))
             TyHole hole' -> do
-              when (hole == hole') (terminateLocalized (OccoursCheck (TyHole hole) (TyHole hole')) Nothing)
+              when (hole == hole') (endDiagnostic (OccoursCheck (TyHole hole) (TyHole hole')) undefined)
               resHol <- readIORef hole'
               case resHol of
                 Empty loc' scope' -> when (scope' > scope) (writeIORef hole (Empty loc' scope))

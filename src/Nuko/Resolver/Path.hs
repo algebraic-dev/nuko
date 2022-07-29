@@ -25,6 +25,7 @@ import Relude.Foldable          (Traversable(..))
 import Lens.Micro.Platform      (use, at, view)
 
 import qualified Data.HashMap.Strict as HashMap
+import Nuko.Report.Message (Severity(Error))
 
 occAt :: Functor f => Label -> (Maybe a2 -> f (Maybe a2)) -> OccEnv a2 -> f (OccEnv a2)
 occAt l = getMap . at l
@@ -52,7 +53,7 @@ useOpenedPath name' = do
   where
     resolveAmbiguity :: MonadResolver m => Name k -> Use -> m (Path (Name k))
     resolveAmbiguity name'' = \case
-      (Ambiguous refs) -> terminate =<< mkErr (AmbiguousNames (getPos name'') refs)
+      (Ambiguous refs) -> terminate =<< mkDiagnostic Error (getPos name'') (AmbiguousNames (getPos name'') refs)
       (Single resPath) ->
         let fixedPos = copyPos name'' (copyPos name'' <$> resPath) in
         pure (mkQualifiedPath (coerceLabel name''.nKind <$> fixedPos)) -- I wish I had dependent hashmaps :P
@@ -74,7 +75,7 @@ assertLookup :: MonadResolver m => NonEmpty NameSort -> Ident -> Maybe ModName -
 assertLookup sorts ident on res = do
   case res of
     Just res' -> pure res'
-    Nothing   -> terminate =<< mkErr (CannotFindInModule sorts (mkPath on ident))
+    Nothing   -> terminate =<< mkDiagnostic Error (getPos ident) (CannotFindInModule sorts (mkPath on ident))
 
 resolveQualified :: MonadResolver m => Qualified (Name k) -> m (Qualified (Name k))
 resolveQualified qualified = do
@@ -91,13 +92,13 @@ resolvePath (Full _ qualified) = mkQualifiedPath <$> resolveQualified qualified
 assertVisibility :: MonadResolver m => Path Label -> Visibility -> m ()
 assertVisibility name = \case
   Public  -> pure ()
-  Private -> terminate =<< mkErr (IsPrivate name)
+  Private -> terminate =<< mkDiagnostic Error (getPos name) (IsPrivate name)
 
 resolveConsOrTy :: MonadResolver m => NameSpace -> Ident -> m (Qualified Label)
 resolveConsOrTy ns ident = do
     resolveKind TyName $
       resolveKind ConsName $
-        terminate =<< mkErr (CannotFindInModule (fromList [NameSort TyName, NameSort ConsName]) (mkPath (Just ns._modName) ident))
+        terminate =<< mkDiagnostic Error (getPos ident) (CannotFindInModule (fromList [NameSort TyName, NameSort ConsName]) (mkPath (Just ns._modName) ident))
   where
     resolveKind :: MonadResolver m => NameKind k -> m (Qualified Label) -> m (Qualified Label)
     resolveKind kind action = do

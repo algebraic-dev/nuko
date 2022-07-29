@@ -2,6 +2,8 @@ module Nuko.Syntax.Lexer.Support (
   AlexInput(..),
   LexerState(..),
   Lexer(..),
+  terminateWith,
+  emitDiagnostic,
   alexGetByte,
   alexInputPrevChar,
   initialState,
@@ -19,8 +21,7 @@ module Nuko.Syntax.Lexer.Support (
   addToBuffer,
   ghostRange,
   runLexer,
-  flagLocal,
-  mkErr,
+  flagChar,
 ) where
 
 import Relude.Monad       (Monad((>>)), Maybe, MonadState, fromMaybe, gets)
@@ -30,14 +31,14 @@ import Relude.Functor     (Functor(fmap), Bifunctor(first), (<$>))
 import Relude.Bool        (Bool(..) )
 import Relude.String      (Text, ByteString)
 import Relude.List        (NonEmpty(..), uncons, head)
-import Relude             (fst, snd, ($), Int, Word8, (.),  const, Maybe (..), (=<<))
+import Relude             (fst, snd, ($), Int, Word8, (.),  const, (=<<))
 
+import Nuko.Report.Message      
 import Data.These               (These)
 import Data.ByteString.Internal (w2c)
 import Control.Monad.Chronicle  (MonadChronicle, Chronicle)
 import Nuko.Report.Range        (Pos, Ranged, Range)
-import Nuko.Utils               (flag)
-import Nuko.Report.Message      (CompilerError(CompilerError), ErrorKind(..))
+import Nuko.Utils               (flag, terminate)
 import Nuko.Syntax.Error        (SyntaxError, getErrorSite)
 import Nuko.Names               (ModName)
 
@@ -70,6 +71,7 @@ alexInputPrevChar = lastInput
 -- that it is in the lexer) and each "layout" place to work by indentation.
 data LexerState = LexerState
     { modName   :: ModName
+    , filename  :: Text
     , input     :: AlexInput
     , codes     :: NonEmpty Int
     , layout    :: [Int]
@@ -77,9 +79,10 @@ data LexerState = LexerState
     , nonLw     :: Bool
     }
 
-initialState :: ModName -> ByteString -> LexerState
-initialState modName str = -- 10 is the ascii for \n
+initialState :: ModName -> Text -> ByteString -> LexerState
+initialState modName filename str = -- 10 is the ascii for \n
   LexerState { modName  = modName
+             , filename = filename
              , input    = AlexInput (Range.Pos 0 0) 10 str
              , codes    = 0 :| []
              , buffer   = ""
@@ -87,8 +90,8 @@ initialState modName str = -- 10 is the ascii for \n
              , nonLw    = False
              }
 
-newtype Lexer a = Lexer { getLexer :: State.StateT LexerState (Chronicle (Endo [CompilerError])) a }
-  deriving newtype (Functor, Applicative, Monad, MonadState LexerState, MonadChronicle (Endo [CompilerError]))
+newtype Lexer a = Lexer { getLexer :: State.StateT LexerState (Chronicle (Endo [Diagnostic])) a }
+  deriving newtype (Functor, Applicative, Monad, MonadState LexerState, MonadChronicle (Endo [Diagnostic]))
 
 -- Stack code manipulation things to jump to string, comments and these things.
 
@@ -114,22 +117,37 @@ popLayout = State.modify $ \s -> s { layout = case s.layout of {_ : xs -> xs; []
 lastLayout :: Lexer (Maybe Int)
 lastLayout = State.gets (fmap fst . uncons . layout)
 
+-- Error messages
+
+mkCompilerError :: Severity -> SyntaxError -> Lexer Diagnostic
+mkCompilerError severity err = do
+  name <- gets $ modName
+  filename <- gets $ Nuko.Syntax.Lexer.Support.filename
+  pure $ Diagnostic
+    { moduleName = name
+    , filename   = filename
+    , severity   = severity
+    , position   = getErrorSite err
+    , kind       = SyntaxError err
+    }
+
+flagChar :: (Range -> SyntaxError) -> Pos -> Lexer ()
+flagChar fn pos = do
+  lastPos <- State.gets (currentPos . input)
+  flag =<< mkCompilerError Error (fn (Range.Range pos lastPos))
+
+emitDiagnostic :: Severity -> SyntaxError -> Lexer ()
+emitDiagnostic severity err = flag =<< mkCompilerError severity err
+
+terminateWith :: SyntaxError -> Lexer a
+terminateWith err = terminate =<< mkCompilerError Error err
+
 -- Token emission things
 
 emit :: (Text -> a) -> Text -> Pos -> Lexer (Ranged a)
 emit fn text pos = do
   lastPos <- State.gets (currentPos . input)
   pure (Range.Ranged (fn text) (Range.Range pos lastPos))
-
-flagLocal :: (Range -> SyntaxError) -> Pos -> Lexer ()
-flagLocal fn pos = do
-  lastPos <- State.gets (currentPos . input)
-  flag =<< mkErr (fn (Range.Range pos lastPos))
-
-mkErr :: SyntaxError -> Lexer CompilerError
-mkErr err = do
-  name <- gets $ modName
-  pure $ CompilerError (Just name) (Just (getErrorSite err)) (SyntaxError err)
 
 token :: a -> Text -> Pos -> Lexer (Ranged a)
 token = emit . const
@@ -153,8 +171,9 @@ ghostRange t = do
     pos <- State.gets (currentPos . input)
     pure $ Range.Ranged t (Range.Range pos pos)
 
-runLexer :: Lexer a -> ModName -> ByteString -> These [CompilerError] a
-runLexer lex' modName input' =
+runLexer :: Lexer a -> ModName -> Text -> ByteString -> These [Diagnostic] a
+runLexer lex' modName filename input' =
   first
     (`appEndo` [])
-    (Chronicle.runChronicle $ State.evalStateT lex'.getLexer (initialState modName input'))
+    (Chronicle.runChronicle
+      $ State.evalStateT lex'.getLexer (initialState modName filename input'))

@@ -16,7 +16,7 @@ import Relude.Applicative         (Applicative(..))
 import Relude.Functor             (Functor (fmap), (<$>))
 import Relude.Monad               (Maybe(..), Either(..), gets, Monad ((>>=)))
 import Relude.Container           (HashSet, HashMap, Hashable)
-import Relude.List                (NonEmpty ((:|)))
+import Relude.List                (NonEmpty ((:|)), head)
 import Relude                     (traverse_, ($), Traversable (traverse), (.), fst, when, Ord ((>)), for_, not, Eq)
 
 import Data.Traversable           (for)
@@ -28,6 +28,7 @@ import qualified Data.List.NonEmpty  as NonEmpty
 import qualified Data.HashSet        as HashSet
 import qualified Data.HashMap.Strict as HashMap
 import Nuko.Report.Range (getPos, HasPosition)
+import Nuko.Report.Message (Severity(Error))
 
 initProgram :: MonadResolver m => Program Nm -> m ()
 initProgram (Program tyDecls' letDecls' _ _) = do
@@ -53,8 +54,8 @@ resolveImport decl = do
       res <- query (GetModule mod')
       case res of
         Right res'-> pure res'
-        Left Cyclic -> terminate =<< mkErr (CyclicImport mod')
-        Left CannotFind -> terminate =<< mkErr (CannotFindModule mod')
+        Left Cyclic -> terminate =<< mkDiagnostic Error (getPos mod') (CyclicImport mod')
+        Left CannotFind -> terminate =<< mkDiagnostic Error (getPos mod') (CannotFindModule mod')
 
     resolveByCase :: MonadResolver m => NameSpace -> ImportDepsKind Nm -> m (Qualified Label)
     resolveByCase ns = \case
@@ -90,7 +91,7 @@ resolveTypeDecl :: MonadResolver m => TypeDecl Nm -> m (TypeDecl Re)
 resolveTypeDecl (TypeDecl name' args decl) = do
   newScope $ do
     let argumentGroups = groupAllWith (iText . nIdent) args
-    for_ argumentGroups $ \group -> when (NonEmpty.length group > 1) (terminate =<< mkErr (ConflictingTypes group))
+    for_ argumentGroups $ \group -> when (NonEmpty.length group > 1) (terminate =<< mkDiagnostic Error (getPos (head group)) (ConflictingTypes group))
     newArgs <- traverse newLocal args
     newDecl <- resolveDecl decl
     pure (TypeDecl name' newArgs newDecl)
@@ -160,13 +161,13 @@ resolvePat pat' = do
       PCons _ pats _ -> foldM removeDuplicates newNames pats
       PId name' _ | not $ HashSet.member name' newNames -> pure (HashSet.insert name' newNames)
       PId name' _ -> do
-        flag =<< mkErr (AlreadyExistsPat name')
+        flag =<< mkDiagnostic Error (getPos name') (AlreadyExistsPat name')
         pure newNames
       POr l r _ -> do
         newNamesL <- removeDuplicates newNames l
         newNamesR <- removeDuplicates newNames r
-        for_ (diff newNamesL newNamesR) (\res -> flag =<< mkErr (ShouldAppearOnOr res))
-        for_ (diff newNamesR newNamesL) (\res -> flag =<< mkErr (CannotIntroduceNewVariables res))
+        for_ (diff newNamesL newNamesR) (\res -> flag =<< mkDiagnostic Error (getPos res) (ShouldAppearOnOr res))
+        for_ (diff newNamesR newNamesL) (\res -> flag =<< mkDiagnostic Error (getPos res) (CannotIntroduceNewVariables res))
         pure newNamesL
 
     renamePat :: MonadResolver m => HashMap (Name ValName) (Name ValName) -> Pat Nm -> m (Pat Re)

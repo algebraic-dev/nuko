@@ -21,7 +21,7 @@ import Nuko.Typer.Infer.Type    (inferClosedTy)
 import Nuko.Typer.Error         (TypeError(..))
 import Nuko.Typer.Unify         (unify, destructFun)
 import Nuko.Typer.Types         (TTy(..), Relation(..), quote, evaluate)
-import Nuko.Typer.Env           (getTy, newTyHole, tsConstructors, DataConsInfo(_parameters), MonadTyper, qualifyPath, terminateLocalized)
+import Nuko.Typer.Env           (getTy, newTyHole, tsConstructors, DataConsInfo(_parameters), MonadTyper, qualifyPath, endDiagnostic)
 import Nuko.Tree.Expr           (Pat(..))
 import Nuko.Names               (coerceTo, genIdent, mkName, Attribute(Untouched), Name, NameKind(TyName), ValName)
 import Nuko.Tree                (Re, Tc)
@@ -64,7 +64,7 @@ inferPat pat =
         qualified <- lift (qualifyPath path)
         (constRealTy, constInfo) <- lift (getTy tsConstructors qualified)
         when (constInfo._parameters /= length args) $
-          lift (terminateLocalized (ExpectedConst constInfo._parameters (length args)) (Just ext))
+          lift (endDiagnostic (ExpectedConst constInfo._parameters (length args)) ext)
         let constTy = evaluate [] constRealTy
         (argsRes, resTy) <- foldM applyPat ([], constTy) args
         pure (PCons path argsRes (quote 0 resTy, ext), resTy)

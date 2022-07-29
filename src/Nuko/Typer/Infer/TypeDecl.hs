@@ -19,7 +19,6 @@ import Nuko.Names               (mkLocalPath, ConsName, Name (nIdent), TyName, V
 
 import Relude.Extra (traverseToSnd)
 import Data.List (length, unzip)
-import Relude.Monad ((>>=))
 
 getRet :: TKind -> TKind
 getRet = \case

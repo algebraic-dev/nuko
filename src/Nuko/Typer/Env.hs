@@ -10,8 +10,8 @@ module Nuko.Typer.Env (
   ProdTyInfo(..),
   MonadTyper,
   qualifyTyName,
-  terminateLocalized,
-  flagLocalized,
+  endDiagnostic,
+  emitDiagnostic,
   emptyTypeSpace,
   addFieldToEnv,
   getKind,
@@ -30,6 +30,7 @@ module Nuko.Typer.Env (
   fiResultType,
   tsConstructors,
   tsTypes,
+  tyName,
   globalTypingEnv,
   tsVars,
   seScope,
@@ -45,7 +46,7 @@ module Nuko.Typer.Env (
   addLocalTypes,
 ) where
 
-import Relude                  (Generic, Int, MonadIO, pure, (.), (<$>), ($), Monad ((>>=)), fst, Num ((+)), IO, Endo (appEndo), Bifunctor (first), NonEmpty, readIORef)
+import Relude                  (Generic, Int, MonadIO, pure, (.), (<$>), ($), Monad ((>>=)), fst, Num ((+)), IO, Endo (appEndo), Bifunctor (first), NonEmpty, readIORef, Text)
 import Relude.Monad            (MonadState, MonadReader (local), Maybe (..), asks, maybe)
 import Relude.Monoid           ((<>))
 import Relude.Lifted           (newIORef)
@@ -58,7 +59,7 @@ import Nuko.Typer.Error        (TypeError(NameResolution))
 import Nuko.Report.Range       (getPos, Range)
 import Nuko.Resolver.Tree      ()
 
-import Nuko.Report.Message     (CompilerError(..), ErrorKind(TypingError))
+import Nuko.Report.Message
 import Pretty.Tree             (PrettyTree)
 import Data.HashMap.Strict     (HashMap)
 import Data.These              (These)
@@ -117,6 +118,7 @@ data TypeSpace = TypeSpace
 
 data TypingEnv = TypingEnv
   { _teCurModule     :: ModName
+  , _teCurFilename   :: Text
   , _globalTypingEnv :: TypeSpace
   } deriving Generic
 
@@ -146,23 +148,29 @@ type MonadTyper m =
   ( MonadIO m
   , MonadState TypingEnv m
   , MonadReader ScopeEnv m
-  , MonadChronicle (Endo [CompilerError]) m
+  , MonadChronicle (Endo [Diagnostic]) m
   )
 
-terminateLocalized :: MonadTyper m => TypeError -> Maybe Range -> m b
-terminateLocalized kind range = do
+endDiagnostic :: MonadTyper m => TypeError -> Range -> m b
+endDiagnostic kind range = do
   modName <- use teCurModule
-  terminate $ CompilerError
-    { moduleName = Just modName
+  fileName <- use teCurFilename
+  terminate $ Diagnostic
+    { moduleName = modName
+    , severity = Error
+    , filename = fileName
     , position = range
     , kind = TypingError kind
     }
 
-flagLocalized :: MonadTyper m => TypeError -> Maybe Range -> m ()
-flagLocalized kind range = do
+emitDiagnostic :: MonadTyper m => Severity -> TypeError -> Range -> m ()
+emitDiagnostic severity kind range = do
   modName <- use teCurModule
-  flag $ CompilerError
-    { moduleName = Just modName
+  fileName <- use teCurFilename
+  flag $ Diagnostic
+    { moduleName = modName
+    , severity = severity
+    , filename = fileName
     , position = range
     , kind = TypingError kind
     }
@@ -173,9 +181,9 @@ emptyScopeEnv = ScopeEnv HashMap.empty [] 0
 emptyTypeSpace :: TypeSpace
 emptyTypeSpace = TypeSpace HashMap.empty HashMap.empty HashMap.empty HashMap.empty
 
-runToIO :: TypeSpace -> ModName -> (forall m. MonadTyper m => m a) -> IO (These [CompilerError] (a, TypingEnv))
-runToIO typeSpace modName action = do
-  let env = TypingEnv modName typeSpace
+runToIO :: TypeSpace -> ModName -> Text -> (forall m. MonadTyper m => m a) -> IO (These [Diagnostic] (a, TypingEnv))
+runToIO typeSpace modName filename action = do
+  let env = TypingEnv modName filename typeSpace
   let res = Reader.runReaderT action emptyScopeEnv
   first (`appEndo` [])
     <$> Chronicle.runChronicleT (State.runStateT res env)
@@ -194,7 +202,7 @@ getLocal name = do
   maybeRes <- asks (HashMap.lookup name . _seVars)
   case maybeRes of
     Just res -> pure res
-    Nothing  -> terminateLocalized (NameResolution $ Label $ name) (Just $ getPos name)
+    Nothing  -> endDiagnostic (NameResolution $ Label $ name) (getPos name)
 
 newTyHole :: MonadTyper m => Name TyName -> m (TTy k)
 newTyHole name = asks _seScope >>= newTyHoleWithScope name
@@ -255,7 +263,7 @@ getTy lens qualified = do
   result <- use (globalTypingEnv . lens . at qualified)
   case result of
     Just res -> pure res
-    Nothing  -> terminateLocalized (NameResolution (Label $ qualified.qInfo)) (Just $ getPos qualified.qInfo)
+    Nothing  -> endDiagnostic (NameResolution (Label $ qualified.qInfo)) (getPos qualified.qInfo)
 
 getKindMaybe :: MonadTyper m => Path (Name TyName) -> m (Maybe TKind)
 getKindMaybe path = do
@@ -266,7 +274,7 @@ getKindMaybe path = do
 getKind :: MonadTyper m => Path (Name TyName) -> m TKind
 getKind path = do
   result <- getKindMaybe path
-  maybe (terminateLocalized (NameResolution (Label $ getPathInfo path)) (Just $ getPos path)) pure result
+  maybe (endDiagnostic (NameResolution (Label $ getPathInfo path)) (getPos path)) pure result
 
 addFieldToEnv :: MonadTyper m => Name TyName -> Name ValName -> FieldInfo -> m ()
 addFieldToEnv typeName fieldName fieldInfo = do

@@ -12,6 +12,7 @@ import Prelude (undefined)
 
 import Data.Text.Read       (decimal)
 import Nuko.Utils           (flag)
+import Nuko.Report.Message  (Severity(..))
 
 import Nuko.Syntax.Error
 import Nuko.Syntax.Lexer.Support
@@ -91,7 +92,7 @@ lexer :-
 <0> "\"         { token TcSlash  }
 <0> "=>"        { layoutKw TcDoubleArrow  }
 
-<0> @not_id     { \_ p -> flagLocal (UnexpectedStr) p *> scan }
+<0> @not_id     { \_ p -> flagChar (UnexpectedStr) p *> scan }
 
 -- Rule for parsing layout
 
@@ -153,7 +154,7 @@ handleEOF = do
     code <- popCode
     when (code == str) $ do
         pos <- State.gets (currentPos . input)
-        flag =<< mkErr (UnfinishedStr pos)
+        emitDiagnostic Error (UnfinishedStr pos)
     case layout of
         Nothing -> popCode *> ghostRange TcEOF
         Just _  -> popLayout *> ghostRange TcEnd
@@ -165,7 +166,7 @@ scan = do
         case alexScan inputCode code of
             AlexEOF              -> handleEOF
             AlexError inp        -> do
-                flag =<< mkErr (UnexpectedStr (oneColRange (currentPos inp)))
+                emitDiagnostic Error (UnexpectedStr (oneColRange (currentPos inp)))
                 case alexGetByte inp of
                     Just (_, inp) -> setInput inp >> scan
                     Nothing -> handleEOF

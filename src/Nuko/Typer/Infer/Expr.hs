@@ -3,7 +3,7 @@ module Nuko.Typer.Infer.Expr (
   checkExpr,
 ) where
 
-import Relude                   (($), (<$>), One (one), fst, (.), Foldable (toList), when, not, putTextLn, show, Semigroup ((<>)), ToText (toText))
+import Relude                   (($), (<$>), One (one), fst, (.), Foldable (toList), putTextLn, show, Semigroup ((<>)))
 import Relude.Monad             (Maybe(..), (=<<))
 import Relude.Functor           (Bifunctor(first))
 import Relude.List.NonEmpty     (NonEmpty((:|)))
@@ -27,13 +27,11 @@ import Nuko.Resolver.Tree       ()
 import Nuko.Tree.Expr           (Expr(..))
 import Nuko.Names               (Name, ValName, Path (..))
 import Nuko.Tree                (Re, Tc, Block (..), Var (..))
+import Nuko.Report.Range        (getPos)
+import Nuko.Typer.Match         (checkUseful, addRow, matrixFromColumn, toMatchPat, isExhaustive)
+import Pretty.Format            (Format(format))
 
 import qualified Data.HashMap.Strict as HashMap
-import Nuko.Report.Range (getPos)
-import Nuko.Typer.Match (isExhaustive, checkUseful, addRow, matrixFromColumn, toMatchPat)
-import Nuko.Utils (flag)
-import Nuko.Resolver.Error (mkErr)
-import Pretty.Format
 
 inferBlock :: MonadTyper m => Block Re -> m (Block Tc, TTy 'Virtual)
 inferBlock = \case
@@ -112,21 +110,20 @@ inferExpr = \case
       pure (resPat, resExpr)
     let resDeref = derefTy resTy
 
-    
-
     -- Exhaustiveness
     let pats = toList $ fst <$> casesRes
     case pats of
       (x : xs) -> do
-        let fn = \matrix pat -> do
+        _ <- foldM (\matrix pat -> do
               res <- checkUseful matrix pat
-              putTextLn $ "Resultado:" <> (show res) <> "|" <> format (toMatchPat pat)
-              pure (addRow matrix pat)
-        _ <- foldM fn (matrixFromColumn [x]) xs
+              putTextLn $ "Resultado:" <> (show res) <> " | " <> format (toMatchPat pat)
+              pure (addRow matrix pat)) (matrixFromColumn [x]) xs
         pure ()
-    --exhaustive <- isExhaustive pats
+      _ -> pure ()
 
-    --when (not exhaustive) $ terminateLocalized NotExhaustive (Just (getPos (scrut)))
+    exhaustive <- isExhaustive pats
+    putTextLn $ format exhaustive
+    --when (not exhaustive) $ endDiagnostic NotExhaustive (Just (getPos (scrut)))
 
     pure (Match scrutRes casesRes (quote 0 resDeref, ext), derefTy resTy)
   Lam pat expr ext -> do
@@ -151,5 +148,5 @@ getFieldByTy field = \case
     res <- getTy tsTypeFields p
     case HashMap.lookup field res of
       Just res' -> pure (evaluate [] res'._fiResultType)
-      Nothing   -> terminateLocalized (CannotInferField) (Just $ getPos field)
-  _ -> terminateLocalized (CannotInferField) (Just $ getPos field)
+      Nothing   -> endDiagnostic (CannotInferField) (getPos field)
+  _ -> endDiagnostic (CannotInferField) (getPos field)
