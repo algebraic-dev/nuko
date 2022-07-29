@@ -22,6 +22,7 @@ import qualified Data.HashSet as HashSet
 import qualified Data.HashMap.Strict as HashMap
 import Nuko.Typer.Infer.Expr (checkExpr)
 import Nuko.Names (NameKind(..), coerceTo)
+import Nuko.Report.Range (getPos)
 
 initLetDecl :: MonadTyper m => LetDecl Re -> m DefInfo
 initLetDecl (LetDecl name args _ ret _) = do
@@ -32,10 +33,10 @@ initLetDecl (LetDecl name args _ ret _) = do
   let bindings = zip freeTys holes
 
   addLocalTypes bindings $ do
-    (argsReal, argsKind)  <- unzip <$> traverse inferOpenTy (snd <$> args)
+    (argsReal, argsKind)  <- unzip <$> traverse (\res -> (\(t, k) -> (t, (getPos res, k))) <$> inferOpenTy res) (snd <$> args)
     (retRet, retKind) <- inferOpenTy ret
 
-    traverse_ (`unifyKind` KiStar) (retKind : argsKind)
+    traverse_ (\(range, kind) -> unifyKind range kind KiStar) ((getPos ret, retKind) : argsKind)
     let realTy = foldr TyFun retRet argsReal
     let generalizedTy = generalizeNames freeTys realTy
 

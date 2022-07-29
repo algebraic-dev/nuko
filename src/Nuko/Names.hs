@@ -74,6 +74,8 @@ data NameKind k where
   TyName    :: NameKind TyName
   ConsName  :: NameKind ConsName
 
+deriving instance Eq (NameKind k)
+
 data NameSort = forall k. NameSort (NameKind k)
 
 -- | This is simply some aditional information

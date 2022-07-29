@@ -52,5 +52,5 @@ printKind =
 
 instance Format TKind where format = printKind
 
-instance PrettyTree (TKind) where
-  prettyTree a = Node ("Kind") [format a] []
+instance PrettyTree TKind where
+  prettyTree a = Node "Kind" [format a] []

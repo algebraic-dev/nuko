@@ -198,7 +198,7 @@ ClosedExpr :: { Expr Nm }
     | Atom App                                                    { withPos $1 $2 $ App $1 $2 }
     | match ClosedExpr with begin SepList1(sep, CaseClause) End   { withPos $1 $5 $ Match $2 $5 }
     | '\\' Pat '=>' ClosedExpr                                    { withPos $1 $4 $ Lam $2 $4 }
-    | begin BlockExpr End                                         { case $2 of { BlEnd x -> x; _ -> withPos $1 $2 $ Block $2} }
+    | begin BlockExpr End                                         { case $2 of { BlEnd x -> x; _ -> Block $2 (getBlockPos $2)} }
     | Atom                                                        { $1 }
 
 Expr :: { Expr Nm }
@@ -254,6 +254,12 @@ Program :: { Program Nm }
     | ImportDecl Program { $2 { impDecls  = $1 : $2.impDecls }  }
     | {- Empty UwU -}    { Program [] [] [] NoExt }
 {
+
+getBlockPos :: Block Nm -> Range
+getBlockPos = \case
+    BlBind _ b -> getBlockPos b
+    BlVar _ b  -> getBlockPos b
+    BlEnd b    -> getPos b
 
 mkPathFromList list last' =
   case list of

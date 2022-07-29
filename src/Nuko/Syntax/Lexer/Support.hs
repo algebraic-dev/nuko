@@ -33,7 +33,7 @@ import Relude.String      (Text, ByteString)
 import Relude.List        (NonEmpty(..), uncons, head)
 import Relude             (fst, snd, ($), Int, Word8, (.),  const, (=<<))
 
-import Nuko.Report.Message      
+import Nuko.Report.Message
 import Data.These               (These)
 import Data.ByteString.Internal (w2c)
 import Control.Monad.Chronicle  (MonadChronicle, Chronicle)
@@ -121,8 +121,8 @@ lastLayout = State.gets (fmap fst . uncons . layout)
 
 mkCompilerError :: Severity -> SyntaxError -> Lexer Diagnostic
 mkCompilerError severity err = do
-  name <- gets $ modName
-  filename <- gets $ Nuko.Syntax.Lexer.Support.filename
+  name <- gets modName
+  filename <- gets Nuko.Syntax.Lexer.Support.filename
   pure $ Diagnostic
     { moduleName = name
     , filename   = filename

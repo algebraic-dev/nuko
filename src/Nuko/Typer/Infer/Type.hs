@@ -24,7 +24,7 @@ import Nuko.Tree            (Re)
 
 import Lens.Micro.Platform (view)
 import qualified Data.HashSet as HashSet
-import Nuko.Report.Range (getPos)
+import Nuko.Report.Range (getPos, Range (..))
 
 type PType x = (TTy x, TKind)
 
@@ -50,7 +50,7 @@ freeVars = \case
 -- TODO: Probably i can just remove poly and use a readerT instead?
 -- TODO: Disallow Guarded polimorphic types
 inferRealTy :: MonadTyper m => Ty Re -> m (PType 'Real)
-inferRealTy ast = go ast
+inferRealTy = go
   where
     findName :: MonadTyper m => Name TyName -> m (PType 'Real)
     findName name = do
@@ -58,13 +58,13 @@ inferRealTy ast = go ast
       case findIndex (\(k, _) -> k == name) env of
         Just idx -> do
           pure (TyVar idx, snd (env !! idx))
-        Nothing -> endDiagnostic (NameResolution (Label name)) (getPos name)
+        Nothing -> endDiagnostic (NameResolution (getPos name) (Label name)) (getPos name)
 
-    applyTy :: MonadTyper m => PType 'Real -> Ty Re -> m (PType 'Real)
-    applyTy (tyRes, tyKind) arg = do
+    applyTy :: MonadTyper m => Range -> PType 'Real -> Ty Re -> m (PType 'Real)
+    applyTy range (tyRes, tyKind) arg = do
       (argTyRes, argTyKind) <- go arg
       resHole <- newKindHole (mkTyName (genIdent ""))
-      unifyKind tyKind (KiFun argTyKind resHole)
+      unifyKind range tyKind (KiFun argTyKind resHole)
       pure (TyApp resHole tyRes argTyRes, resHole)
 
     go :: MonadTyper m => Ty Re -> m (PType 'Real)
@@ -77,12 +77,12 @@ inferRealTy ast = go ast
         findName name
       TApp ty (x :| xs) _ -> do
         res <- go ty
-        foldM applyTy res (x : xs)
+        foldM (applyTy (getPos ty)) res (x : xs)
       TArrow from to _ -> do
         (vFrom, vFromKi) <- go from
         (vTo, vToKi) <- go to
-        unifyKind vFromKi KiStar
-        unifyKind vToKi KiStar
+        unifyKind (getPos from) vFromKi KiStar
+        unifyKind (getPos to)   vToKi KiStar
         pure (TyFun vFrom vTo, KiStar)
       TForall name ty _ -> do
         hole <- newKindHole name

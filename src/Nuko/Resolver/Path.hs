@@ -12,7 +12,7 @@ import Nuko.Names
 import Nuko.Resolver.Env
 import Nuko.Resolver.Occourence (getMap, OccEnv(..))
 import Nuko.Resolver.Error      (ResolveErrorReason (..))
-import Nuko.Report.Range        (copyPos, getPos)
+import Nuko.Report.Range        (copyPos, getPos, SetPosition (setPos))
 import Nuko.Utils               (terminate)
 
 import Relude                   ((.), asum, NonEmpty, fst, ($), filter, Eq ((==)), Functor (fmap))
@@ -62,7 +62,8 @@ resolveName :: MonadResolver m => Name k -> m (Path (Name k))
 resolveName name' = do
   module' <- use currentNamespace
   res  <- sequence [(mkLocalPath <$>) <$> useLocalPath name', useGlobalPath module' name', useOpenedPath name']
-  assertLookup (one (NameSort name'.nKind)) name'.nIdent Nothing (asum res)
+  path <- assertLookup (one (NameSort name'.nKind)) name'.nIdent Nothing (asum res)
+  pure $ setPos (getPos name') path
 
 resolveInNameSpace :: MonadResolver m => NameSpace -> Name k -> m (Qualified (Name k))
 resolveInNameSpace module' name' = do
@@ -83,7 +84,7 @@ resolveQualified qualified = do
   result      <- useGlobal module' qualified.qInfo
   (path, vis) <- assertLookup (one (NameSort qualified.qInfo.nKind)) (qualified.qInfo.nIdent) (Just qualified.qModule) result
   assertVisibility (Label <$> mkQualifiedPath path) vis
-  pure path
+  pure (setPos (getPos qualified) path)
 
 resolvePath :: MonadResolver m => Path (Name k) -> m (Path (Name k))
 resolvePath (Local _ path)     = resolveName path

@@ -19,6 +19,7 @@ import Nuko.Names               (mkLocalPath, ConsName, Name (nIdent), TyName, V
 
 import Relude.Extra (traverseToSnd)
 import Data.List (length, unzip)
+import Nuko.Report.Range (getPos)
 
 getRet :: TKind -> TKind
 getRet = \case
@@ -47,7 +48,7 @@ initTypeDecl decl = do
 
     -- The type application that should end with kind equals to *
     let (resKind, resType, _) = mkTyApp tyKind typeTy indices
-    unifyKind resKind KiStar
+    unifyKind (getPos decl.tyName) resKind KiStar
 
     tyDef <- getTyDef decl.tyDecl
 
@@ -60,7 +61,7 @@ initTypeDecl decl = do
       TypeSym  _      -> error "Not Implemented Yet!"
       TypeProd fields -> pure $ IsProdType $ ProdTyInfo (fst <$> fields)
       TypeSum fields  -> do
-        fieldsRes <- traverse ((\(n, r) -> (, length r) <$> qualifyTyName (Just decl.tyName.nIdent) n)) fields
+        fieldsRes <- traverse (\(n, r) -> (, length r) <$> qualifyTyName (Just decl.tyName.nIdent) n) fields
         pure (IsSumType $ SumTyInfo fieldsRes)
 
 
@@ -73,7 +74,7 @@ inferTypeDecl (TypeDecl name' args arg) tyInfo =
     inferField :: MonadTyper m => (Name ValName, Ty Re) -> m (Name ValName, TTy 'Real)
     inferField (fieldName, ty) = do
       (inferedTy, kind) <- inferOpenTy ty
-      unifyKind kind KiStar
+      unifyKind (getPos ty) kind KiStar
       -- TODO: check if FV is empty
       let names = fst <$> tyInfo._tyNames
       let realTy = TyFun inferedTy tyInfo._resultantType
@@ -84,7 +85,7 @@ inferTypeDecl (TypeDecl name' args arg) tyInfo =
     inferSumField :: MonadTyper m => (Name ConsName, [Ty Re]) -> m (Name ConsName, [TTy 'Real])
     inferSumField (consName, tys) = do
       -- TODO: inferTy generalizes so i have to take some care here.
-      (argTys, argKinds) <- unzip <$> traverse (inferOpenTy) tys
+      (argTys, argKinds) <- unzip <$> traverse (\n -> (\(t, k) -> (t, (getPos n, k))) <$> inferOpenTy n) tys
 
       let names = fst <$> tyInfo._tyNames
       let generalizedTy = generalizeNames names (foldr TyFun tyInfo._resultantType argTys)
@@ -92,7 +93,7 @@ inferTypeDecl (TypeDecl name' args arg) tyInfo =
       path <- qualifyLocal name'
       addTy tsConstructors (Just tyInfo._label.nIdent) consName (generalizedTy, DataConsInfo (length tys) path)
 
-      traverse_ (`unifyKind` KiStar) argKinds
+      traverse_ (\(r, k) -> unifyKind r k KiStar) argKinds
       pure (consName, argTys)
 
     inferBody :: MonadTyper m => TypeDeclArg Re -> m (TypeDeclArg Tc)

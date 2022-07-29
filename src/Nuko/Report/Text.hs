@@ -2,17 +2,54 @@ module Nuko.Report.Text (
   Color(..),
   Mode(..),
   Piece(..),
-  colorlessFromFormat
+  colorlessFromFormat,
+  DetailedDiagnosticInfo(..),
+  PrettyDiagnostic(..),
+  Severity(..),
+  Annotation(..),
+  mkBasicDiagnostic,
 ) where
 
 import Relude.String (Text, unwords)
 import Relude.Functor (fmap)
 import Relude.Monoid ((<>))
+import Nuko.Report.Range (Range)
 
-data Color = Fst | Snd | Thr
+data Severity
+  = Warning
+  | Error
+  | Information
+  | Hint
 
-newtype Mode = Words [Piece]
-data Piece = Raw Text | Marked Color Text | Quoted Piece
+data Color
+  = Fst
+  | Snd
+  | Thr
+
+newtype Mode
+  = Words [Piece]
+
+data Piece
+  = Raw Text
+  | Marked Color Text
+  | Quoted Piece
+
+data Annotation
+  = Ann Color Mode Range
+  | NoAnn Color Range
+
+data DetailedDiagnosticInfo = DetailedDiagnosticInfo
+  { title     :: Mode
+  , subtitles :: [(Color, Mode)]
+  , hints     :: [Mode]
+  , positions :: [Annotation]
+  }
+
+mkBasicDiagnostic :: [Piece] -> [Annotation] -> DetailedDiagnosticInfo
+mkBasicDiagnostic title = DetailedDiagnosticInfo (Words title) [] []
+
+class PrettyDiagnostic a where
+  prettyDiagnostic :: a -> DetailedDiagnosticInfo
 
 getPieceText :: Piece -> Text
 getPieceText (Raw t) = t

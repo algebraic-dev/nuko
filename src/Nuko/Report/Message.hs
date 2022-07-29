@@ -13,17 +13,12 @@ import Pretty.Format     (Format(format))
 import Relude            (($))
 import Nuko.Resolver.Error (ResolveErrorReason)
 import Data.Text (Text)
+import Nuko.Report.Text (Severity(..), PrettyDiagnostic(..))
 
 data DiagnosticInfo
   = SyntaxError SyntaxError
   | ResolveError ResolveErrorReason
   | TypingError TypeError
-
-data Severity
-  = Warning
-  | Error
-  | Information
-  | Hint
 
 data Diagnostic = Diagnostic
   { moduleName :: ModName
@@ -32,6 +27,12 @@ data Diagnostic = Diagnostic
   , position   :: Range
   , kind       :: DiagnosticInfo
   }
+
+instance PrettyDiagnostic DiagnosticInfo where
+  prettyDiagnostic = \case
+    SyntaxError err -> prettyDiagnostic err
+    ResolveError err -> prettyDiagnostic err
+    TypingError err -> prettyDiagnostic err
 
 instance ToJSON DiagnosticInfo where
   toJSON = \case
@@ -42,7 +43,7 @@ instance ToJSON DiagnosticInfo where
 instance ToJSON Diagnostic where
   toJSON err =
     object
-      [ "module"   .= (toJSON $ format err.moduleName)
-      , "position" .= (toJSON (toLabel err.position))
-      , "details"  .= (toJSON err.kind)
+      [ "module"   .= toJSON (format err.moduleName)
+      , "position" .= toJSON (toLabel err.position)
+      , "details"  .= toJSON err.kind
       ]

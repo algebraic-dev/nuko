@@ -8,7 +8,7 @@ import Relude.List.NonEmpty      (NonEmpty)
 import Nuko.Names                (NameSort, Path, Label, Ident, Qualified, ModName, Name, TyName, ValName)
 import Data.Aeson                (ToJSON(..), KeyValue ((.=)), object)
 import Pretty.Format             (Format(format), formatOr)
-import Nuko.Report.Text          (Mode (..), Color (..), Piece (..), colorlessFromFormat)
+import Nuko.Report.Text          (Mode (..), Color (..), Piece (..), colorlessFromFormat, PrettyDiagnostic(..), mkBasicDiagnostic, Annotation (NoAnn))
 import Nuko.Report.Range         (Range, HasPosition (..), toLabel)
 
 data Case = UpperCase | LowerCase
@@ -74,6 +74,12 @@ getErrorSite = \case
   AlreadyExistsPat path -> getPos path
   ShouldAppearOnOr path -> getPos path
   CannotIntroduceNewVariables path -> getPos path
+
+instance PrettyDiagnostic ResolveErrorReason where
+  prettyDiagnostic = \case
+    err ->
+      let (Words title) = errorTitle err in
+      mkBasicDiagnostic title [NoAnn Fst (getErrorSite err)]
 
 instance ToJSON ResolveErrorReason where
   toJSON reason =

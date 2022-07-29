@@ -11,7 +11,6 @@ import Relude hiding (undefined)
 import Prelude (undefined)
 
 import Data.Text.Read       (decimal)
-import Nuko.Utils           (flag)
 import Nuko.Report.Message  (Severity(..))
 
 import Nuko.Syntax.Error

@@ -1,28 +1,33 @@
-module Nuko.Typer.Match where
+module Nuko.Typer.Match (
+  checkUseful,
+  addRow,
+  matrixFromColumn,
+  toMatchPat,
+  isExhaustive
+) where
 
 -- The Pattern matching analysis is part of the type checker.
 
-import Nuko.Names ( Path, Name, ConsName, Qualified (..), TyName, mkQualifiedPath )
-import Nuko.Typer.Tree ()
-import Nuko.Typer.Env (MonadTyper, qualifyPath, tsConstructors, globalTypingEnv, tsTypes, SumTyInfo(..), TyInfoKind (..), TyInfo(..), DataConsInfo(..))
-import Nuko.Tree.Expr (Pat (..))
-import Nuko.Tree (Tc)
-import Nuko.Report.Range (Range(..), HasPosition (getPos))
+import Nuko.Names          (Path, Name, ConsName, Qualified (..), TyName, mkQualifiedPath)
+import Nuko.Typer.Tree     ()
+import Nuko.Typer.Env      (MonadTyper, qualifyPath, tsConstructors, globalTypingEnv, tsTypes, SumTyInfo(..), TyInfoKind (..), TyInfo(..), DataConsInfo(..))
+import Nuko.Tree.Expr      (Pat (..))
+import Nuko.Tree           (Tc)
+import Nuko.Report.Range   (Range(..), HasPosition (getPos))
 
-import Relude              (snd, (<$>), Int, concatMap, error, Maybe (..), Foldable (..), traverse, uncurry, not, maybe, fromMaybe, splitAt, Num ((-)))
-import Relude.Bool         (Bool(..), (||), when)
+import Relude              (snd, (<$>), Int, concatMap, error, Maybe (..), Foldable (..), traverse, uncurry, not, fromMaybe, splitAt, Num ((-)))
+import Relude.Bool         (Bool(..), (||), otherwise)
 import Relude.Base         (Eq((==)))
-import Relude.Bool         (otherwise)
-import Relude.List         (NonEmpty, replicate, filter )
-import Relude.Monoid       (Semigroup((<>)) )
-import Relude.Function     (($), (.) )
+import Relude.List         (NonEmpty, replicate, filter)
+import Relude.Monoid       (Semigroup((<>)))
+import Relude.Function     (($), (.))
 import Relude.Applicative  (pure)
 
 import Lens.Micro.Platform (use, at)
-import Data.List           (nub, all, null, foldr1, findIndex, (!!))
-import Pretty.Format (Format(..))
+import Data.List           (nub, all, findIndex, (!!))
+import Pretty.Format       (Format(..))
 
-import qualified Data.Text as Text
+import qualified Data.Text    as Text
 import qualified Data.HashSet as HashSet
 
 -- Implementation of http://moscova.inria.fr/%7Emaranget/papers/warn/warn.pdf
@@ -31,8 +36,6 @@ import qualified Data.HashSet as HashSet
 type ConsNm = Path (Name ConsName)
 
 data At = At Range | Created
-
-data Used = IORef Bool
 
 data Match
   = Wild At
@@ -54,7 +57,7 @@ instance Format Match where
 
 instance Format Matrix where
   format (Matrix []) = "||"
-  format (Matrix x) = Text.intercalate "\n" ((\t -> "| " <> t <> " |") <$> Text.intercalate ", " <$> ((format <$>) <$> x))
+  format (Matrix x) = Text.intercalate "\n" ((\t -> "| " <> t <> " |") . Text.intercalate ", " <$> ((format <$>) <$> x))
 
 instance Format Witness where
   format (NoMatter True)      = "<Yes>"
@@ -72,7 +75,7 @@ toMatchPat = \case
   POr p q (_,x) -> Or (toMatchPat p) (toMatchPat q) (At x)
 
 matrixFromColumn :: [Pat Tc] -> Matrix
-matrixFromColumn pats = Matrix (((: []) . toMatchPat) <$> pats)
+matrixFromColumn pats = Matrix ((: []) . toMatchPat <$> pats)
 
 specialize :: Path (Name ConsName) -> Int -> Matrix -> Matrix
 specialize cons size (Matrix rows) = Matrix $ concatMap getRow rows where
@@ -119,7 +122,7 @@ defaultMatrix :: Matrix -> Matrix
 defaultMatrix (Matrix s) = Matrix $ concatMap getRow s where
   getRow = \case
     []             -> error "Checker Error: Should not have empty rows in default matrix"
-    Cons _ _ _:_   -> []
+    Cons {}  :_    -> []
     Wild _   :rest -> [rest]
     Or p q _ :rest -> unpackMatrix $ defaultMatrix (Matrix [p:rest, q:rest])
 

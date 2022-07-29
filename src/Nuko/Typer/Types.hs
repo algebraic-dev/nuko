@@ -13,7 +13,7 @@ module Nuko.Typer.Types (
   printRealTy,
 ) where
 
-import Relude             ((.), reverse, Num ((-), (+)), Text, Semigroup ((<>)), ($), Foldable (length, foldr), Ord ((>=), (<)), (||), (<$>))
+import Relude             ((.), reverse, Num ((-), (+)), Text, Semigroup ((<>)), ($), Foldable (length, foldr), Ord ((>=), (<)), (||), (<$>), unwords)
 import Relude.Lifted      (IORef, readIORef)
 import Relude.Numeric     (Int)
 import Relude.Unsafe      ((!!))
@@ -23,7 +23,6 @@ import Nuko.Names         (Name (..), TyName, Qualified (..))
 import GHC.IO             (unsafePerformIO)
 import Pretty.Format      (Format(..))
 import Pretty.Tree        (PrettyTree(prettyTree), Tree (..))
-import Data.Text          (intercalate)
 
 data Relation = Real | Virtual
 
@@ -94,7 +93,7 @@ printRealTy =
     go []
   where
     getSeq :: TTy 'Real -> ([Name TyName], TTy 'Real)
-    getSeq (TyForall x t) = let (n, f) = getSeq t in ((x : n), f)
+    getSeq (TyForall x t) = let (n, f) = getSeq t in (x : n, f)
     getSeq other = ([], other)
 
     go :: [Name TyName] -> TTy 'Real -> Text
@@ -115,10 +114,10 @@ printRealTy =
 
       TyForall ident fn ->
         let (ident', fn') = getSeq (TyForall ident fn) in
-        "forall " <> (intercalate " " $ format <$> ident') <> ". " <> go (reverse ident' <> env) fn'
+        "forall " <> unwords (format <$> ident') <> ". " <> go (reverse ident' <> env) fn'
       TyFun t f   -> go env t <> " -> " <> go env f
       TyApp _ t f -> go env t <> " " <> go env f
-      TyIdent t   -> format t
+      TyIdent t   -> format t.qInfo
       TyVar i     ->
         if i >= length env || i < 0
           then "^" <> format i
@@ -131,7 +130,7 @@ instance Format (TTy 'Virtual) where format = printTy
 instance Format (TTy 'Real) where format = printRealTy
 
 instance PrettyTree (TTy 'Virtual) where
-  prettyTree a = Node ("Ty") [format a] []
+  prettyTree a = Node "Ty" [format a] []
 
 instance PrettyTree (TTy 'Real) where
-  prettyTree a = Node ("Ty") [format a] []
+  prettyTree a = Node "Ty" [format a] []

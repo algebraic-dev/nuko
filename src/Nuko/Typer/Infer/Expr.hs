@@ -9,7 +9,7 @@ import Relude.Functor           (Bifunctor(first))
 import Relude.List.NonEmpty     (NonEmpty((:|)))
 import Relude.Applicative       (pure)
 
-import Control.Monad.Reader     (foldM)
+import Control.Monad.Reader     (foldM, foldM_)
 import Lens.Micro.Platform      (view)
 import Data.Traversable         (for)
 import Data.List.NonEmpty       ((<|))
@@ -27,7 +27,7 @@ import Nuko.Resolver.Tree       ()
 import Nuko.Tree.Expr           (Expr(..))
 import Nuko.Names               (Name, ValName, Path (..))
 import Nuko.Tree                (Re, Tc, Block (..), Var (..))
-import Nuko.Report.Range        (getPos)
+import Nuko.Report.Range        (getPos, Range (..))
 import Nuko.Typer.Match         (checkUseful, addRow, matrixFromColumn, toMatchPat, isExhaustive)
 import Pretty.Format            (Format(format))
 
@@ -55,58 +55,58 @@ checkExpr expr tty = case (expr, tty) of
     checkExpr expr (f (TyVar ctxLvl))
   (Lam pat expr' e, TyFun argTy retTy) -> do
     ((patRes, patTy), bindings) <- inferPat pat
-    unify patTy argTy
+    unify (getPos pat) patTy argTy
     exprRes <- addLocals bindings (checkExpr expr' retTy)
     pure (Lam patRes exprRes (quote 0 (TyFun argTy retTy), e))
   _ -> do
     (resExpr, inferedTy) <- inferExpr expr
     instTy <- eagerInstantiate inferedTy
-    unify instTy tty
+    unify (getPos expr) instTy tty
     pure resExpr
 
-applyExpr :: MonadTyper m => TTy 'Virtual -> Expr Re -> m (Expr Tc, TTy 'Virtual)
-applyExpr fnTy expr = do
-  (argTy, resTy) <- destructFun fnTy
+applyExpr :: MonadTyper m => Range -> TTy 'Virtual -> Expr Re -> m (Expr Tc, TTy 'Virtual)
+applyExpr range fnTy expr = do
+  (argTy, resTy) <- destructFun range fnTy
   argRes <- checkExpr expr argTy
   pure (argRes, resTy)
 
-accApplyExpr :: MonadTyper m => (NonEmpty (Expr Tc), TTy 'Virtual) -> Expr Re -> m (NonEmpty (Expr Tc), TTy 'Virtual)
-accApplyExpr (exprs, fnTy) expr = first (<| exprs) <$> applyExpr fnTy expr
+accApplyExpr :: MonadTyper m => Range -> (NonEmpty (Expr Tc), TTy 'Virtual) -> Expr Re -> m (NonEmpty (Expr Tc), TTy 'Virtual)
+accApplyExpr range (exprs, fnTy) expr = first (<| exprs) <$> applyExpr range fnTy expr
 
 inferExpr :: MonadTyper m => Expr Re -> m (Expr Tc, TTy 'Virtual)
 inferExpr = \case
-  Lit lit ext -> do
+  Lit lit extension -> do
     (resLit, resTy) <- inferLit lit
-    pure (Lit resLit ext, resTy)
+    pure (Lit resLit extension, resTy)
   Lower path _ -> do
     ty <- case path of
       Local _ path' -> getLocal path'
-      Full _ qual   -> (evaluate [] . fst) <$> getTy tsVars qual
+      Full _ qual   -> evaluate [] . fst <$> getTy tsVars qual
     pure (Lower path (quote 0 ty), ty)
   Upper path _ -> do
     qualified <- qualifyPath path
     (consTy, _) <- getTy tsConstructors qualified
     pure (Upper path consTy, evaluate [] consTy)
-  Ann exp ty ext -> do
+  Ann exp ty extension -> do
     (resTy, _) <- inferClosedTy ty
     exprRes <- checkExpr exp resTy
-    pure (Ann exprRes (quote 0 resTy) ext, resTy)
-  Block block ext -> do
+    pure (Ann exprRes (quote 0 resTy) extension, resTy)
+  Block block extension -> do
     (blockRes, resTy) <- inferBlock block
-    pure (Block blockRes (quote 0 resTy, ext), resTy)
-  If con if' else' ext -> do
+    pure (Block blockRes (quote 0 resTy, extension), resTy)
+  If con if' else' extension -> do
     (conRes, conTy) <- inferExpr con
-    unify conTy boolTy
+    unify (getPos con) conTy boolTy
     (ifRes, ifTy)  <- runInst $ inferExpr if'
     elseRes <- checkExpr else' ifTy
-    pure (If conRes ifRes elseRes (quote 0 ifTy, ext), ifTy)
-  Match scrut cas ext -> do
+    pure (If conRes ifRes elseRes (quote 0 ifTy, extension), ifTy)
+  Match scrut cas extension -> do
     (scrutRes, scrutTy) <- inferExpr scrut
     resTy <- genTyHole
     casesRes <- for cas $ \(pat, expr) ->  do
       ((resPat, patTy), bindings) <- inferPat pat
       resExpr <- addLocals bindings (checkExpr expr resTy)
-      unify scrutTy patTy
+      unify (getPos scrut) scrutTy patTy
       pure (resPat, resExpr)
     let resDeref = derefTy resTy
 
@@ -114,32 +114,32 @@ inferExpr = \case
     let pats = toList $ fst <$> casesRes
     case pats of
       (x : xs) -> do
-        _ <- foldM (\matrix pat -> do
+        foldM_ (\matrix pat -> do
               res <- checkUseful matrix pat
-              putTextLn $ "Resultado:" <> (show res) <> " | " <> format (toMatchPat pat)
+              putTextLn $ "Resultado:" <> show res <> " | " <> format (toMatchPat pat)
               pure (addRow matrix pat)) (matrixFromColumn [x]) xs
-        pure ()
       _ -> pure ()
 
     exhaustive <- isExhaustive pats
     putTextLn $ format exhaustive
     --when (not exhaustive) $ endDiagnostic NotExhaustive (Just (getPos (scrut)))
 
-    pure (Match scrutRes casesRes (quote 0 resDeref, ext), derefTy resTy)
-  Lam pat expr ext -> do
+    pure (Match scrutRes casesRes (quote 0 resDeref, extension), derefTy resTy)
+  Lam pat expr extension -> do
     ((resPat, patTy), bindings) <- inferPat pat
     (resExpr, exprTy) <- runInst $ addLocals bindings (inferExpr expr)
-    pure (Lam resPat resExpr (quote 0 (TyFun patTy exprTy), ext), TyFun patTy exprTy)
-  App expr (x :| xs) ext -> do
+    pure (Lam resPat resExpr (quote 0 (TyFun patTy exprTy), extension), TyFun patTy exprTy)
+  App expr (x :| xs) extension -> do
     (fnExpr, fnTy) <- inferExpr expr
-    (argExpr, fnResTy) <- applyExpr fnTy x
-    (resArgs, resTy) <- foldM accApplyExpr (one argExpr, fnResTy) xs
-    pure (App fnExpr resArgs (quote 0 resTy, ext), resTy)
-  Field expr field ext -> do
+    let fnRange = getPos expr
+    (argExpr, fnResTy) <- applyExpr fnRange fnTy x
+    (resArgs, resTy) <- foldM (accApplyExpr fnRange) (one argExpr, fnResTy) xs
+    pure (App fnExpr resArgs (quote 0 resTy, extension), resTy)
+  Field expr field extension -> do
     (resExpr, resTy) <- inferExpr expr
-    (argFieldTy, resFieldTy) <- destructFun =<< getFieldByTy field resTy
-    unify argFieldTy resTy
-    pure (Field resExpr field (quote 0 resFieldTy, ext), resFieldTy)
+    (argFieldTy, resFieldTy) <- destructFun (getPos field) =<< getFieldByTy field resTy
+    unify (getPos expr) argFieldTy resTy
+    pure (Field resExpr field (quote 0 resFieldTy, extension), resFieldTy)
 
 getFieldByTy :: MonadTyper m => Name ValName -> TTy 'Virtual -> m (TTy 'Virtual)
 getFieldByTy field = \case
@@ -148,5 +148,5 @@ getFieldByTy field = \case
     res <- getTy tsTypeFields p
     case HashMap.lookup field res of
       Just res' -> pure (evaluate [] res'._fiResultType)
-      Nothing   -> endDiagnostic (CannotInferField) (getPos field)
-  _ -> endDiagnostic (CannotInferField) (getPos field)
+      Nothing   -> endDiagnostic (CannotInferField (getPos field)) (getPos field)
+  _ -> endDiagnostic (CannotInferField (getPos field)) (getPos field)

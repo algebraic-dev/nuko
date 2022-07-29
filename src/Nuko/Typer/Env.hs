@@ -9,6 +9,7 @@ module Nuko.Typer.Env (
   SumTyInfo(..),
   ProdTyInfo(..),
   MonadTyper,
+  teTrackers,
   qualifyTyName,
   endDiagnostic,
   emitDiagnostic,
@@ -53,8 +54,7 @@ import Relude.Lifted           (newIORef)
 
 import Nuko.Names              (Name, ConsName, TyName, ValName, ModName (..), Label (..), Path (..), mkQualified, Qualified(..), getPathInfo, NameKind (TyName), mkName, genIdent, Attribute (Untouched), Ident, mkModName)
 import Nuko.Utils              (terminate, flag)
-import Nuko.Typer.Types        (TTy (..), Relation (..), TKind, derefTy)
-import Nuko.Typer.Types        (Hole (..), TKind (..))
+import Nuko.Typer.Types        (TTy (..), Relation (..), TKind, derefTy, Hole (..), TKind (..))
 import Nuko.Typer.Error        (TypeError(NameResolution))
 import Nuko.Report.Range       (getPos, Range)
 import Nuko.Resolver.Tree      ()
@@ -70,12 +70,13 @@ import qualified Data.HashMap.Strict as HashMap
 import qualified Control.Monad.Trans.Chronicle as Chronicle
 import qualified Control.Monad.State.Strict as State
 import qualified Control.Monad.Reader as Reader
+import Nuko.Typer.Error.Tracking (Tracker)
 
-data SumTyInfo = SumTyInfo
+newtype SumTyInfo = SumTyInfo
   { _stiConstructors :: NonEmpty (Qualified (Name ConsName), Int)
   } deriving Generic
 
-data ProdTyInfo = ProdTyInfo
+newtype ProdTyInfo = ProdTyInfo
   { _ptiFields :: [Name ValName]
   } deriving Generic
 
@@ -100,7 +101,7 @@ data DefInfo = DefInfo
   , _retType      :: TTy 'Real
   } deriving Generic
 
-data FieldInfo = FieldInfo
+newtype FieldInfo = FieldInfo
   { _fiResultType :: TTy 'Real
   } deriving Generic
 
@@ -119,6 +120,7 @@ data TypeSpace = TypeSpace
 data TypingEnv = TypingEnv
   { _teCurModule     :: ModName
   , _teCurFilename   :: Text
+  , _teTrackers      :: [Tracker]
   , _globalTypingEnv :: TypeSpace
   } deriving Generic
 
@@ -152,7 +154,7 @@ type MonadTyper m =
   )
 
 endDiagnostic :: MonadTyper m => TypeError -> Range -> m b
-endDiagnostic kind range = do
+endDiagnostic kind' range = do
   modName <- use teCurModule
   fileName <- use teCurFilename
   terminate $ Diagnostic
@@ -160,16 +162,16 @@ endDiagnostic kind range = do
     , severity = Error
     , filename = fileName
     , position = range
-    , kind = TypingError kind
+    , kind = TypingError kind'
     }
 
 emitDiagnostic :: MonadTyper m => Severity -> TypeError -> Range -> m ()
-emitDiagnostic severity kind range = do
+emitDiagnostic severity' kind range = do
   modName <- use teCurModule
   fileName <- use teCurFilename
   flag $ Diagnostic
     { moduleName = modName
-    , severity = severity
+    , severity = severity'
     , filename = fileName
     , position = range
     , kind = TypingError kind
@@ -183,7 +185,7 @@ emptyTypeSpace = TypeSpace HashMap.empty HashMap.empty HashMap.empty HashMap.emp
 
 runToIO :: TypeSpace -> ModName -> Text -> (forall m. MonadTyper m => m a) -> IO (These [Diagnostic] (a, TypingEnv))
 runToIO typeSpace modName filename action = do
-  let env = TypingEnv modName filename typeSpace
+  let env = TypingEnv modName filename [] typeSpace
   let res = Reader.runReaderT action emptyScopeEnv
   first (`appEndo` [])
     <$> Chronicle.runChronicleT (State.runStateT res env)
@@ -202,7 +204,7 @@ getLocal name = do
   maybeRes <- asks (HashMap.lookup name . _seVars)
   case maybeRes of
     Just res -> pure res
-    Nothing  -> endDiagnostic (NameResolution $ Label $ name) (getPos name)
+    Nothing  -> endDiagnostic (NameResolution (getPos name) (Label name)) (getPos name)
 
 newTyHole :: MonadTyper m => Name TyName -> m (TTy k)
 newTyHole name = asks _seScope >>= newTyHoleWithScope name
@@ -263,7 +265,7 @@ getTy lens qualified = do
   result <- use (globalTypingEnv . lens . at qualified)
   case result of
     Just res -> pure res
-    Nothing  -> endDiagnostic (NameResolution (Label $ qualified.qInfo)) (getPos qualified.qInfo)
+    Nothing  -> endDiagnostic (NameResolution (getPos qualified.qInfo) (Label $ qualified.qInfo)) (getPos qualified.qInfo)
 
 getKindMaybe :: MonadTyper m => Path (Name TyName) -> m (Maybe TKind)
 getKindMaybe path = do
@@ -274,12 +276,12 @@ getKindMaybe path = do
 getKind :: MonadTyper m => Path (Name TyName) -> m TKind
 getKind path = do
   result <- getKindMaybe path
-  maybe (endDiagnostic (NameResolution (Label $ getPathInfo path)) (getPos path)) pure result
+  maybe (endDiagnostic (NameResolution (getPos path) (Label $ getPathInfo path)) (getPos path)) pure result
 
 addFieldToEnv :: MonadTyper m => Name TyName -> Name ValName -> FieldInfo -> m ()
 addFieldToEnv typeName fieldName fieldInfo = do
   qualified <- qualifyLocal typeName
-  globalTypingEnv . tsTypeFields %= HashMap.insertWith ((<>)) qualified (HashMap.singleton fieldName fieldInfo)
+  globalTypingEnv . tsTypeFields %= HashMap.insertWith (<>) qualified (HashMap.singleton fieldName fieldInfo)
 
 addLocalTy :: MonadTyper m => Name TyName -> TKind -> m a -> m a
 addLocalTy name ty = local (over seTyEnv ((name, ty) :) . over seScope (+ 1))

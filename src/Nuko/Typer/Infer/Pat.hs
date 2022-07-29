@@ -28,6 +28,7 @@ import Nuko.Tree                (Re, Tc)
 
 import qualified Control.Monad.State as State
 import qualified Data.HashMap.Strict as HashMap
+import Nuko.Report.Range (Range, HasPosition (getPos))
 
 type InferPat m a = State.StateT (HashMap (Name ValName) (TTy 'Virtual)) m a
 
@@ -45,11 +46,11 @@ inferPat pat =
           modify (HashMap.insert name resHole)
           pure (name, resHole)
 
-    applyPat ::  MonadTyper m => ([Pat Tc], TTy 'Virtual) -> Pat Re -> InferPat m ([Pat Tc], TTy 'Virtual)
-    applyPat (args, fnTy) arg = do
-      (argTy, retTy) <- lift $ destructFun fnTy
+    applyPat ::  MonadTyper m => Range -> ([Pat Tc], TTy 'Virtual) -> Pat Re -> InferPat m ([Pat Tc], TTy 'Virtual)
+    applyPat range (args, fnTy) arg = do
+      (argTy, retTy) <- lift $ destructFun range fnTy
       (argRes, argTy') <- go arg
-      lift $ unify argTy argTy'
+      lift $ unify range argTy argTy'
       pure (argRes : args, retTy)
 
     go :: MonadTyper m => Pat Re -> InferPat m (Pat Tc, TTy 'Virtual)
@@ -64,9 +65,10 @@ inferPat pat =
         qualified <- lift (qualifyPath path)
         (constRealTy, constInfo) <- lift (getTy tsConstructors qualified)
         when (constInfo._parameters /= length args) $
-          lift (endDiagnostic (ExpectedConst constInfo._parameters (length args)) ext)
+          lift (endDiagnostic (ExpectedConst (getPos path) constInfo._parameters (length args)) ext)
         let constTy = evaluate [] constRealTy
-        (argsRes, resTy) <- foldM applyPat ([], constTy) args
+        let fnRange = getPos path
+        (argsRes, resTy) <- foldM (applyPat fnRange) ([], constTy) args
         pure (PCons path argsRes (quote 0 resTy, ext), resTy)
       PLit lit ext -> do
         (resLit, resTy) <- lift $ inferLit lit
@@ -74,10 +76,10 @@ inferPat pat =
       PAnn pat' ty ext -> do
         (resPat, resPatTy) <- go pat'
         (resTy, _) <- lift $ inferClosedTy ty
-        lift $ unify resPatTy resTy
+        lift $ unify (getPos resPat) resPatTy resTy
         pure (PAnn resPat (quote 0 resTy) (quote 0 resTy, ext), resTy)
       POr pat' pat'' ext -> do
         (resPat, resPatTy) <- go pat'
         (resPat', resPatTy') <- go pat''
-        lift $ unify resPatTy resPatTy'
+        lift $ unify (getPos resPat) resPatTy resPatTy'
         pure (POr resPat resPat' (quote 0 resPatTy, ext), resPatTy)

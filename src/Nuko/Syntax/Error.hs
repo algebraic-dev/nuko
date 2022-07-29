@@ -5,11 +5,11 @@ module Nuko.Syntax.Error (
 ) where
 
 import Relude                   (Show, Int)
-import Nuko.Report.Range        (Ranged, Range, Pos, HasPosition(..), toLabel, oneColRange)
+import Nuko.Report.Range        (Ranged(..), Range, Pos, HasPosition(..), toLabel, oneColRange)
 import Nuko.Syntax.Lexer.Tokens (Token)
 
 import Data.Aeson                (ToJSON(..), KeyValue ((.=)), object)
-import Nuko.Report.Text          (Mode (..), Piece (..), colorlessFromFormat)
+import Nuko.Report.Text          (Mode (..), Piece (..), colorlessFromFormat, PrettyDiagnostic(..), Annotation (..), Color (..), mkBasicDiagnostic)
 
 data Case = UpperCase | LowerCase
   deriving Show
@@ -46,6 +46,11 @@ errorTitle = \case
   AssignInEndOfBlock _ -> Words [Raw "You cannot assign a new variable in the end of a block!"]
   WrongUsageOfCase UpperCase _ -> Words [Raw "The identifier should be upper cased"]
   WrongUsageOfCase LowerCase _ -> Words [Raw "The identifier should be lower cased"]
+
+instance PrettyDiagnostic SyntaxError where
+  prettyDiagnostic cause =
+    let (Words title) = errorTitle cause in
+    mkBasicDiagnostic title [Ann Fst (Words [Raw "Here!"]) (getErrorSite cause)]
 
 instance ToJSON SyntaxError where
   toJSON reason =
