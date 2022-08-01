@@ -22,6 +22,7 @@ import Nuko.Typer.Infer.Pat     (inferPat)
 import Nuko.Typer.Error         (TypeError(..))
 import Nuko.Typer.Unify         (unify, destructFun)
 import Nuko.Typer.Types         (TTy(..), Relation(..), quote, derefTy, evaluate)
+import Nuko.Typer.Match         (checkPatterns)
 
 import Nuko.Resolver.Tree       ()
 import Nuko.Tree.Expr           (Expr(..))
@@ -30,7 +31,6 @@ import Nuko.Tree                (Re, Tc, Block (..), Var (..))
 import Nuko.Report.Range        (getPos, Range (..))
 
 import qualified Data.HashMap.Strict as HashMap
-import Nuko.Typer.Match (checkPatterns)
 
 inferBlock :: MonadTyper m => Block Re -> m (Block Tc, TTy 'Virtual)
 inferBlock = \case
@@ -131,6 +131,8 @@ inferExpr = \case
     unify (getPos expr) argFieldTy resTy
     pure (Field resExpr field (quote 0 resFieldTy, extension), resFieldTy)
 
+-- TODO: If the type is private and it's not in the current namespace, we have to thrown
+-- an error. It would cause problems in the hot reloading.
 getFieldByTy :: MonadTyper m => Name ValName -> TTy 'Virtual -> m (TTy 'Virtual)
 getFieldByTy field = \case
   TyApp _ f _ -> getFieldByTy field f

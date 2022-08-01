@@ -77,9 +77,9 @@ library:
     - pretty-terminal
 
 executables:
-  Nuko-exe:
+  Nuko-Cli-exe:
     main: Main.hs
-    source-dirs: app
+    source-dirs: cli
     ghc-options:
       - -Wall
       - -threaded

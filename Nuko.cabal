@@ -116,12 +116,12 @@ library
     , unordered-containers
   default-language: Haskell2010
 
-executable Nuko-exe
+executable Nuko-Cli-exe
   main-is: Main.hs
   other-modules:
       Paths_Nuko
   hs-source-dirs:
-      app
+      cli
   default-extensions:
       DuplicateRecordFields
       OverloadedRecordDot

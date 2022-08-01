@@ -8,9 +8,8 @@ module Nuko.Typer.Error.Extract (
 ) where
 
 import Nuko.Typer.Error.Tracking (Tracker(..), getLastTypeUnify, getLastKindUnify )
-import Nuko.Typer.Env            (MonadTyper, teTrackers, emitDiagnostic)
+import Nuko.Typer.Env            (MonadTyper, teTrackers, endDiagnostic)
 import Nuko.Typer.Error          (TypeError(..))
-import Nuko.Report.Text          (Severity(Error))
 import Nuko.Report.Range         (Range(..))
 import Lens.Micro.Platform       (use, (%=))
 import Data.Maybe                (fromMaybe)
@@ -27,13 +26,13 @@ extractTypeMismatch :: MonadTyper m => m ()
 extractTypeMismatch = do
   trackers <- use teTrackers
   let (r, t, t') = fromMaybe internalMismatch (getLastTypeUnify trackers)
-  emitDiagnostic Error (Mismatch r t t') r
+  endDiagnostic (Mismatch r t t') r
 
 extractKindMismatch :: MonadTyper m => m ()
 extractKindMismatch = do
   trackers <- use teTrackers
   let (r, t, t') = fromMaybe internalMismatch (getLastKindUnify trackers)
-  emitDiagnostic Error (KindMismatch r t t') r
+  endDiagnostic (KindMismatch r t t') r
 
 extractKindUnifierRange :: MonadTyper m => m Range
 extractKindUnifierRange = do

@@ -83,12 +83,13 @@ instance PrettyDiagnostic TypeError where
     CyclicTypeDef range _ ->
         mkBasicDiagnostic [Raw "Cannot make cycles with type definitions"] [Ann Fst (Words [Raw "Here!"]) range]
     ExpectedConst range e g ->
-        mkBasicDiagnostic [Raw "This constructor expects", Marked Fst (format e), Raw "arguments but got", Marked Snd (format g)] 
-                          [Ann Fst (Words [Raw "Here!"]) range]
+        mkBasicDiagnostic
+          [Raw "This constructor expects", Marked Fst (format e), Raw "arguments but got", Marked Snd (format g)]
+          [Ann Fst (Words [Raw "Here!"]) range]
     CannotInferField range ->
         mkBasicDiagnostic [Raw "Cannot discover a type that this field have!"] [Ann Fst (Words [Raw "Here!"]) range]
     NotExhaustive range like ->
-        mkBasicDiagnostic [Raw "This pattern match does not match", Raw (formatAnd like)] [Ann Fst (Words [Raw "Here!"]) range]
+        mkBasicDiagnostic [Raw "These clauses does not match", Marked Snd (formatAnd like)] [Ann Fst (Words [Raw "Here!"]) range]
     UselessClause range ->
         mkBasicDiagnostic [Raw "The clause is useless for the other ones!"] [Ann For (Words [Raw "Here!"]) range]
 
