@@ -13,16 +13,15 @@ module Nuko.Typer.Types (
   printRealTy,
 ) where
 
-import Relude             ((.), reverse, Num ((-), (+)), Text, Semigroup ((<>)), ($), Foldable (length, foldr), Ord ((>=), (<)), (||), (<$>), unwords)
-import Relude.Lifted      (IORef, readIORef)
-import Relude.Numeric     (Int)
-import Relude.Unsafe      ((!!))
+import Relude
+import Relude.Unsafe    ((!!))
 
-import Nuko.Typer.Kinds   (Hole (..), TKind (..), derefKind)
-import Nuko.Names         (Name (..), TyName, Qualified (..))
-import GHC.IO             (unsafePerformIO)
-import Pretty.Format      (Format(..))
-import Pretty.Tree        (PrettyTree(prettyTree), Tree (..))
+import Nuko.Names       (Name (..), Qualified (..), TyName)
+import Nuko.Typer.Kinds (Hole (..), TKind (..), derefKind)
+import Pretty.Format    (Format (..))
+import Pretty.Tree      (PrettyTree (prettyTree), Tree (..))
+
+import GHC.IO           (unsafePerformIO)
 
 data Relation = Real | Virtual
 
@@ -45,7 +44,7 @@ derefTy :: TTy 'Virtual -> TTy 'Virtual
 derefTy = \case
   TyHole hole -> do
     case unsafePerformIO (readIORef hole) of
-      Empty {} -> TyHole hole
+      Empty {}  -> TyHole hole
       Filled  r -> derefTy r
   TyForall ident fn -> TyForall ident (derefTy . fn)
   TyFun t f -> TyFun (derefTy t) (derefTy f)
@@ -69,13 +68,13 @@ evaluate types = \case
 
 quote :: Int -> TTy 'Virtual -> TTy 'Real
 quote lvl = \case
-  TyErr -> TyErr
-  TyHole hole -> TyHole hole
+  TyErr             -> TyErr
+  TyHole hole       -> TyHole hole
   TyForall ident fn -> TyForall ident (quote (lvl + 1) (fn (TyVar lvl)))
-  TyFun t f -> TyFun (quote lvl t) (quote lvl f)
-  TyApp k t f -> TyApp k (quote lvl t) (quote lvl f)
-  TyIdent t -> TyIdent t
-  TyVar i -> TyVar (lvl - i - 1)
+  TyFun t f         -> TyFun (quote lvl t) (quote lvl f)
+  TyApp k t f       -> TyApp k (quote lvl t) (quote lvl f)
+  TyIdent t         -> TyIdent t
+  TyVar i           -> TyVar (lvl - i - 1)
 
 generalizeWith :: [Name TyName] -> TTy 'Real -> (TTy 'Virtual -> TTy 'Virtual) -> TTy 'Virtual
 generalizeWith [] ty _ = evaluate [] ty
@@ -94,7 +93,7 @@ printRealTy =
   where
     getSeq :: TTy 'Real -> ([Name TyName], TTy 'Real)
     getSeq (TyForall x t) = let (n, f) = getSeq t in (x : n, f)
-    getSeq other = ([], other)
+    getSeq other          = ([], other)
 
     go :: [Name TyName] -> TTy 'Real -> Text
     go env = \case

@@ -4,27 +4,25 @@ module Nuko.Typer.Infer.Type (
   freeVars
 ) where
 
-import Relude               (id, snd, (<$>), HashSet, Traversable (traverse), ($))
-import Relude.Base          (Eq(..))
-import Relude.Unsafe        ((!!))
-import Relude.Applicative   (pure)
-import Relude.Monad         (Maybe(..))
+import Relude
+
+import Nuko.Names           (Label (Label), Name, TyName, genIdent, mkTyName)
+import Nuko.Report.Range    (Range (..), getPos)
+import Nuko.Tree            (Re)
+import Nuko.Tree.Expr       (Ty (..))
+import Nuko.Typer.Env       (MonadTyper, addLocalTy, addLocalTypes,
+                             endDiagnostic, getKind, newKindHole, qualifyPath,
+                             seTyEnv)
+import Nuko.Typer.Error     (TypeError (..))
+import Nuko.Typer.Types     (Relation (..), TKind (..), TTy (..),
+                             generalizeWith)
+import Nuko.Typer.Unify     (unifyKind)
 
 import Control.Monad.Reader (foldM)
-import Data.List.NonEmpty   (NonEmpty(..))
-import Data.List            (findIndex, zip)
+import Data.HashSet         qualified as HashSet
+import Data.List            (findIndex, (!!))
+import Lens.Micro.Platform  (view)
 
-import Nuko.Typer.Error     (TypeError(..))
-import Nuko.Typer.Unify     (unifyKind)
-import Nuko.Typer.Types     (TKind(..), TTy(..), Relation(..), generalizeWith)
-import Nuko.Typer.Env       (getKind, newKindHole, MonadTyper, qualifyPath, addLocalTy, seTyEnv, addLocalTypes, endDiagnostic)
-import Nuko.Tree.Expr       (Ty(..))
-import Nuko.Names           (genIdent, mkTyName, Label(Label), Name, TyName )
-import Nuko.Tree            (Re)
-
-import Lens.Micro.Platform (view)
-import qualified Data.HashSet as HashSet
-import Nuko.Report.Range (getPos, Range (..))
 
 type PType x = (TTy x, TKind)
 
@@ -41,11 +39,11 @@ inferClosedTy ast = do
 
 freeVars :: Ty Re -> HashSet (Name TyName)
 freeVars = \case
-  TId _ _ -> HashSet.empty
-  TPoly name _ -> HashSet.singleton name
+  TId _ _             -> HashSet.empty
+  TPoly name _        -> HashSet.singleton name
   TApp ty (x :| xs) _ -> HashSet.unions (freeVars <$> (ty : x : xs))
-  TArrow from to _ -> HashSet.union (freeVars from) (freeVars to)
-  TForall name ty _ -> HashSet.delete name (freeVars ty)
+  TArrow from to _    -> HashSet.union (freeVars from) (freeVars to)
+  TForall name ty _   -> HashSet.delete name (freeVars ty)
 
 -- TODO: Probably i can just remove poly and use a readerT instead?
 -- TODO: Disallow Guarded polimorphic types

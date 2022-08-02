@@ -3,34 +3,30 @@ module Nuko.Typer.Infer.Expr (
   checkExpr,
 ) where
 
-import Relude                   (($), (<$>), One (one), fst, (.))
-import Relude.Monad             (Maybe(..), (=<<))
-import Relude.Functor           (Bifunctor(first))
-import Relude.List.NonEmpty     (NonEmpty((:|)))
-import Relude.Applicative       (pure)
+import Relude
+
+import Nuko.Names               (Name, Path (..), ValName)
+import Nuko.Report.Range        (Range (..), getPos)
+import Nuko.Resolver.Tree       ()
+import Nuko.Tree                (Block (..), Re, Tc, Var (..))
+import Nuko.Tree.Expr           (Expr (..))
+import Nuko.Typer.Env
+import Nuko.Typer.Error         (TypeError (..))
+import Nuko.Typer.Infer.Literal (boolTy, inferLit)
+import Nuko.Typer.Infer.Pat     (inferPat)
+import Nuko.Typer.Infer.Type    (inferClosedTy)
+import Nuko.Typer.Match         (checkPatterns)
+import Nuko.Typer.Tree          ()
+import Nuko.Typer.Types         (Relation (..), TTy (..), derefTy, evaluate,
+                                 quote)
+import Nuko.Typer.Unify         (destructFun, unify)
 
 import Control.Monad.Reader     (foldM)
-import Lens.Micro.Platform      (view)
-import Data.Traversable         (for)
 import Data.List.NonEmpty       ((<|))
+import Data.Traversable         (for)
+import Lens.Micro.Platform      (view)
 
-import Nuko.Typer.Env
-import Nuko.Typer.Tree          ()
-import Nuko.Typer.Infer.Literal (inferLit, boolTy)
-import Nuko.Typer.Infer.Type    (inferClosedTy)
-import Nuko.Typer.Infer.Pat     (inferPat)
-import Nuko.Typer.Error         (TypeError(..))
-import Nuko.Typer.Unify         (unify, destructFun)
-import Nuko.Typer.Types         (TTy(..), Relation(..), quote, derefTy, evaluate)
-import Nuko.Typer.Match         (checkPatterns)
-
-import Nuko.Resolver.Tree       ()
-import Nuko.Tree.Expr           (Expr(..))
-import Nuko.Names               (Name, ValName, Path (..))
-import Nuko.Tree                (Re, Tc, Block (..), Var (..))
-import Nuko.Report.Range        (getPos, Range (..))
-
-import qualified Data.HashMap.Strict as HashMap
+import Data.HashMap.Strict      qualified as HashMap
 
 inferBlock :: MonadTyper m => Block Re -> m (Block Tc, TTy 'Virtual)
 inferBlock = \case
@@ -88,9 +84,9 @@ inferExpr = \case
     qualified <- qualifyPath path
     (consTy, _) <- getTy tsConstructors qualified
     pure (Upper path consTy, evaluate [] consTy)
-  Ann exp ty extension -> do
+  Ann expr ty extension -> do
     (resTy, _) <- inferClosedTy ty
-    exprRes <- checkExpr exp resTy
+    exprRes <- checkExpr expr resTy
     pure (Ann exprRes (quote 0 resTy) extension, resTy)
   Block block extension -> do
     (blockRes, resTy) <- inferBlock block

@@ -47,30 +47,28 @@ module Nuko.Typer.Env (
   addLocalTypes,
 ) where
 
-import Relude                  (Generic, Int, MonadIO, pure, (.), (<$>), ($), Monad ((>>=)), fst, Num ((+)), IO, Endo (appEndo), Bifunctor (first), NonEmpty, readIORef, Text)
-import Relude.Monad            (MonadState, MonadReader (local), Maybe (..), asks, maybe)
-import Relude.Monoid           ((<>))
-import Relude.Lifted           (newIORef)
+import Relude
 
-import Nuko.Names              (Name, ConsName, TyName, ValName, ModName (..), Label (..), Path (..), mkQualified, Qualified(..), getPathInfo, NameKind (TyName), mkName, genIdent, Attribute (Untouched), Ident, mkModName)
-import Nuko.Utils              (terminate, flag)
-import Nuko.Typer.Types        (TTy (..), Relation (..), TKind, derefTy, Hole (..), TKind (..))
-import Nuko.Typer.Error        (TypeError(NameResolution))
-import Nuko.Report.Range       (getPos, Range)
-import Nuko.Resolver.Tree      ()
+import Nuko.Names
+import Nuko.Report.Message           (Diagnostic (..), DiagnosticInfo (..),
+                                      Severity (..))
+import Nuko.Report.Range             (Range, getPos)
+import Nuko.Resolver.Tree            ()
+import Nuko.Typer.Error              (TypeError (NameResolution))
+import Nuko.Typer.Error.Tracking     (Tracker)
+import Nuko.Typer.Types              (Hole (..), Relation (..), TKind (..),
+                                      TTy (..), derefTy)
+import Nuko.Utils                    (flag, terminate)
 
-import Nuko.Report.Message
-import Pretty.Tree             (PrettyTree)
-import Data.HashMap.Strict     (HashMap)
-import Data.These              (These)
-import Lens.Micro.Platform     (makeLenses, over, Lens', use, (%=), at)
-import Control.Monad.Chronicle (MonadChronicle)
+import Control.Monad.Chronicle       (MonadChronicle)
+import Data.These                    (These)
+import Lens.Micro.Platform           (Lens', at, makeLenses, over, use, (%=))
+import Pretty.Tree                   (PrettyTree)
 
-import qualified Data.HashMap.Strict as HashMap
-import qualified Control.Monad.Trans.Chronicle as Chronicle
-import qualified Control.Monad.State.Strict as State
-import qualified Control.Monad.Reader as Reader
-import Nuko.Typer.Error.Tracking (Tracker)
+import Control.Monad.Reader          qualified as Reader
+import Control.Monad.State.Strict    qualified as State
+import Control.Monad.Trans.Chronicle qualified as Chronicle
+import Data.HashMap.Strict           qualified as HashMap
 
 newtype SumTyInfo = SumTyInfo
   { _stiConstructors :: NonEmpty (Qualified (Name ConsName), Int)
@@ -106,8 +104,8 @@ newtype FieldInfo = FieldInfo
   } deriving Generic
 
 data DataConsInfo = DataConsInfo
-  { _parameters    :: Int
-  , _tyName        :: Qualified (Name TyName)
+  { _parameters :: Int
+  , _tyName     :: Qualified (Name TyName)
   } deriving Generic
 
 data TypeSpace = TypeSpace
@@ -125,9 +123,9 @@ data TypingEnv = TypingEnv
   } deriving Generic
 
 data ScopeEnv = ScopeEnv
-  { _seVars     :: HashMap (Name ValName) (TTy 'Virtual)
-  , _seTyEnv    :: [(Name TyName, TKind)]
-  , _seScope    :: Int
+  { _seVars  :: HashMap (Name ValName) (TTy 'Virtual)
+  , _seTyEnv :: [(Name TyName, TKind)]
+  , _seScope :: Int
   } deriving Generic
 
 makeLenses ''DataConsInfo
@@ -241,7 +239,7 @@ qualifyLocal name = do
   pure (mkQualified modName name (getPos name))
 
 qualifyPath :: MonadTyper m => Path (Name k) -> m (Qualified (Name k))
-qualifyPath (Local _ name) = qualifyLocal name
+qualifyPath (Local _ name)     = qualifyLocal name
 qualifyPath (Full _ qualified) = pure qualified
 
 addTyKind :: MonadTyper m => Name TyName -> TKind -> TyInfo -> m ()

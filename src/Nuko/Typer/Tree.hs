@@ -3,12 +3,13 @@
 
 module Nuko.Typer.Tree where
 
+import Relude
+
+import Nuko.Names        (Ident, ModName, Name, Path)
+import Nuko.Report.Range (HasPosition (..), Range)
 import Nuko.Tree
-import Nuko.Report.Range  (Range, HasPosition(..))
-import Relude             (Semigroup((<>)), Void, Generic, snd)
-import Pretty.Tree        (PrettyTree)
-import Nuko.Names         (Path, Name, Ident, ModName)
-import Nuko.Typer.Types   (TTy, Relation(..))
+import Nuko.Typer.Types  (Relation (..), TTy)
+import Pretty.Tree       (PrettyTree)
 
 type instance XIdent Tc    = Ident
 type instance XModName Tc  = ModName
@@ -82,25 +83,25 @@ instance HasPosition (Literal Tc) where
 
 instance HasPosition (Pat Tc) where
   getPos = \case
-    PWild (_, r) -> r
+    PWild (_, r)     -> r
     PCons _ _ (_, r) -> r
-    PLit i _    -> getPos i
-    POr _ _ r  -> snd r
-    PAnn _ _ r  -> snd r
-    PId n _   -> getPos n
+    PLit i _         -> getPos i
+    POr _ _ r        -> snd r
+    PAnn _ _ r       -> snd r
+    PId n _          -> getPos n
 
 instance HasPosition (Expr Tc) where
   getPos = \case
-    Lit t _ -> getPos t
-    Lam _ _ (_, r) -> r
-    App _ _ (_, r) -> r
-    Lower r _ -> getPos r
-    Upper r _ -> getPos r
+    Lit t _          -> getPos t
+    Lam _ _ (_, r)   -> r
+    App _ _ (_, r)   -> r
+    Lower r _        -> getPos r
+    Upper r _        -> getPos r
     Field _ _ (_, r) -> r
-    If _ _ _ (_, r) -> r
+    If _ _ _ (_, r)  -> r
     Match _ _ (_, r) -> r
-    Block _  (_, r) -> r
-    Ann _ _ r  -> r
+    Block _  (_, r)  -> r
+    Ann _ _ r        -> r
 
 instance HasPosition (Block Tc) where
   getPos = \case

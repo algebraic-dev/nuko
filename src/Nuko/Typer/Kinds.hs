@@ -6,14 +6,13 @@ module Nuko.Typer.Kinds (
   printKind
 ) where
 
-import Relude             ((.), Text, Semigroup ((<>)))
-import Relude.Lifted      (IORef, readIORef)
-import Relude.Numeric     (Int)
+import Relude
 
-import Nuko.Names         (Name (..), TyName)
-import GHC.IO             (unsafePerformIO)
-import Pretty.Format      (Format(..))
-import Pretty.Tree        (PrettyTree(prettyTree), Tree (..))
+import Nuko.Names    (Name (..), TyName)
+import Pretty.Format (Format (..))
+import Pretty.Tree   (PrettyTree (prettyTree), Tree (..))
+
+import GHC.IO        (unsafePerformIO)
 
 type KiHole = IORef (Hole TKind)
 
@@ -30,7 +29,7 @@ derefKind :: TKind -> TKind
 derefKind = \case
   KiHole hole -> do
     case unsafePerformIO (readIORef hole) of
-      Empty {} -> KiHole hole
+      Empty {}  -> KiHole hole
       Filled  r -> derefKind r
   KiFun a b -> KiFun (derefKind a) (derefKind b)
   other -> other

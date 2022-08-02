@@ -5,12 +5,12 @@
 --   Yeah.. i use a lot of orphan instances here :P
 module Nuko.Syntax.Tree where
 
+import Relude
+
+import Nuko.Names        (Ident, ModName, Name, Path)
+import Nuko.Report.Range (HasPosition (..), Range)
 import Nuko.Tree
-import Nuko.Report.Range  (Range, HasPosition(..))
-import Relude             (Semigroup((<>)), Void)
-import GHC.Generics       (Generic)
-import Pretty.Tree        (PrettyTree)
-import Nuko.Names         (Ident, Path, Name, ModName)
+import Pretty.Tree       (PrettyTree)
 
 type Normal = Nuko 'Normal
 
@@ -98,19 +98,19 @@ instance HasPosition (Pat Nm) where
     PAnn _ _ r  -> r
     PId n _     -> getPos n
     POr _ _ r   -> r
-  
+
 instance HasPosition (Expr Nm) where
   getPos = \case
-    Lit t _ -> getPos t
-    Lam _ _ r -> r
-    App _ _ r -> r
-    Lower n _ -> getPos n
-    Upper n _ -> getPos n
+    Lit t _     -> getPos t
+    Lam _ _ r   -> r
+    App _ _ r   -> r
+    Lower n _   -> getPos n
+    Upper n _   -> getPos n
     Field _ _ r -> r
-    If _ _ _ r -> r
+    If _ _ _ r  -> r
     Match _ _ r -> r
-    Block _  r -> r
-    Ann _ _ r  -> r
+    Block _  r  -> r
+    Ann _ _ r   -> r
 
 instance HasPosition (Block Nm) where
   getPos = \case
@@ -122,6 +122,6 @@ instance HasPosition (Ty Nm) where
   getPos = \case
     TId n _       -> getPos n
     TPoly n _     -> getPos n
-    TApp _ _ r   -> r
+    TApp _ _ r    -> r
     TArrow _ _ r  -> r
     TForall _ _ r -> r

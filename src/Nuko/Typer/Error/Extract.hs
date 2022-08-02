@@ -7,14 +7,16 @@ module Nuko.Typer.Error.Extract (
   track
 ) where
 
-import Nuko.Typer.Error.Tracking (Tracker(..), getLastTypeUnify, getLastKindUnify )
-import Nuko.Typer.Env            (MonadTyper, teTrackers, endDiagnostic)
-import Nuko.Typer.Error          (TypeError(..))
-import Nuko.Report.Range         (Range(..))
-import Lens.Micro.Platform       (use, (%=))
-import Data.Maybe                (fromMaybe)
-import Relude                    (error, Applicative (..))
+import Relude                    hiding (tail)
 import Relude.Unsafe             (tail)
+
+import Nuko.Report.Range         (Range (..))
+import Nuko.Typer.Env            (MonadTyper, endDiagnostic, teTrackers)
+import Nuko.Typer.Error          (TypeError (..))
+import Nuko.Typer.Error.Tracking (Tracker (..), getLastKindUnify,
+                                  getLastTypeUnify)
+
+import Lens.Micro.Platform       (use, (%=))
 
 track :: MonadTyper m => Tracker -> m a -> m a
 track tracker action = (teTrackers %= (tracker :)) *> action <* (teTrackers %= tail)

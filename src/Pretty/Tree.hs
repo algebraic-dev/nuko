@@ -4,25 +4,19 @@ module Pretty.Tree (
   inlineTree,
 ) where
 
-import GHC.Generics     (V1, U1, K1 (K1), type (:+:)(..), type (:*:)(..), Generic (from, Rep), D1, M1 (M1), Constructor (conName), C1, S1, Selector (selName))
-import Data.Text        (length, Text)
-
-import Relude           ((.), show, ToText (toText), ($), unwords,Ord ((<)), NonEmpty, Int, Functor (fmap), Foldable (toList), Void, otherwise)
-import Relude.Monoid    (Semigroup ((<>)), Monoid (mconcat))
-import Relude.Monad     (Maybe(..), Either(..), maybe, Either (Right))
-import Relude.Bool      (Bool(..))
-import Relude.Container (HashMap, HashSet)
-import Relude.Foldable  (sum)
-import Relude.List      (map)
-
-import qualified Data.HashMap.Strict as HashMap
-import qualified Data.HashSet        as HashSet
+import Data.HashMap.Strict qualified as HashMap
+import Data.HashSet        qualified as HashSet
+import Data.Text           qualified as Text
+import GHC.Generics        (C1, Constructor (conName), D1, Generic (Rep, from),
+                            K1 (K1), M1 (M1), S1, Selector (selName), U1, V1,
+                            type (:*:) (..), type (:+:) (..))
+import Relude
 
 data Tree = Node Text [Text] [Tree]
 
 inlineTree :: Tree -> Tree
 inlineTree tree@(Node a [] c) =
-    maybe tree (\f -> if sum (map length f) < 60 then Node a f [] else tree) (canInline [] c)
+    maybe tree (\f -> if sum (map Text.length f) < 60 then Node a f [] else tree) (canInline [] c)
   where
     canInline :: [Text] -> [Tree] -> Maybe [Text]
     canInline f (Node a' [] [] : xs) = canInline (a' : f) xs
@@ -73,7 +67,7 @@ instance (Selector f, GPrettyTree g) => GPrettyTree (S1 f g) where
       (":", n)              -> n
       (name, Node a' [] []) -> Node name [a'] []
       (name, Node a' other [])
-        | sum (map length other) < 30 -> Node name ["(" <> unwords (a' : other) <> ")"] []
+        | sum (map Text.length other) < 30 -> Node name ["(" <> unwords (a' : other) <> ")"] []
         | otherwise                   -> Node name [] [Node a' other []]
       (name, other) -> Node name [] [other]
 
@@ -87,12 +81,12 @@ class PrettyTree a where
   prettyShowTree = prettyShow' True "" . prettyTree
 
 prettyShow' :: Bool -> Text -> Tree -> Text
-prettyShow' last ident (Node text f others) =
-    ident <> (if last then " └" else " ├") <> unwords (text : f) <> "\n" <> mconcat (mapOn others)
+prettyShow' lastItem ident (Node text f others) =
+    ident <> (if lastItem then " └" else " ├") <> unwords (text : f) <> "\n" <> mconcat (mapOn others)
   where
     mapOn []       = []
-    mapOn [x]      = [prettyShow' True (ident <> (if last then "  " else " |")) x]
-    mapOn (x : xs) = prettyShow' False (ident <> (if last then "  " else " |")) x : mapOn xs
+    mapOn [x]      = [prettyShow' True (ident <> (if lastItem then "  " else " |")) x]
+    mapOn (x : xs) = prettyShow' False (ident <> (if lastItem then "  " else " |")) x : mapOn xs
 
 instance PrettyTree Int where
   prettyTree a = Node (show a) [] []
@@ -107,7 +101,7 @@ instance (PrettyTree a, PrettyTree b, PrettyTree c) => PrettyTree (a, b, c) wher
   prettyTree (a, b, c) = Node "Prod" [] [prettyTree a, prettyTree b, prettyTree c]
 
 instance (PrettyTree a, PrettyTree b) => PrettyTree (Either a b) where
-  prettyTree (Left a) = Node "Left" [] [prettyTree a]
+  prettyTree (Left a)  = Node "Left" [] [prettyTree a]
   prettyTree (Right a) = Node "Right" [] [prettyTree a]
 
 instance (PrettyTree a, PrettyTree b) => PrettyTree (HashMap a b) where

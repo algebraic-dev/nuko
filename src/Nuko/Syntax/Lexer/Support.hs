@@ -24,29 +24,24 @@ module Nuko.Syntax.Lexer.Support (
   flagChar,
 ) where
 
-import Relude.Monad       (Monad((>>)), Maybe, MonadState, fromMaybe, gets)
-import Relude.Monoid      (Semigroup((<>)), Endo(appEndo))
-import Relude.Applicative (Applicative(pure))
-import Relude.Functor     (Functor(fmap), Bifunctor(first), (<$>))
-import Relude.Bool        (Bool(..) )
-import Relude.String      (Text, ByteString)
-import Relude.List        (NonEmpty(..), uncons, head)
-import Relude             (fst, snd, ($), Int, Word8, (.),  const, (=<<))
+import Relude
 
-import Nuko.Report.Message
-import Data.These               (These)
-import Data.ByteString.Internal (w2c)
-import Control.Monad.Chronicle  (MonadChronicle, Chronicle)
-import Nuko.Report.Range        (Pos, Ranged, Range)
-import Nuko.Utils               (flag, terminate)
-import Nuko.Syntax.Error        (SyntaxError, getErrorSite)
 import Nuko.Names               (ModName)
+import Nuko.Report.Message      (Diagnostic (..), DiagnosticInfo (SyntaxError),
+                                 Severity (Error))
+import Nuko.Report.Range        (Pos, Range, Ranged)
+import Nuko.Syntax.Error        (SyntaxError, getErrorSite)
+import Nuko.Utils               (flag, terminate)
 
-import qualified Control.Monad.Chronicle as Chronicle
-import qualified Control.Monad.State     as State
-import qualified Data.List.NonEmpty      as NonEmpty
-import qualified Data.ByteString         as ByteString
-import qualified Nuko.Report.Range       as Range
+import Control.Monad.Chronicle  (Chronicle, MonadChronicle)
+import Data.ByteString.Internal (w2c)
+import Data.These               (These)
+
+import Control.Monad.Chronicle  qualified as Chronicle
+import Control.Monad.State      qualified as State
+import Data.ByteString          qualified as ByteString
+import Data.List.NonEmpty       qualified as NonEmpty
+import Nuko.Report.Range        qualified as Range
 
 -- | AlexInput is the Data Type used by the Alex inside the
 -- generated code to track the input data.
@@ -70,13 +65,13 @@ alexInputPrevChar = lastInput
 -- | Lexer state to store the input, each code (the place like (<thing>)
 -- that it is in the lexer) and each "layout" place to work by indentation.
 data LexerState = LexerState
-    { modName   :: ModName
-    , filename  :: Text
-    , input     :: AlexInput
-    , codes     :: NonEmpty Int
-    , layout    :: [Int]
-    , buffer    :: Text
-    , nonLw     :: Bool
+    { modName  :: ModName
+    , filename :: Text
+    , input    :: AlexInput
+    , codes    :: NonEmpty Int
+    , layout   :: [Int]
+    , buffer   :: Text
+    , nonLw    :: Bool
     }
 
 initialState :: ModName -> Text -> ByteString -> LexerState

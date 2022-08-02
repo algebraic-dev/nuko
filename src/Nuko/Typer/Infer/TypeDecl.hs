@@ -5,26 +5,24 @@ module Nuko.Typer.Infer.TypeDecl (
 
 import Nuko.Typer.Env
 
-import Relude                   ((<$>), Traversable (traverse), Foldable (foldr, foldl'), snd, fst, error, traverse_, Num ((-)), ($), Int, Maybe (Just))
-import Relude.Functor           (Functor (fmap))
-import Relude.Applicative       (pure)
+import Relude
+import Relude.Extra          (traverseToSnd)
 
-import Nuko.Resolver.Tree       ()
-import Nuko.Typer.Tree          ()
-import Nuko.Typer.Infer.Type    (inferOpenTy)
-import Nuko.Typer.Unify         (unifyKind)
-import Nuko.Typer.Types         (Relation(..), TTy(..), TKind(KiStar, KiFun), generalizeNames)
-import Nuko.Tree                (Ty, TypeDeclArg(..), Tc, TypeDecl(..), Re)
-import Nuko.Names               (mkLocalPath, ConsName, Name (nIdent), TyName, ValName)
-
-import Relude.Extra (traverseToSnd)
-import Data.List (length, unzip)
-import Nuko.Report.Range (getPos)
+import Nuko.Names            (ConsName, Name (nIdent), TyName, ValName,
+                              mkLocalPath)
+import Nuko.Report.Range     (getPos)
+import Nuko.Resolver.Tree    ()
+import Nuko.Tree             (Re, Tc, Ty, TypeDecl (..), TypeDeclArg (..))
+import Nuko.Typer.Infer.Type (inferOpenTy)
+import Nuko.Typer.Tree       ()
+import Nuko.Typer.Types      (Relation (..), TKind (KiFun, KiStar), TTy (..),
+                              generalizeNames)
+import Nuko.Typer.Unify      (unifyKind)
 
 getRet :: TKind -> TKind
 getRet = \case
   KiFun _ ret -> ret
-  other -> other
+  other       -> other
 
 mkTyApp :: TKind -> TTy 'Real -> [(Name TyName, TKind)] -> (TKind, TTy 'Real, [Name TyName])
 mkTyApp kind typeTy bindings = do

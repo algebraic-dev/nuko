@@ -4,12 +4,16 @@ module Nuko.Syntax.Error (
   getErrorSite,
 ) where
 
-import Relude                   (Show, Int)
-import Nuko.Report.Range        (Ranged(..), Range, Pos, HasPosition(..), toLabel, oneColRange)
+import Relude
+
+import Nuko.Report.Range        (HasPosition (..), Pos, Range, Ranged (..),
+                                 oneColRange, toLabel)
+import Nuko.Report.Text         (Annotation (..), Color (..), Mode (..),
+                                 Piece (..), PrettyDiagnostic (..),
+                                 colorlessFromFormat, mkBasicDiagnostic)
 import Nuko.Syntax.Lexer.Tokens (Token)
 
-import Data.Aeson                (ToJSON(..), KeyValue ((.=)), object)
-import Nuko.Report.Text          (Mode (..), Piece (..), colorlessFromFormat, PrettyDiagnostic(..), Annotation (..), Color (..), mkBasicDiagnostic)
+import Data.Aeson               (KeyValue ((.=)), ToJSON (..), object)
 
 data Case = UpperCase | LowerCase
   deriving Show
@@ -24,17 +28,17 @@ data SyntaxError
 
 errorCode :: SyntaxError -> Int
 errorCode = \case
-  UnexpectedStr {} -> 1
-  UnfinishedStr {} -> 2
-  UnexpectedToken {} -> 3
+  UnexpectedStr {}      -> 1
+  UnfinishedStr {}      -> 2
+  UnexpectedToken {}    -> 3
   AssignInEndOfBlock {} -> 4
-  WrongUsageOfCase {} -> 5
+  WrongUsageOfCase {}   -> 5
 
 getErrorSite :: SyntaxError -> Range
 getErrorSite = \case
-  UnexpectedStr r -> r
-  UnfinishedStr r -> oneColRange r
-  UnexpectedToken r -> getPos r
+  UnexpectedStr r      -> r
+  UnfinishedStr r      -> oneColRange r
+  UnexpectedToken r    -> getPos r
   AssignInEndOfBlock r -> r
   WrongUsageOfCase _ r -> r
 

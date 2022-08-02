@@ -9,31 +9,28 @@ module Nuko.Typer.Match (
 
 -- The Pattern matching analysis is part of the type checker.
 
-import Nuko.Names          (Path, Name, ConsName, Qualified (..), TyName, mkQualifiedPath, getPathInfo)
-import Nuko.Typer.Tree     ()
-import Nuko.Typer.Env      (MonadTyper, qualifyPath, tsConstructors, globalTypingEnv, tsTypes, SumTyInfo(..), TyInfoKind (..), TyInfo(..), DataConsInfo(..), emitDiagnostic)
-import Nuko.Tree.Expr      (Pat (..))
+import Relude
+
+import Nuko.Names          (ConsName, Name, Path, Qualified (..), TyName,
+                            getPathInfo, mkQualifiedPath)
+import Nuko.Report.Message (Severity (..))
+import Nuko.Report.Range   (HasPosition (getPos), Range (..))
 import Nuko.Tree           (Tc)
-import Nuko.Report.Range   (Range(..), HasPosition (getPos))
+import Nuko.Tree.Expr      (Pat (..))
+import Nuko.Typer.Env      (DataConsInfo (..), MonadTyper, SumTyInfo (..),
+                            TyInfo (..), TyInfoKind (..), emitDiagnostic,
+                            globalTypingEnv, qualifyPath, tsConstructors,
+                            tsTypes)
+import Nuko.Typer.Error    (TypeError (..))
+import Nuko.Typer.Tree     ()
+import Pretty.Format       (Format (..))
 
-import Relude              (snd, (<$>), Int, concatMap, error, Maybe (..), Foldable (..), traverse, uncurry, not, fromMaybe, splitAt, Num ((-)), Text, One (one))
-import Relude.Bool         (Bool(..), (||), otherwise, when)
-import Relude.Base         (Eq((==)))
-import Relude.List         (NonEmpty (..), replicate, filter)
-import Relude.Monoid       (Semigroup((<>)))
-import Relude.Function     (($), (.))
-import Relude.Applicative  (pure)
-
-import Lens.Micro.Platform (use, at)
-import Data.List           (nub, all, findIndex, (!!), take)
-import Pretty.Format       (Format(..))
-
-import qualified Data.Text    as Text
-import qualified Data.HashSet as HashSet
-import Control.Monad (foldM)
-import Nuko.Report.Message (Severity(..))
-import Nuko.Typer.Error (TypeError(..))
-import Data.List.NonEmpty ((<|))
+import Control.Monad       (foldM)
+import Data.HashSet        qualified as HashSet
+import Data.List           (findIndex, nub, (!!))
+import Data.List.NonEmpty  ((<|))
+import Data.Text           qualified as Text
+import Lens.Micro.Platform (at, use)
 
 -- Implementation of http://moscova.inria.fr/%7Emaranget/papers/warn/warn.pdf
 -- But modified to look like the rust version.
@@ -73,11 +70,11 @@ instance Format Witness where
 toMatchPat :: Pat Tc -> Match
 toMatchPat = \case
   PCons name pats (_, r) -> Cons name (toMatchPat <$> pats) (At r)
-  PWild x       -> Wild (At (snd x))
-  PId n _       -> Wild (At $ getPos n)
-  PLit _ _      -> error "Not implemented yet"
-  PAnn t _ _    -> toMatchPat t
-  POr p q (_,x) -> Or (toMatchPat p) (toMatchPat q) (At x)
+  PWild x                -> Wild (At (snd x))
+  PId n _                -> Wild (At $ getPos n)
+  PLit _ _               -> error "Not implemented yet"
+  PAnn t _ _             -> toMatchPat t
+  POr p q (_,x)          -> Or (toMatchPat p) (toMatchPat q) (At x)
 
 matrixFromColumn :: [Pat Tc] -> Matrix
 matrixFromColumn pats = Matrix ((: []) . toMatchPat <$> pats)
@@ -121,7 +118,7 @@ getAllCons name = do
   tInfo <- getConsFromTy info._tyName
   case tInfo._tyKind of
     IsSumType prod -> pure prod._stiConstructors
-    _ -> error "Cannot match on this type!"
+    _              -> error "Cannot match on this type!"
 
 defaultMatrix :: Matrix -> Matrix
 defaultMatrix (Matrix s) = Matrix $ concatMap getRow s where

@@ -6,16 +6,15 @@ module Nuko.Typer.Infer.Literal (
   preludeQual,
 ) where
 
-import Relude.Applicative (Applicative(pure))
-import Relude.Container   (fromList)
-import Relude             (Text, (.))
+import Relude
 
-import Nuko.Typer.Tree    ()
-import Nuko.Typer.Env     (MonadTyper)
-import Nuko.Typer.Types   (TTy (TyIdent), Relation (..))
-import Nuko.Tree.Expr     (Literal(..))
-import Nuko.Tree          (Re, Tc)
-import Nuko.Names         (mkModName, genIdent, ModName, mkTyName, TyName, Name(..), mkQualifiedWithPos, Qualified (..))
+import Nuko.Names       (ModName, Name (..), Qualified (..), TyName, genIdent,
+                         mkModName, mkQualifiedWithPos, mkTyName)
+import Nuko.Tree        (Re, Tc)
+import Nuko.Tree.Expr   (Literal (..))
+import Nuko.Typer.Env   (MonadTyper)
+import Nuko.Typer.Tree  ()
+import Nuko.Typer.Types (Relation (..), TTy (TyIdent))
 
 preludePath :: ModName
 preludePath = mkModName (fromList [genIdent "Prelude"])

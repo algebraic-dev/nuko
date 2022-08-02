@@ -4,12 +4,12 @@ module Nuko.Typer.Error.Tracking (
   getLastKindUnify
 ) where
 
-import Nuko.Typer.Types
-import Nuko.Report.Range (Range(..))
-import Data.Maybe (Maybe (..))
-import Relude (Generic, (<>))
-import Pretty.Tree (PrettyTree)
-import Pretty.Format (Format(format))
+import Relude
+
+import Nuko.Report.Range (Range (..))
+import Nuko.Typer.Types  (Relation (Virtual), TKind, TTy)
+import Pretty.Format     (Format (format))
+import Pretty.Tree       (PrettyTree)
 
 data Tracker
   = InUnify Range (TTy 'Virtual) (TTy 'Virtual)
@@ -19,17 +19,17 @@ data Tracker
 
 instance Format Tracker where
   format = \case
-    InUnify _ t t' -> "Unifying: " <> format t <> ", " <> format t'
+    InUnify _ t t'     -> "Unifying: " <> format t <> ", " <> format t'
     InKindUnify _ t t' -> "Unifying Kind: " <> format t <> ", " <> format t'
-    _ -> "Err"
+    _                  -> "Err"
 
 instance PrettyTree Tracker where
 
 getLastTypeUnify :: [Tracker] -> Maybe (Range, TTy 'Virtual, TTy 'Virtual)
 getLastTypeUnify (InUnify {} : g@InUnify {} : xs) = getLastTypeUnify (g : xs)
-getLastTypeUnify ((InUnify r t t') : _) = Just (r, t, t')
-getLastTypeUnify (_ : xs) = getLastTypeUnify xs
-getLastTypeUnify [] = Nothing
+getLastTypeUnify ((InUnify r t t') : _)           = Just (r, t, t')
+getLastTypeUnify (_ : xs)                         = getLastTypeUnify xs
+getLastTypeUnify []                               = Nothing
 
 getLastKindUnify :: [Tracker] -> Maybe (Range, TKind, TKind)
 getLastKindUnify (InKindUnify {} : g@InKindUnify {} : xs) = getLastKindUnify (g : xs)

@@ -39,9 +39,10 @@ module Nuko.Tree.Expr (
   XTy,
 ) where
 
-import Relude      (Show, Int, NonEmpty, Text)
-import Pretty.Tree (PrettyTree(prettyTree), Tree (..))
-import Nuko.Names (TyName, ValName, ConsName)
+import Relude
+
+import Nuko.Names  (ConsName, TyName, ValName)
+import Pretty.Tree (PrettyTree (prettyTree), Tree (..))
 
 data NoExt = NoExt deriving Show
 

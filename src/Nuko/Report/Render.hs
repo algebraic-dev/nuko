@@ -2,23 +2,20 @@ module Nuko.Report.Render (
   renderDiagnostic
 ) where
 
-import Nuko.Report.Text
-import Nuko.Report.Message    (Diagnostic(..))
+import Relude                 hiding (intercalate, replicate, unlines, unwords)
+
+import Data.Text              (replicate)
+import Nuko.Report.Message    (Diagnostic (..))
+import Nuko.Report.Range      (Pos (Pos, column, line), Range (..))
+import Pretty.Format          (Format (..))
+import Relude.Unsafe          ((!!))
+
 import Data.Text.Lazy.Builder (Builder, fromText, toLazyText)
 
-import Relude.String     (Text)
-import Relude.Function   ((.), ($))
-import Relude.Monoid     ((<>), Monoid (mempty, mconcat), memptyIfFalse)
-import Relude.Functor    ((<$>))
-import Relude            (Int, Eq ((==)), Num ((-), (+)), Maybe (..), maybe, LazyStrict (toStrict), Ord (..))
-import Data.Text         (replicate, length, splitAt)
-import Nuko.Report.Range (Range(..), Pos(Pos, line, column))
-import Relude.Unsafe     ((!!))
-import Pretty.Format     (Format(..))
-import Data.Bool         ((||))
-
-import qualified System.Console.Pretty as Pretty
-import qualified Data.List as List
+import Data.List              qualified as List
+import Data.Text              qualified as Text
+import Nuko.Report.Text       qualified as Report
+import System.Console.Pretty  qualified as Pretty
 
 indent :: Int
 indent = 5
@@ -39,7 +36,7 @@ unlines :: [Builder] -> Builder
 unlines = intercalate "\n"
 
 pad :: Int -> Builder
-pad n = fromText $ replicate n " "
+pad n = fromText $ Text.replicate n " "
 
 faint :: Text -> Text
 faint = Pretty.style Pretty.Faint
@@ -56,31 +53,31 @@ colorize color = fromText . Pretty.color color
 bgColorize :: Pretty.Color -> Text -> Builder
 bgColorize color = fromText . Pretty.bgColor color
 
-renderBadge :: Severity -> Builder
+renderBadge :: Report.Severity -> Builder
 renderBadge = \case
-    Error       -> bgColorize Pretty.Red " ERROR "
-    Warning     -> bgColorize Pretty.Yellow " WARN "
-    Information -> bgColorize Pretty.Blue " INFO "
-    Hint        -> bgColorize Pretty.Green " Hint "
+    Report.Error       -> bgColorize Pretty.Red " ERROR "
+    Report.Warning     -> bgColorize Pretty.Yellow " WARN "
+    Report.Information -> bgColorize Pretty.Blue " INFO "
+    Report.Hint        -> bgColorize Pretty.Green " Hint "
 
-getColorFromMark :: Color -> Pretty.Color
+getColorFromMark :: Report.Color -> Pretty.Color
 getColorFromMark = \case
-  Fst -> Pretty.Red
-  Snd -> Pretty.Blue
-  Thr -> Pretty.Green
-  For -> Pretty.Yellow
+  Report.Fst -> Pretty.Red
+  Report.Snd -> Pretty.Blue
+  Report.Thr -> Pretty.Green
+  Report.For -> Pretty.Yellow
 
-getPieceText :: (Text -> Text) -> Piece -> Builder
+getPieceText :: (Text -> Text) -> Report.Piece -> Builder
 getPieceText trans = \case
-  Raw t      -> fromText (trans t)
-  Marked m t -> colorize (getColorFromMark m) (trans t)
-  Quoted t   -> "'" <> getPieceText trans t <> "'"
+  Report.Raw t      -> fromText (trans t)
+  Report.Marked m t -> colorize (getColorFromMark m) (trans t)
+  Report.Quoted t   -> "'" <> getPieceText trans t <> "'"
 
-renderMode :: (Text -> Text) -> Mode -> Builder
+renderMode :: (Text -> Text) -> Report.Mode -> Builder
 renderMode trans = \case
-  Words words -> unwords (getPieceText trans <$> words)
+  Report.Words words' -> unwords (getPieceText trans <$> words')
 
-renderTitle :: Diagnostic -> DetailedDiagnosticInfo -> Builder
+renderTitle :: Diagnostic -> Report.DetailedDiagnosticInfo -> Builder
 renderTitle diagnostic detailed =
   renderBadge diagnostic.severity <> " " <> renderMode bold detailed.title
 
@@ -89,24 +86,24 @@ renderLocation diagnostic =
   let pos = diagnostic.position in
   fromText (blue $ faint $ (diagnostic.filename <> ":" <> (format $ pos.start.line + 1) <> ":" <> (format $ pos.start.column + 1)))
 
-renderSubtitle :: (Color, Mode) -> Builder
+renderSubtitle :: (Report.Color, Report.Mode) -> Builder
 renderSubtitle (color, text) =
   pad indent <> colorize (getColorFromMark color) "• " <> renderMode bold text
 
-renderSubtitles :: [(Color, Mode)] -> Builder
+renderSubtitles :: [(Report.Color, Report.Mode)] -> Builder
 renderSubtitles [] = mempty
 renderSubtitles ts = unlines (renderSubtitle <$> ts) <> "\n\n"
 
 modifyLine :: [Text] -> Range -> (Text -> Text) -> Builder
 modifyLine source range fn =
-    let (start, rest) = splitAt fixedRange.start.column line
-        (middle, end) = splitAt (fixedRange.end.column - fixedRange.start.column) rest
+    let (start, rest) = Text.splitAt fixedRange.start.column line
+        (middle, end) = Text.splitAt (fixedRange.end.column - fixedRange.start.column) rest
     in fromText $ start <> fn middle <> end
   where
     line = source !! range.start.line
     toEndRange (Range start end) size = Range start (Pos end.line size)
     sameLine   = range.start.line == range.end.line
-    fixedRange = if sameLine then range else toEndRange range (length line)
+    fixedRange = if sameLine then range else toEndRange range (Text.length line)
 
 emptyLine :: Builder
 emptyLine = pad (indent) <> (fromText $ faint "┊ \n")
@@ -116,15 +113,15 @@ renderLine :: [Text] -> Int -> Builder
 renderLine source lineNum | lineNum < 0 || lineNum >= List.length source = emptyLine
 renderLine source lineNum = do
   let lineText = format (lineNum + 1)
-  let padding  = pad (indent - length lineText - 1)
+  let padding  = pad (indent - Text.length lineText - 1)
   let line     = source !! lineNum
   let header   = fromText $ faint $ lineText <> " | "
   padding <> header <> (fromText $ faint $ line) <> "\n"
 
-renderPosition :: [Text] -> Annotation -> Builder
+renderPosition :: [Text] -> Report.Annotation -> Builder
 renderPosition source ann = do
     let lineText = format (range.start.line + 1)
-    let padding  = pad (indent - length lineText - 1)
+    let padding  = pad (indent - Text.length lineText - 1)
     let tip      = maybe "" (("\n" <> pad indent <> fromText (faint "| ") <> pad range.start.column <> fromText (boldColor $ replicate (List.maximum [colSize, 1]) "^" <> " ")) <>) text
     let resLine  = padding <> fromText lineText <> " | " <> modifyLine source range boldColor <> tip
     mconcat
@@ -137,16 +134,16 @@ renderPosition source ann = do
     boldColor :: Text -> Text
     boldColor t = Pretty.style Pretty.Bold $ Pretty.color color t
     line     = source !! range.start.line
-    colSize  = if range.start.line == range.end.line then range.end.column - range.start.column else length line - range.start.column
-    color = getColorFromMark $ case ann of {Ann color' _ _ -> color'; NoAnn color' _ -> color' }
-    range = case ann of {Ann _ _ range' -> range'; NoAnn _ range' -> range' }
-    text  = renderMode boldColor <$> case ann of {Ann _ text' _ -> Just text'; NoAnn {} -> Nothing }
+    colSize  = if range.start.line == range.end.line then range.end.column - range.start.column else Text.length line - range.start.column
+    color = getColorFromMark $ case ann of {Report.Ann color' _ _ -> color'; Report.NoAnn color' _ -> color' }
+    range = case ann of {Report.Ann _ _ range' -> range'; Report.NoAnn _ range' -> range' }
+    text  = renderMode boldColor <$> case ann of {Report.Ann _ text' _ -> Just text'; Report.NoAnn {} -> Nothing }
 
 renderDiagnostic :: [Text] -> Diagnostic -> Text
 renderDiagnostic source diagnostic =
     toStrict $ toLazyText go
   where
-    detailed = prettyDiagnostic diagnostic.kind
+    detailed = Report.prettyDiagnostic diagnostic.kind
     go =
       mconcat
         [ "\n"

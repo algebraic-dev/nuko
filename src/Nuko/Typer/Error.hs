@@ -2,13 +2,14 @@ module Nuko.Typer.Error (
   TypeError(..),
 ) where
 
-import Nuko.Report.Text
-import Relude            (Int, NonEmpty, Text)
-import Nuko.Typer.Types  (TTy, Relation (..), TKind)
-import Nuko.Names        (Label(..))
-import Data.Aeson.Types  (ToJSON(toJSON), (.=), object, Value)
-import Pretty.Format     (format, formatAnd)
+import Relude
+
+import Data.Aeson.Types  (ToJSON (toJSON), Value, object, (.=))
+import Nuko.Names        (Label (..))
 import Nuko.Report.Range (Range)
+import Nuko.Report.Text
+import Nuko.Typer.Types  (Relation (..), TKind, TTy)
+import Pretty.Format     (format, formatAnd)
 
 data TypeError
   = Mismatch Range (TTy 'Virtual) (TTy 'Virtual)

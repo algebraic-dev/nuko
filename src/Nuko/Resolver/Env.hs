@@ -27,30 +27,24 @@ module Nuko.Resolver.Env (
   mkDiagnostic
 ) where
 
-import Nuko.Report.Message 
-import Nuko.Resolver.Occourence (OccEnv, empty, insertOcc, insertWith, getMap)
-import Nuko.Report.Range        (Range, HasPosition (..))
+import Relude
+
+import Nuko.Names               (Ident (..), Label (..), ModName, Name (..),
+                                 Qualified, changeName, getChildName, mkIdent)
+import Nuko.Report.Range        (HasPosition (..), Range)
 import Nuko.Resolver.Error      (ResolveErrorReason (..))
-import Nuko.Utils               (terminate)
-import Nuko.Names               (Qualified, ModName, Label(..), Ident(..), Name(..), changeName, getChildName, mkIdent)
-
-import Relude.Container         (HashSet, HashMap)
-import Relude.Base              (Eq((==)))
-import Relude.Bool              (otherwise)
-import Relude.Monoid            ((<>), Endo)
-import Relude.Applicative       (Applicative(pure))
-import Relude.Monad             (MonadState, maybe, (=<<))
-import Relude                   (Show, Generic, (.), Text, Num ((+)), show, Int, const, Maybe (..), Either)
-
+import Nuko.Resolver.Occourence (OccEnv, getMap, insertOcc, insertWith)
+import Nuko.Utils               (flag, terminate)
 import Pretty.Tree              (PrettyTree)
+
 import Control.Monad.Chronicle  (MonadChronicle)
-import Control.Monad.Query     (MonadQuery)
+import Control.Monad.Query      (MonadQuery)
+import Lens.Micro.Platform      (at, makeLenses, use, (%=), (.=))
 
-import Lens.Micro.Platform      (makeLenses, use, (.=), (%=), at)
-
-import qualified Data.HashSet             as HashSet
-import qualified Data.HashMap.Strict      as HashMap
-import qualified Nuko.Resolver.Occourence as Occ
+import Data.HashMap.Strict      qualified as HashMap
+import Data.HashSet             qualified as HashSet
+import Nuko.Report.Message      qualified as Message
+import Nuko.Resolver.Occourence qualified as Occ
 
 data Visibility
   = Public
@@ -78,7 +72,7 @@ data ResolverState = ResolverState
   -- ^ Used to tracking locals.
   , _currentNamespace :: NameSpace
   , _newNamespaces    :: HashMap ModName NameSpace
-  , _reFilename         :: Text
+  , _reFilename       :: Text
   } deriving Generic
 
 makeLenses ''NameSpace
@@ -99,14 +93,14 @@ data Query a where
 type MonadResolver m =
   ( MonadQuery Query m
   , MonadState ResolverState m
-  , MonadChronicle (Endo [Diagnostic]) m
+  , MonadChronicle (Endo [Message.Diagnostic]) m
   )
 
-mkDiagnostic :: MonadResolver m => Severity -> Range -> ResolveErrorReason -> m Diagnostic
+mkDiagnostic :: MonadResolver m => Message.Severity -> Range -> ResolveErrorReason -> m Message.Diagnostic
 mkDiagnostic severity range reason = do
   namespace <- use (currentNamespace . modName)
   filename  <- use reFilename
-  pure (Diagnostic namespace filename severity range (ResolveError reason))
+  pure (Message.Diagnostic namespace filename severity range (Message.ResolveError reason))
 
 joinUses :: Use -> Use -> Use
 joinUses a' b' = case (a', b') of
@@ -118,14 +112,14 @@ joinUses a' b' = case (a', b') of
     | otherwise -> Ambiguous (HashSet.fromList [r, r'])
 
 emptyNamespace :: ModName -> NameSpace
-emptyNamespace moduleName = NameSpace moduleName Occ.empty
+emptyNamespace moduleName = NameSpace moduleName Occ.emptyOcc
 
 -- | This function is useful to create namespaces for types.
 newNamespace :: MonadState ResolverState m => ModName -> m a -> m a
 newNamespace newModuleName action = do
 
   lastNamespace    <- use currentNamespace
-  currentNamespace .= NameSpace newModuleName empty
+  currentNamespace .= NameSpace newModuleName mempty
   result           <- action
   resultNamespace  <- use currentNamespace
   currentNamespace .= lastNamespace
@@ -138,7 +132,7 @@ newNamespace newModuleName action = do
   pure result
 
 emptyState :: ModName -> Text -> ResolverState
-emptyState moduleName = ResolverState Occ.empty HashMap.empty Occ.empty Occ.empty (emptyNamespace moduleName) HashMap.empty
+emptyState moduleName = ResolverState Occ.emptyOcc HashMap.empty Occ.emptyOcc Occ.emptyOcc (emptyNamespace moduleName) HashMap.empty
 
 newScope :: MonadState ResolverState m => m a -> m a
 newScope action = do
@@ -177,21 +171,21 @@ newLocal lName = do
 
 useLocal :: MonadResolver m => Label -> m ()
 useLocal label = do
-    local <- use (localNames . getMap . at label)
-    case local of
-      Nothing -> terminate =<< mkDiagnostic Error (getPos label) (AlreadyExistsName label)
+    localLabel <- use (localNames . getMap . at label)
+    case localLabel of
+      Nothing -> flag =<< mkDiagnostic Message.Error (getPos label) (AlreadyExistsName label)
       Just _  -> usedLocals %= Occ.insertOcc label (getPos label)
 
 useModule :: MonadResolver m => ModName -> m NameSpace
 useModule modName' = do
     moduleRes <- use (openedModules . at modName')
     case moduleRes of
-      Nothing  -> terminate =<< mkDiagnostic Error (getPos modName')  (CannotFindModule modName')
+      Nothing  -> terminate =<< mkDiagnostic Message.Error (getPos modName')  (CannotFindModule modName')
       Just res -> pure res
 
 addGlobal :: MonadResolver m => Name k -> Visibility -> m ()
 addGlobal name vs = do
   result <- use (currentNamespace . names . getMap . at (Label name))
   case result of
-    Just _  -> terminate =<< mkDiagnostic Error (getPos name) (AlreadyExistsName (Label name))
+    Just _  -> flag =<< mkDiagnostic Message.Error (getPos name) (AlreadyExistsName (Label name))
     Nothing -> addDefinition (Label name) vs

@@ -2,15 +2,12 @@ module Nuko.Typer.Infer (
   inferProgram
 ) where
 
-import Relude.Foldable           (traverse)
-import Relude.Container          (uncurry)
-import Relude.List               (zip)
-import Relude.Applicative        (pure)
+import Relude
 
-import Nuko.Tree                 (Tc, Program (..), Re, NoExt (NoExt))
+import Nuko.Tree                 (NoExt (NoExt), Program (..), Re, Tc)
 import Nuko.Typer.Env            (MonadTyper)
-import Nuko.Typer.Infer.TypeDecl (initTypeDecl, inferTypeDecl)
-import Nuko.Typer.Infer.LetDecl (initLetDecl, inferLetDecl)
+import Nuko.Typer.Infer.LetDecl  (inferLetDecl, initLetDecl)
+import Nuko.Typer.Infer.TypeDecl (inferTypeDecl, initTypeDecl)
 
 inferProgram :: MonadTyper m => Program Re -> m (Program Tc)
 inferProgram program = do

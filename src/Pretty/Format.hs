@@ -4,14 +4,8 @@ module Pretty.Format (
   formatAnd
 ) where
 
-import Relude.String (show)
-import Data.Text (Text, intercalate)
-import Data.Int (Int)
-import Relude.List.NonEmpty (NonEmpty ((:|)), last, init)
-import Relude.Monoid ((<>))
-import Relude.Functor (Functor(fmap), (<$>))
-import qualified Data.Text as Text
-import Relude.Function (id)
+import Data.Text qualified as Text
+import Relude
 
 -- | A type class to beautifully represent some types of data
 -- as Show should always contain code that can run
@@ -31,7 +25,7 @@ formatWith (ne :| []) _ = format ne
 formatWith ne t =
   let formated = fmap format ne
       (rest, lastOne) = (init formated, last formated)
-  in intercalate ", " rest <> " " <> t <> " " <> lastOne
+  in Text.intercalate ", " rest <> " " <> t <> " " <> lastOne
 
 formatOr :: Format a => NonEmpty a -> Text
 formatOr ne = formatWith ne "or"

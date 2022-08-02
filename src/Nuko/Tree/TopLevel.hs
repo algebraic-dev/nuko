@@ -17,10 +17,11 @@ module Nuko.Tree.TopLevel (
   XModName,
 ) where
 
-import Nuko.Tree.Expr     (Expr, XName, XTy, XIdent, XModName)
+import Nuko.Names         (ConsName, TyName, ValName)
+import Nuko.Tree.Expr     (Expr, XIdent, XModName, XName, XTy)
+
 import Data.List.NonEmpty (NonEmpty)
 import Data.Maybe         (Maybe)
-import Nuko.Names (ConsName, ValName, TyName)
 
 data LetDecl x = LetDecl
   { declName :: XName x ValName

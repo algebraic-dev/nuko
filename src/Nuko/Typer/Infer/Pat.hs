@@ -3,33 +3,30 @@ module Nuko.Typer.Infer.Pat (
   checkPat
 ) where
 
-import Relude                   (($))
-import Relude.Base              (Eq(..))
-import Relude.Applicative       (pure)
-import Relude.Monad             (Maybe(..), modify)
-import Relude.Container         (HashMap)
+import Relude
 
-import Control.Monad.Reader     (foldM, MonadTrans(lift))
-import Lens.Micro.Platform      (use, at, view)
-import Data.List                (length)
-import Control.Monad            (when)
-
+import Nuko.Names               (Attribute (Untouched), Name, NameKind (TyName),
+                                 ValName, coerceTo, genIdent, mkName)
 import Nuko.Resolver.Tree       ()
-import Nuko.Typer.Tree          ()
-
+import Nuko.Tree                (Re, Tc)
+import Nuko.Tree.Expr           (Pat (..))
+import Nuko.Typer.Env           (DataConsInfo (_parameters), MonadTyper,
+                                 eagerInstantiate, endDiagnostic, getTy,
+                                 newTyHole, qualifyPath, seScope,
+                                 tsConstructors)
+import Nuko.Typer.Error         (TypeError (..))
 import Nuko.Typer.Infer.Literal (inferLit)
 import Nuko.Typer.Infer.Type    (inferClosedTy)
-import Nuko.Typer.Error         (TypeError(..))
-import Nuko.Typer.Unify         (unify, destructFun)
-import Nuko.Typer.Types         (TTy(..), Relation(..), quote, evaluate)
-import Nuko.Typer.Env           (getTy, newTyHole, tsConstructors, DataConsInfo(_parameters), MonadTyper, qualifyPath, endDiagnostic, seScope, eagerInstantiate)
-import Nuko.Tree.Expr           (Pat(..))
-import Nuko.Names               (coerceTo, genIdent, mkName, Attribute(Untouched), Name, NameKind(TyName), ValName)
-import Nuko.Tree                (Re, Tc)
+import Nuko.Typer.Tree          ()
+import Nuko.Typer.Types         (Relation (..), TTy (..), evaluate, quote)
+import Nuko.Typer.Unify         (destructFun, unify)
 
-import qualified Control.Monad.State as State
-import qualified Data.HashMap.Strict as HashMap
-import Nuko.Report.Range (Range, HasPosition (getPos))
+import Control.Monad.Reader     (foldM)
+import Lens.Micro.Platform      (at, use, view)
+
+import Control.Monad.State      qualified as State
+import Data.HashMap.Strict      qualified as HashMap
+import Nuko.Report.Range        (HasPosition (getPos), Range)
 
 type InferPat m a = State.StateT (HashMap (Name ValName) (TTy 'Virtual)) m a
 

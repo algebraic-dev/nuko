@@ -3,26 +3,21 @@ module Nuko.Typer.Infer.LetDecl (
   inferLetDecl
 ) where
 
-import Relude                   ((<$>), Traversable (traverse), Foldable (foldr), snd, traverse_, ($), fst, Maybe (Nothing))
-import Relude.Applicative       (pure)
-import Nuko.Resolver.Tree       ()
-import Nuko.Typer.Tree          ()
+import Relude
 
-import Nuko.Typer.Env           (tsVars, MonadTyper, addTy, DefInfo(..), newKindHole, addLocalTypes, addLocals, newTyHole)
-
-import Nuko.Typer.Infer.Type    (inferOpenTy, freeVars)
-import Nuko.Typer.Unify         (unifyKind)
-import Nuko.Typer.Types         (TTy(..), TKind(KiStar), evaluate, generalizeNames )
-
-import Nuko.Tree                (LetDecl(..), Tc, Re)
-
-import Data.List (unzip, zip)
-
-import qualified Data.HashSet as HashSet
-import qualified Data.HashMap.Strict as HashMap
+import Nuko.Names            (NameKind (..), coerceTo)
+import Nuko.Report.Range     (getPos)
+import Nuko.Tree             (LetDecl (..), Re, Tc)
+import Nuko.Typer.Env        (DefInfo (..), MonadTyper, addLocalTypes,
+                              addLocals, addTy, newKindHole, newTyHole, tsVars)
 import Nuko.Typer.Infer.Expr (checkExpr)
-import Nuko.Names (NameKind(..), coerceTo)
-import Nuko.Report.Range (getPos)
+import Nuko.Typer.Infer.Type (freeVars, inferOpenTy)
+import Nuko.Typer.Types      (TKind (KiStar), TTy (..), evaluate,
+                              generalizeNames)
+import Nuko.Typer.Unify      (unifyKind)
+
+import Data.HashMap.Strict   qualified as HashMap
+import Data.HashSet          qualified as HashSet
 
 initLetDecl :: MonadTyper m => LetDecl Re -> m DefInfo
 initLetDecl (LetDecl name args _ ret _) = do

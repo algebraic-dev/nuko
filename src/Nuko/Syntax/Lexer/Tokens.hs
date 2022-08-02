@@ -2,7 +2,8 @@ module Nuko.Syntax.Lexer.Tokens (
     Token(..),
 ) where
 
-import Relude      (Text, Show, Int, Generic)
+import Relude
+
 import Pretty.Tree (PrettyTree)
 
 -- | Unit of information that the lexer will use

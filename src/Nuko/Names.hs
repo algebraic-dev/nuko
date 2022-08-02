@@ -1,60 +1,60 @@
-module Nuko.Names (
-  Attribute(..),
-  NameSort(..),
-  Ident(..),
-  Path(..),
-  Name(..),
-  ModName(..),
-  Qualified(..),
-  NameKind(..),
-  Label(..),
-  ValName,
-  TyName,
-  ConsName,
-  MiscName,
-  mkIdent,
-  mkName,
-  mkLabel,
-  mkModName,
-  mkQualified,
-  mkQualifiedPath,
-  attachModName,
-  mkQualifiedWithPos,
-  mkLocalPath,
-  mkValName,
-  mkTyName,
-  mkConsName,
-  getIdent,
-  getNameSort,
-  coerceTo,
-  addSegments,
-  changeName,
-  changeLabel,
-  genIdent,
-  coerceLabel,
-  getPathModule,
-  getPathInfo,
-  moduleLastIdent,
-  getChildName,
-  mkPath,
-) where
+module Nuko.Names
+  ( Attribute (..),
+    NameSort (..),
+    Ident (..),
+    Path (..),
+    Name (..),
+    ModName (..),
+    Qualified (..),
+    NameKind (..),
+    Label (..),
+    ValName,
+    TyName,
+    ConsName,
+    MiscName,
+    mkIdent,
+    mkName,
+    mkLabel,
+    mkModName,
+    mkQualified,
+    mkQualifiedPath,
+    attachModName,
+    mkQualifiedWithPos,
+    mkLocalPath,
+    mkValName,
+    mkTyName,
+    mkConsName,
+    getIdent,
+    getNameSort,
+    coerceTo,
+    addSegments,
+    changeName,
+    changeLabel,
+    genIdent,
+    coerceLabel,
+    getPathModule,
+    getPathInfo,
+    moduleLastIdent,
+    getChildName,
+    mkPath,
+  )
+where
 
-import Relude            (Bool (..), Int, Semigroup(..), NonEmpty ((:|)), Maybe (..), last, show)
-import Relude.Base       (Generic, Eq ((==)))
-import Relude.String     (Text)
-import Relude.Functor    (Functor(fmap))
-import Relude.Foldable   (Foldable(toList))
-import Relude.Function   (($))
+import Data.Hashable     (Hashable (hash))
+import Nuko.Report.Range (HasPosition (getPos), Range, SetPosition (..),
+                          emptyRange, toLabel)
+import Pretty.Format     (Format (..))
+import Pretty.Tree       (PrettyTree (..), Tree (..))
 
-import Data.Text         (intercalate)
-import Pretty.Tree       (PrettyTree(..), Tree (..))
-import Data.Hashable     (Hashable(hash, hashWithSalt))
-import Nuko.Report.Range (Range, toLabel, HasPosition (getPos), emptyRange, SetPosition(..))
-import Pretty.Format     (Format(..))
+import Data.Text         qualified as Text
+import Relude
 
 data ValName
+
 data TyName
+
 data ConsName
+
 data MiscName
 
 -- | This is simply some aditional information
@@ -63,16 +63,17 @@ data IdentAttr
   | FromSource
 
 data Ident = Ident
-  { iHash   :: {-# UNPACK #-}!Int
-  , iText   :: Text
-  , iRange  :: Range
-  , iAttr   :: IdentAttr
-  } deriving stock Generic
+  { iHash  :: {-# UNPACK #-} !Int,
+    iText  :: Text,
+    iRange :: Range,
+    iAttr  :: IdentAttr
+  }
+  deriving stock (Generic)
 
 data NameKind k where
-  ValName   :: NameKind ValName
-  TyName    :: NameKind TyName
-  ConsName  :: NameKind ConsName
+  ValName :: NameKind ValName
+  TyName :: NameKind TyName
+  ConsName :: NameKind ConsName
 
 deriving instance Eq (NameKind k)
 
@@ -84,36 +85,39 @@ data Attribute
   | Was Ident
 
 data Name e = Name
-  { nHash   :: {-# UNPACK #-}!Int
-  , nKind   :: NameKind e
-  , nAttr   :: Attribute
-  , nIdent  :: Ident
-  } deriving stock Generic
+  { nHash  :: {-# UNPACK #-} !Int,
+    nKind  :: NameKind e,
+    nAttr  :: Attribute,
+    nIdent :: Ident
+  }
+  deriving stock (Generic)
 
 -- | A Label is just a type synonym for the
 -- impredicative type of anonymous kind name
-data Label = forall a. Label { lName :: Name a }
+data Label = forall a. Label {lName :: Name a}
 
 -- | The path of a module
 data ModName = ModName
-  { mHash'    :: {-# UNPACK #-}!Int
-  , mSegments :: NonEmpty Ident
-  , mRange    :: Range
-  } deriving stock Generic
+  { mHash'    :: {-# UNPACK #-} !Int,
+    mSegments :: NonEmpty Ident,
+    mRange    :: Range
+  }
+  deriving stock (Generic)
 
 -- | A name that is qualified by a module name
 data Qualified a = Qualified
-  { qHash   :: {-# UNPACK #-}!Int
-  , qModule :: ModName
-  , qInfo   :: a
-  , qRange  :: Range
-  } deriving stock (Generic, Functor)
+  { qHash   :: {-# UNPACK #-} !Int,
+    qModule :: ModName,
+    qInfo   :: a,
+    qRange  :: Range
+  }
+  deriving stock (Generic, Functor)
 
 -- | Paths that can be either local (like let declarations) or
 -- external.
 data Path e
-  = Full {-# UNPACK #-}!Int (Qualified e)
-  | Local {-# UNPACK #-}!Int e
+  = Full {-# UNPACK #-} !Int (Qualified e)
+  | Local {-# UNPACK #-} !Int e
   deriving stock (Functor)
 
 getNameSort :: Label -> NameSort
@@ -138,10 +142,10 @@ mkModName :: NonEmpty Ident -> ModName
 mkModName path = ModName (hash path) path (getPos path)
 
 mkQualified :: Hashable a => ModName -> a -> Range -> Qualified a
-mkQualified mod text = Qualified (hash mod `hashWithSalt` text) mod text
+mkQualified moduleName text = Qualified (hash moduleName `hashWithSalt` text) moduleName text
 
 mkQualifiedWithPos :: (Hashable a, HasPosition a) => ModName -> a -> Qualified a
-mkQualifiedWithPos mod text = Qualified (hash mod `hashWithSalt` text) mod text (getPos mod <> getPos text)
+mkQualifiedWithPos moduleName text = Qualified (hash moduleName `hashWithSalt` text) moduleName text (getPos moduleName <> getPos text)
 
 attachModName :: Hashable a => HasPosition a => ModName -> a -> Qualified a
 attachModName modName info = mkQualified modName info (getPos info)
@@ -163,7 +167,7 @@ mkConsName ident = mkName ConsName ident Untouched
 
 changeName :: Ident -> Name x -> Name x
 changeName to (Name _ kind Untouched ident) = mkName kind to (Was ident)
-changeName to (Name _ kind other         _) = mkName kind to other
+changeName to (Name _ kind other _)         = mkName kind to other
 
 changeLabel :: Ident -> Label -> Label
 changeLabel to (Label n) = Label (changeName to n)
@@ -176,16 +180,16 @@ coerceLabel newKind (Label (Name _ _ attr ident)) = mkName newKind ident attr
 
 addSegments :: ModName -> [Ident] -> ModName
 addSegments (ModName _ (x :| seg) r) toAppend =
-  let segs = (x :| seg <> toAppend) in
-  ModName (hash segs) segs r
+  let segs = (x :| seg <> toAppend)
+   in ModName (hash segs) segs r
 
 getPathModule :: Path a -> Maybe ModName
-getPathModule (Local _ _) = Nothing
+getPathModule (Local _ _)   = Nothing
 getPathModule (Full _ qual) = Just qual.qModule
 
 getPathInfo :: Path a -> a
 getPathInfo (Local _ ident) = ident
-getPathInfo (Full _ qual) = qual.qInfo
+getPathInfo (Full _ qual)   = qual.qInfo
 
 moduleLastIdent :: ModName -> Ident
 moduleLastIdent (ModName _ segments _) = last segments
@@ -194,7 +198,7 @@ getChildName :: ModName -> ModName
 getChildName (ModName _ segments _) = mkModName (last segments :| [])
 
 mkPath :: (Hashable a, HasPosition a) => Maybe ModName -> a -> Path a
-mkPath Nothing ident = mkLocalPath ident
+mkPath Nothing ident        = mkLocalPath ident
 mkPath (Just modName) ident = mkQualifiedPath (mkQualifiedWithPos modName ident)
 
 -- Instances for comparisons and hashing
@@ -209,9 +213,9 @@ instance Hashable Ident where
 
 instance Hashable (NameKind k) where
   hash = \case
-    ValName   -> hash (1 :: Int)
-    TyName    -> hash (2 :: Int)
-    ConsName  -> hash (3 :: Int)
+    ValName  -> hash (1 :: Int)
+    TyName   -> hash (2 :: Int)
+    ConsName -> hash (3 :: Int)
   hashWithSalt salt n = salt `hashWithSalt` hash n
 
 instance Hashable (Name k) where
@@ -227,9 +231,9 @@ instance Hashable (Qualified a) where
   hashWithSalt salt (Qualified hash' _ _ _) = hashWithSalt salt hash'
 
 instance Hashable (Path a) where
-  hash (Full hash' _) = hash'
+  hash (Full hash' _)  = hash'
   hash (Local hash' _) = hash'
-  hashWithSalt salt (Full hash' _) = hashWithSalt salt hash'
+  hashWithSalt salt (Full hash' _)  = hashWithSalt salt hash'
   hashWithSalt salt (Local hash' _) = hashWithSalt salt hash'
 
 instance Eq Label where
@@ -248,20 +252,20 @@ instance Eq (Qualified a) where
   (Qualified hash' _ _ _) == (Qualified hash'' _ _ _) = hash' == hash''
 
 instance Eq (Path a) where
-  (Full hash' _) == (Full hash'' _) = hash' == hash''
+  (Full hash' _) == (Full hash'' _)   = hash' == hash''
   (Local hash' _) == (Local hash'' _) = hash' == hash''
-  _ == _ = False
+  _ == _                              = False
 
 -- Instances for pretty printing
 
 joinSegments :: NonEmpty Ident -> Text
-joinSegments segments = intercalate "." (toList $ fmap iText segments)
+joinSegments segments = Text.intercalate "." (toList $ fmap iText segments)
 
 showKind :: NameKind k -> Text
 showKind = \case
-  ValName   -> "ValName"
-  TyName    -> "TyName"
-  ConsName  -> "ConsName"
+  ValName  -> "ValName"
+  TyName   -> "TyName"
+  ConsName -> "ConsName"
 
 instance PrettyTree Label where
   prettyTree (Label n) = prettyTree n
@@ -276,7 +280,7 @@ instance PrettyTree ModName where
 
 instance PrettyTree (Name k) where
   prettyTree (Name _ kind _ (Ident _ text range' _)) =
-      Node "Name:" [showKind kind, text, toLabel range'] []
+    Node "Name:" [showKind kind, text, toLabel range'] []
 
 instance PrettyTree a => PrettyTree (Qualified a) where
   prettyTree (Qualified _ (ModName _ segments _) name range') =
@@ -298,9 +302,9 @@ instance Format (Name k) where
 
 instance Format (NameKind k) where
   format = \case
-    ValName   -> "value"
+    ValName  -> "value"
     TyName   -> "type"
-    ConsName  -> "constructor"
+    ConsName -> "constructor"
 
 instance Format NameSort where
   format (NameSort sort) = format sort
@@ -316,7 +320,7 @@ instance Format k => Format (Qualified k) where
 
 instance Format k => Format (Path k) where
   format (Full _ qualified) = format qualified
-  format (Local _ name) = format name
+  format (Local _ name)     = format name
 
 -- Instances for source code position
 
@@ -337,7 +341,7 @@ instance HasPosition (Qualified k) where
 
 instance HasPosition k => HasPosition (Path k) where
   getPos (Local _ name) = getPos name
-  getPos (Full _ name) = getPos name
+  getPos (Full _ name)  = getPos name
 
 instance SetPosition Ident where
   setPos r (Ident h k _ t) = Ident h k r t

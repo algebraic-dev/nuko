@@ -10,25 +10,23 @@ module Nuko.Report.Range (
     emptyRange,
     copyPos
 ) where
+import Relude
 
-import Relude        (Int, Semigroup(..), Char, Num ((+)), Show, show, ($))
-import Pretty.Tree   (PrettyTree(..), Tree (..), inlineTree)
-import Relude.String (Text)
-
-import qualified Data.List.NonEmpty as NonEmpty
+import Data.List.NonEmpty qualified as NonEmpty
+import Pretty.Tree        (PrettyTree (..), Tree (..), inlineTree)
 
 data Pos = Pos
-  { line :: {-# UNPACK #-} Int
+  { line   :: {-# UNPACK #-} Int
   , column :: {-# UNPACK #-} Int
   } deriving Show
 
 data Range = Range
   { start :: Pos
-  , end :: Pos
+  , end   :: Pos
   } deriving Show
 
 data Ranged a = Ranged
-  { info :: a
+  { info     :: a
   , position :: Range }
   deriving Show
 

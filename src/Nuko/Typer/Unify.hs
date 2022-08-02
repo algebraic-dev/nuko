@@ -4,20 +4,20 @@ module Nuko.Typer.Unify (
   destructFun,
 ) where
 
-import Nuko.Typer.Types    (TTy(..), Relation (..), derefTy, TyHole)
-import Nuko.Typer.Kinds    (TKind(..), Hole(Filled, Empty), KiHole, derefKind)
-import Nuko.Typer.Error    (TypeError(..))
-import Nuko.Typer.Env      (MonadTyper, addLocalTy, seScope, newTyHoleWithScope, eagerInstantiate, newKindHole, endDiagnostic)
+import Relude
 
-import Relude              (Int, Ord ((>=), (>)), (&&), (<))
-import Relude.Base         ((==))
-import Relude.Bool         (when, Bool (..), otherwise, unless)
-import Relude.Lifted       (readIORef, writeIORef)
-import Relude.Function     (($))
-import Relude.Applicative  (pure, (*>))
-import Lens.Micro.Platform (view)
-import Nuko.Typer.Error.Extract (extractTypeMismatch, extractKindMismatch, extractKindUnifierRange, extractTypeUnifierRange, Tracker (..), track)
-import Nuko.Report.Range (Range(..))
+import Lens.Micro.Platform      (view)
+import Nuko.Report.Range        (Range (..))
+import Nuko.Typer.Env           (MonadTyper, addLocalTy, eagerInstantiate,
+                                 endDiagnostic, newKindHole, newTyHoleWithScope,
+                                 seScope)
+import Nuko.Typer.Error         (TypeError (..))
+import Nuko.Typer.Error.Extract (Tracker (..), extractKindMismatch,
+                                 extractKindUnifierRange, extractTypeMismatch,
+                                 extractTypeUnifierRange, track)
+import Nuko.Typer.Kinds         (Hole (Empty, Filled), KiHole, TKind (..),
+                                 derefKind)
+import Nuko.Typer.Types         (Relation (..), TTy (..), TyHole, derefTy)
 
 destructFun :: MonadTyper m => Range -> TTy 'Virtual -> m (TTy 'Virtual, TTy 'Virtual)
 destructFun range ty = do

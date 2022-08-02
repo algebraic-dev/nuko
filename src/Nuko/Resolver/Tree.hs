@@ -7,11 +7,12 @@
 
 module Nuko.Resolver.Tree where
 
+import Relude
+
+import Nuko.Names        (Ident, ModName, Name, Path)
+import Nuko.Report.Range (HasPosition (..), Range)
 import Nuko.Tree
-import Nuko.Report.Range  (Range, HasPosition(..))
-import Relude             (Semigroup((<>)), Void, Generic)
-import Pretty.Tree        (PrettyTree)
-import Nuko.Names         (Path, Name, Ident, ModName)
+import Pretty.Tree       (PrettyTree)
 
 type instance XIdent Re    = Ident
 type instance XModName Re  = ModName
@@ -100,16 +101,16 @@ instance HasPosition (Pat Re) where
 
 instance HasPosition (Expr Re) where
   getPos = \case
-    Lit t _ -> getPos t
-    Lam _ _ r -> r
-    App _ _ r -> r
-    Lower r _ -> getPos r
-    Upper r _ -> getPos r
+    Lit t _     -> getPos t
+    Lam _ _ r   -> r
+    App _ _ r   -> r
+    Lower r _   -> getPos r
+    Upper r _   -> getPos r
     Field _ _ r -> r
-    If _ _ _ r -> r
+    If _ _ _ r  -> r
     Match _ _ r -> r
-    Block _  r -> r
-    Ann _ _ r  -> r
+    Block _  r  -> r
+    Ann _ _ r   -> r
 
 instance HasPosition (Block Re) where
   getPos = \case

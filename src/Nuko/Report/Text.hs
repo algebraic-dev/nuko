@@ -10,9 +10,8 @@ module Nuko.Report.Text (
   mkBasicDiagnostic,
 ) where
 
-import Relude.String (Text, unwords)
-import Relude.Functor (fmap)
-import Relude.Monoid ((<>))
+import Relude
+
 import Nuko.Report.Range (Range)
 
 data Severity
@@ -53,9 +52,9 @@ class PrettyDiagnostic a where
   prettyDiagnostic :: a -> DetailedDiagnosticInfo
 
 getPieceText :: Piece -> Text
-getPieceText (Raw t) = t
+getPieceText (Raw t)      = t
 getPieceText (Marked _ t) = t
-getPieceText (Quoted t) = "'" <> getPieceText t <> "'"
+getPieceText (Quoted t)   = "'" <> getPieceText t <> "'"
 
 colorlessFromFormat :: Mode -> Text
 colorlessFromFormat = \case
