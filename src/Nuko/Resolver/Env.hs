@@ -154,11 +154,11 @@ openName :: MonadState ResolverState m => Label -> Qualified Label -> m ()
 openName name label = openedNames %= insertWith name joinUses (Single label)
 
 newLocal :: MonadState ResolverState m => Name k -> m (Name k)
-newLocal lName = do
+newLocal localName = do
     locals      <- use localNames
-    let text     = lName.nIdent.iText
-    let newLabel = maybe lName (const (generateNewName locals lName text 1)) (Occ.lookupOcc (Label lName) locals)
-    localNames  %= Occ.insertOcc (Label lName) (Label newLabel)
+    let text     = localName.nIdent.iText
+    let newLabel = maybe localName (const (generateNewName locals localName text 1)) (Occ.lookupOcc (Label localName) locals)
+    localNames  %= Occ.insertOcc (Label localName) (Label newLabel)
     localNames  %= Occ.insertOcc (Label newLabel) (Label newLabel)
     pure newLabel
   where

@@ -75,9 +75,9 @@ data LexerState = LexerState
     }
 
 initialState :: ModName -> Text -> ByteString -> LexerState
-initialState modName filename str = -- 10 is the ascii for \n
-  LexerState { modName  = modName
-             , filename = filename
+initialState moduleName' fileName str = -- 10 is the ascii for \n
+  LexerState { modName  = moduleName'
+             , filename = fileName
              , input    = AlexInput (Range.Pos 0 0) 10 str
              , codes    = 0 :| []
              , buffer   = ""
@@ -115,13 +115,13 @@ lastLayout = State.gets (fmap fst . uncons . layout)
 -- Error messages
 
 mkCompilerError :: Severity -> SyntaxError -> Lexer Diagnostic
-mkCompilerError severity err = do
+mkCompilerError diagSeverity err = do
   name <- gets modName
-  filename <- gets Nuko.Syntax.Lexer.Support.filename
+  fileName <- gets Nuko.Syntax.Lexer.Support.filename
   pure $ Diagnostic
     { moduleName = name
-    , filename   = filename
-    , severity   = severity
+    , filename   = fileName
+    , severity   = diagSeverity
     , position   = getErrorSite err
     , kind       = SyntaxError err
     }
@@ -132,7 +132,7 @@ flagChar fn pos = do
   flag =<< mkCompilerError Error (fn (Range.Range pos lastPos))
 
 emitDiagnostic :: Severity -> SyntaxError -> Lexer ()
-emitDiagnostic severity err = flag =<< mkCompilerError severity err
+emitDiagnostic diagnosticSeverity err = flag =<< mkCompilerError diagnosticSeverity err
 
 terminateWith :: SyntaxError -> Lexer a
 terminateWith err = terminate =<< mkCompilerError Error err
@@ -167,8 +167,8 @@ ghostRange t = do
     pure $ Range.Ranged t (Range.Range pos pos)
 
 runLexer :: Lexer a -> ModName -> Text -> ByteString -> These [Diagnostic] a
-runLexer lex' modName filename input' =
+runLexer lex' moduleName' fileName input' =
   first
     (`appEndo` [])
     (Chronicle.runChronicle
-      $ State.evalStateT lex'.getLexer (initialState modName filename input'))
+      $ State.evalStateT lex'.getLexer (initialState moduleName' fileName input'))

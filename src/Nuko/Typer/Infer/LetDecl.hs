@@ -13,7 +13,7 @@ import Nuko.Typer.Env        (DefInfo (..), MonadTyper, addLocalTypes,
 import Nuko.Typer.Infer.Expr (checkExpr)
 import Nuko.Typer.Infer.Type (freeVars, inferOpenTy)
 import Nuko.Typer.Types      (TKind (KiStar), TTy (..), evaluate,
-                              generalizeNames)
+                              generalizeNames, quote)
 import Nuko.Typer.Unify      (unifyKind)
 
 import Data.HashMap.Strict   qualified as HashMap
@@ -47,5 +47,5 @@ inferLetDecl (LetDecl name' args arg _ ext) tyInfo = do
     polyTys <- traverse newTyHole (coerceTo TyName <$> names)
     let argNames = HashMap.fromList $ zip (fst <$> args) (evaluate polyTys <$> tyInfo._argTypes)
     addLocals argNames $ do
-      bodyRes <- checkExpr arg (evaluate [] tyInfo._retType)
-      pure (LetDecl name' argNamesReal bodyRes tyInfo._retType ext)
+      (bodyRes, bodyResTy) <- checkExpr arg (evaluate [] tyInfo._retType)
+      pure (LetDecl name' argNamesReal bodyRes (quote 0 bodyResTy) ext)

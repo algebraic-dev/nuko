@@ -11,7 +11,6 @@ import Nuko.Resolver.Error (ResolveErrorReason)
 import Nuko.Syntax.Error   (SyntaxError)
 import Nuko.Typer.Error    (TypeError)
 
-import Data.Aeson          (ToJSON (toJSON))
 import Data.Text           (Text)
 
 data DiagnosticInfo
@@ -32,9 +31,3 @@ instance PrettyDiagnostic DiagnosticInfo where
     SyntaxError err  -> prettyDiagnostic err
     ResolveError err -> prettyDiagnostic err
     TypingError err  -> prettyDiagnostic err
-
-instance ToJSON DiagnosticInfo where
-  toJSON = \case
-    SyntaxError e  -> toJSON e
-    TypingError e  -> toJSON e
-    ResolveError e -> toJSON e

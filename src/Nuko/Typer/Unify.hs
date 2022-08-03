@@ -6,6 +6,7 @@ module Nuko.Typer.Unify (
 
 import Relude
 
+import Control.Monad.Chronicle  (MonadChronicle (..), memento)
 import Lens.Micro.Platform      (view)
 import Nuko.Report.Range        (Range (..))
 import Nuko.Typer.Env           (MonadTyper, addLocalTy, eagerInstantiate,
@@ -23,6 +24,7 @@ destructFun :: MonadTyper m => Range -> TTy 'Virtual -> m (TTy 'Virtual, TTy 'Vi
 destructFun range ty = do
   instTy <- eagerInstantiate (derefTy ty)
   case instTy of
+    TyErr     -> pure (TyErr, TyErr)
     TyFun a b -> pure (a, b)
     TyHole hole -> do
       content <- readIORef hole
@@ -68,8 +70,12 @@ unifyKind range t' ty' = track (InKindUnify range t' ty') $ go t' ty'
           Empty _ _ -> pure ()
           Filled a  -> preCheck hole a
 
-unify :: MonadTyper m => Range -> TTy 'Virtual -> TTy 'Virtual -> m ()
-unify range rt rty = track (InUnify range rt rty) $ go rt rty
+unify :: MonadTyper m => Range -> TTy 'Virtual -> TTy 'Virtual -> m (TTy 'Virtual)
+unify range got expect = do
+    res <- memento $ track (InUnify range got expect) $ go got expect
+    case res of
+      Left err -> dictate err *> pure TyErr
+      Right () -> pure expect
   where
     go :: MonadTyper m => TTy 'Virtual -> TTy 'Virtual -> m ()
     go oTy oTy' = track (InUnify range oTy oTy') $ do
@@ -95,15 +101,15 @@ unify range rt rty = track (InUnify range rt rty) $ go rt rty
 
     unifyHoleTy :: MonadTyper m => TyHole -> Int -> TTy 'Virtual -> m ()
     unifyHoleTy hole scope ty = do
-      start <- view seScope
+      start' <- view seScope
       case ty of
         TyHole hole' | hole == hole' -> pure ()
         _ -> do
-          preCheck scope start hole ty
+          preCheck scope start' hole ty
           writeIORef hole (Filled ty)
 
     preCheck :: MonadTyper m => Int -> Int -> TyHole -> TTy 'Virtual -> m ()
-    preCheck scope start hole =
+    preCheck scope initial hole =
         go'
       where
         go' :: MonadTyper m => TTy 'Virtual -> m ()
@@ -112,7 +118,7 @@ unify range rt rty = track (InUnify range rt rty) $ go rt rty
           case derefTy uTy of
             TyErr -> pure ()
             TyVar lvl
-              | lvl >= scope && lvl < start -> do
+              | lvl >= scope && lvl < initial -> do
                 range' <- extractTypeUnifierRange
                 endDiagnostic (EscapingScope range') range'
               | otherwise    -> pure ()

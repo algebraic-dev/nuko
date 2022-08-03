@@ -11,6 +11,7 @@ module Nuko.Typer.Types (
   printTy,
   generalizeNames,
   printRealTy,
+  isError
 ) where
 
 import Relude
@@ -39,6 +40,10 @@ data TTy (v :: Relation) where
   TyFun     :: TTy a -> TTy a -> TTy a
   TyApp     :: TKind -> TTy a -> TTy a -> TTy a
   TyErr     :: TTy a
+
+isError :: TTy 'Virtual -> Bool
+isError TyErr = True
+isError _     = False
 
 derefTy :: TTy 'Virtual -> TTy 'Virtual
 derefTy = \case
@@ -100,7 +105,7 @@ printRealTy =
       TyErr -> "ERR"
       TyHole hole ->
         case unsafePerformIO (readIORef hole) of
-          Empty n i -> "[" <> format n <> "." <> format i <> "]"
+          Empty _ _ -> "?"
           Filled f  -> printTy f
 
       TyFun a@(TyForall {}) b -> "(" <> go env a <> ") -> " <> go env b

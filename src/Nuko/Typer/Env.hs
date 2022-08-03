@@ -164,7 +164,7 @@ endDiagnostic kind' range = do
     }
 
 emitDiagnostic :: MonadTyper m => Severity -> TypeError -> Range -> m ()
-emitDiagnostic severity' kind range = do
+emitDiagnostic severity' infoKind range = do
   modName <- use teCurModule
   fileName <- use teCurFilename
   flag $ Diagnostic
@@ -172,7 +172,7 @@ emitDiagnostic severity' kind range = do
     , severity = severity'
     , filename = fileName
     , position = range
-    , kind = TypingError kind
+    , kind = TypingError infoKind
     }
 
 emptyScopeEnv :: ScopeEnv
@@ -182,8 +182,8 @@ emptyTypeSpace :: TypeSpace
 emptyTypeSpace = TypeSpace HashMap.empty HashMap.empty HashMap.empty HashMap.empty
 
 runToIO :: TypeSpace -> ModName -> Text -> (forall m. MonadTyper m => m a) -> IO (These [Diagnostic] (a, TypingEnv))
-runToIO typeSpace modName filename action = do
-  let env = TypingEnv modName filename [] typeSpace
+runToIO typeSpace modName fileName action = do
+  let env = TypingEnv modName fileName [] typeSpace
   let res = Reader.runReaderT action emptyScopeEnv
   first (`appEndo` [])
     <$> Chronicle.runChronicleT (State.runStateT res env)

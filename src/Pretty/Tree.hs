@@ -12,6 +12,7 @@ import GHC.Generics        (C1, Constructor (conName), D1, Generic (Rep, from),
                             type (:*:) (..), type (:+:) (..))
 import Relude
 
+
 data Tree = Node Text [Text] [Tree]
 
 inlineTree :: Tree -> Tree

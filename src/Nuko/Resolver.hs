@@ -19,7 +19,7 @@ import Nuko.Tree
 import Nuko.Utils              (flag, terminate)
 
 import Control.Monad           (foldM)
-import Control.Monad.Chronicle (memento)
+import Control.Monad.Chronicle (MonadChronicle (dictate), memento)
 import Control.Monad.Query     (MonadQuery (..))
 import Data.List.NonEmpty      (groupAllWith)
 import Data.Traversable        (for)
@@ -46,7 +46,7 @@ resolveImport :: MonadResolver m => Import Nm -> m ()
 resolveImport decl = do
   spaceRes <- memento (importModule decl.path)
   case spaceRes of
-    Left _ -> pure ()
+    Left err -> dictate err *> pure ()
     Right space ->
       case decl.modifier of
         Just res -> resolveModifier space res
@@ -131,15 +131,15 @@ resolveLit = \case
 
 resolveType :: MonadResolver m => Ty Nm -> m (Ty Re)
 resolveType = \case
-  TForall binder ty ext' -> Env.newScope $ Env.newLocal binder >>= \name -> TForall name <$> resolveType ty <*> pure ext'
+  TForall binder ty ext' -> Env.newScope $ Env.newLocal binder >>= \binderName -> TForall binderName <$> resolveType ty <*> pure ext'
   TId path' ext' -> TId <$> resolvePath path' <*> pure ext'
   TApp ty' ty ext' -> TApp <$> resolveType ty' <*> traverse resolveType ty <*> pure ext'
   TArrow from to ext' -> TArrow <$> resolveType from <*> resolveType to <*> pure ext'
-  TPoly name ext' -> do
-    result <- useLocalPath name
+  TPoly binderName ext' -> do
+    result <- useLocalPath binderName
     case result of
       Just res -> pure (TPoly res ext')
-      Nothing  -> pure (TPoly name ext')
+      Nothing  -> pure (TPoly binderName ext')
 
 resolvePat :: MonadResolver m => Pat Nm -> m (Pat Re)
 resolvePat pat' = do

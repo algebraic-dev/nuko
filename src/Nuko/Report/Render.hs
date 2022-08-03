@@ -96,14 +96,14 @@ renderSubtitles ts = unlines (renderSubtitle <$> ts) <> "\n\n"
 
 modifyLine :: [Text] -> Range -> (Text -> Text) -> Builder
 modifyLine source range fn =
-    let (start, rest) = Text.splitAt fixedRange.start.column line
-        (middle, end) = Text.splitAt (fixedRange.end.column - fixedRange.start.column) rest
-    in fromText $ start <> fn middle <> end
+    let (start', rest) = Text.splitAt fixedRange.start.column line'
+        (middle, end') = Text.splitAt (fixedRange.end.column - fixedRange.start.column) rest
+    in fromText $ start' <> fn middle <> end'
   where
-    line = source !! range.start.line
-    toEndRange (Range start end) size = Range start (Pos end.line size)
+    line' = source !! range.start.line
+    toEndRange (Range start' end') size = Range start' (Pos end'.line size)
     sameLine   = range.start.line == range.end.line
-    fixedRange = if sameLine then range else toEndRange range (Text.length line)
+    fixedRange = if sameLine then range else toEndRange range (Text.length line')
 
 emptyLine :: Builder
 emptyLine = pad (indent) <> (fromText $ faint "┊ \n")
@@ -114,9 +114,9 @@ renderLine source lineNum | lineNum < 0 || lineNum >= List.length source = empty
 renderLine source lineNum = do
   let lineText = format (lineNum + 1)
   let padding  = pad (indent - Text.length lineText - 1)
-  let line     = source !! lineNum
+  let line'    = source !! lineNum
   let header   = fromText $ faint $ lineText <> " | "
-  padding <> header <> (fromText $ faint $ line) <> "\n"
+  padding <> header <> (fromText $ faint $ line') <> "\n"
 
 renderPosition :: [Text] -> Report.Annotation -> Builder
 renderPosition source ann = do
@@ -133,8 +133,8 @@ renderPosition source ann = do
   where
     boldColor :: Text -> Text
     boldColor t = Pretty.style Pretty.Bold $ Pretty.color color t
-    line     = source !! range.start.line
-    colSize  = if range.start.line == range.end.line then range.end.column - range.start.column else Text.length line - range.start.column
+    line'     = source !! range.start.line
+    colSize  = if range.start.line == range.end.line then range.end.column - range.start.column else Text.length line' - range.start.column
     color = getColorFromMark $ case ann of {Report.Ann color' _ _ -> color'; Report.NoAnn color' _ -> color' }
     range = case ann of {Report.Ann _ _ range' -> range'; Report.NoAnn _ range' -> range' }
     text  = renderMode boldColor <$> case ann of {Report.Ann _ text' _ -> Just text'; Report.NoAnn {} -> Nothing }
@@ -152,5 +152,5 @@ renderDiagnostic source diagnostic =
         , renderSubtitles detailed.subtitles
         , pad indent <> builderFaint "┌" <> (fromText (blue $ faint $ " at ") <> renderLocation diagnostic <> "\n")
         , pad indent <> builderFaint "|" <> "\n"
-        , unlines $ renderPosition source <$> detailed.positions
+        , mconcat $ renderPosition source <$> detailed.positions
         ]

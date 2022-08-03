@@ -27,8 +27,10 @@ internalMismatch = error "Compiler error: A tracker for unification must exist"
 extractTypeMismatch :: MonadTyper m => m ()
 extractTypeMismatch = do
   trackers <- use teTrackers
-  let (r, t, t') = fromMaybe internalMismatch (getLastTypeUnify trackers)
-  endDiagnostic (Mismatch r t t') r
+  let (r, t, t', rest) = fromMaybe internalMismatch (getLastTypeUnify trackers)
+  case rest of
+    InFunApp fnRange place range:_ -> endDiagnostic (MismatchInApp fnRange range place t t') r
+    _                              -> endDiagnostic (Mismatch r t t') r
 
 extractKindMismatch :: MonadTyper m => m ()
 extractKindMismatch = do
@@ -45,5 +47,5 @@ extractKindUnifierRange = do
 extractTypeUnifierRange :: MonadTyper m => m Range
 extractTypeUnifierRange = do
   trackers <- use teTrackers
-  let (r, _, _) = fromMaybe internalMismatch (getLastTypeUnify trackers)
+  let (r, _, _, _) = fromMaybe internalMismatch (getLastTypeUnify trackers)
   pure r

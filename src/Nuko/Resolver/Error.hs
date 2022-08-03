@@ -7,13 +7,10 @@ import Relude
 
 import Nuko.Names        (Ident, Label, ModName, Name, NameSort, Path,
                           Qualified, TyName, ValName)
-import Nuko.Report.Range (HasPosition (..), Range, toLabel)
+import Nuko.Report.Range (HasPosition (..), Range)
 import Nuko.Report.Text  (Annotation (NoAnn), Color (..), Mode (..), Piece (..),
-                          PrettyDiagnostic (..), colorlessFromFormat,
-                          mkBasicDiagnostic)
+                          PrettyDiagnostic (..), mkBasicDiagnostic)
 import Pretty.Format     (Format (format), formatOr)
-
-import Data.Aeson        (KeyValue ((.=)), ToJSON (..), object)
 
 data Case = UpperCase | LowerCase
   deriving Show
@@ -83,11 +80,4 @@ instance PrettyDiagnostic ResolveErrorReason where
   prettyDiagnostic = \case
     err ->
       let (Words title) = errorTitle err in
-      mkBasicDiagnostic title [NoAnn Fst (getErrorSite err)]
-
-instance ToJSON ResolveErrorReason where
-  toJSON reason =
-    object [ "code" .= errorCode reason
-           , "place" .= toLabel (getErrorSite reason)
-           , "title" .= colorlessFromFormat (errorTitle reason)
-           ]
+      mkBasicDiagnostic (errorCode err) title [NoAnn Fst (getErrorSite err)]

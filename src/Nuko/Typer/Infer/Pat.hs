@@ -38,7 +38,7 @@ checkPat pat ty = case (pat, ty) of
   _ -> do
     ((resPat, inferedTy), bindings) <- inferPat pat
     instTy <- eagerInstantiate inferedTy
-    unify (getPos resPat) instTy ty
+    _ <- unify (getPos resPat) instTy ty
     pure bindings
 
 inferPat :: MonadTyper m => Pat Re -> m ((Pat Tc, TTy 'Virtual), HashMap (Name ValName) (TTy 'Virtual))
@@ -59,7 +59,7 @@ inferPat pat =
     applyPat range (args, fnTy) arg = do
       (argTy, retTy) <- lift $ destructFun range fnTy
       (argRes, argTy') <- go arg
-      lift $ unify range argTy argTy'
+      _ <- lift $ unify range argTy argTy'
       pure (argRes : args, retTy)
 
     go :: MonadTyper m => Pat Re -> InferPat m (Pat Tc, TTy 'Virtual)
@@ -85,10 +85,10 @@ inferPat pat =
       PAnn pat' ty ext -> do
         (resPat, resPatTy) <- go pat'
         (resTy, _) <- lift $ inferClosedTy ty
-        lift $ unify (getPos resPat) resPatTy resTy
-        pure (PAnn resPat (quote 0 resTy) (quote 0 resTy, ext), resTy)
+        resTy' <- lift $ unify (getPos resPat) resPatTy resTy
+        pure (PAnn resPat (quote 0 resTy) (quote 0 resTy, ext), resTy')
       POr pat' pat'' ext -> do
         (resPat, resPatTy) <- go pat'
         (resPat', resPatTy') <- go pat''
-        lift $ unify (getPos resPat) resPatTy resPatTy'
-        pure (POr resPat resPat' (quote 0 resPatTy, ext), resPatTy)
+        resTy' <- lift $ unify (getPos resPat) resPatTy resPatTy'
+        pure (POr resPat resPat' (quote 0 resPatTy, ext), resTy')

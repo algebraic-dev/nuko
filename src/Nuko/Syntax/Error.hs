@@ -7,13 +7,11 @@ module Nuko.Syntax.Error (
 import Relude
 
 import Nuko.Report.Range        (HasPosition (..), Pos, Range, Ranged (..),
-                                 oneColRange, toLabel)
+                                 oneColRange)
 import Nuko.Report.Text         (Annotation (..), Color (..), Mode (..),
                                  Piece (..), PrettyDiagnostic (..),
-                                 colorlessFromFormat, mkBasicDiagnostic)
+                                 mkBasicDiagnostic)
 import Nuko.Syntax.Lexer.Tokens (Token)
-
-import Data.Aeson               (KeyValue ((.=)), ToJSON (..), object)
 
 data Case = UpperCase | LowerCase
   deriving Show
@@ -54,11 +52,4 @@ errorTitle = \case
 instance PrettyDiagnostic SyntaxError where
   prettyDiagnostic cause =
     let (Words title) = errorTitle cause in
-    mkBasicDiagnostic title [Ann Fst (Words [Raw "Here!"]) (getErrorSite cause)]
-
-instance ToJSON SyntaxError where
-  toJSON reason =
-    object [ "code" .= errorCode reason
-           , "place" .= toLabel (getErrorSite reason)
-           , "title" .= colorlessFromFormat (errorTitle reason)
-           ]
+    mkBasicDiagnostic (errorCode cause) title [Ann Fst (Words [Raw "Here!"]) (getErrorSite cause)]

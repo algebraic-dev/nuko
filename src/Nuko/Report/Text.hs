@@ -39,14 +39,15 @@ data Annotation
   | NoAnn Color Range
 
 data DetailedDiagnosticInfo = DetailedDiagnosticInfo
-  { title     :: Mode
+  { code      :: Int
+  , title     :: Mode
   , subtitles :: [(Color, Mode)]
   , hints     :: [Mode]
   , positions :: [Annotation]
   }
 
-mkBasicDiagnostic :: [Piece] -> [Annotation] -> DetailedDiagnosticInfo
-mkBasicDiagnostic title = DetailedDiagnosticInfo (Words title) [] []
+mkBasicDiagnostic :: Int -> [Piece] -> [Annotation] -> DetailedDiagnosticInfo
+mkBasicDiagnostic code' diagTitle = DetailedDiagnosticInfo code' (Words diagTitle) [] []
 
 class PrettyDiagnostic a where
   prettyDiagnostic :: a -> DetailedDiagnosticInfo

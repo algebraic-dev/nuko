@@ -14,7 +14,7 @@ import Pretty.Tree       (PrettyTree)
 data Tracker
   = InUnify Range (TTy 'Virtual) (TTy 'Virtual)
   | InKindUnify Range TKind TKind
-  | InApp Range
+  | InFunApp Range Int Range
   deriving Generic
 
 instance Format Tracker where
@@ -25,9 +25,9 @@ instance Format Tracker where
 
 instance PrettyTree Tracker where
 
-getLastTypeUnify :: [Tracker] -> Maybe (Range, TTy 'Virtual, TTy 'Virtual)
+getLastTypeUnify :: [Tracker] -> Maybe (Range, TTy 'Virtual, TTy 'Virtual, [Tracker])
 getLastTypeUnify (InUnify {} : g@InUnify {} : xs) = getLastTypeUnify (g : xs)
-getLastTypeUnify ((InUnify r t t') : _)           = Just (r, t, t')
+getLastTypeUnify ((InUnify r t t') : xs)          = Just (r, t, t', xs)
 getLastTypeUnify (_ : xs)                         = getLastTypeUnify xs
 getLastTypeUnify []                               = Nothing
 

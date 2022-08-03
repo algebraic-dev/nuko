@@ -43,7 +43,7 @@ printKind =
     go = \case
       KiHole hole -> do
         case unsafePerformIO (readIORef hole) of
-          Empty {} -> "?"
+          Empty {} -> "_"
           Filled r -> printKind r
       KiFun t@(KiFun {}) f ->  "(" <> printKind t <> ") -> " <> printKind f
       KiFun t f ->  printKind t <> " -> " <> printKind f

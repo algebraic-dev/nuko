@@ -307,7 +307,7 @@ instance Format (NameKind k) where
     ConsName -> "constructor"
 
 instance Format NameSort where
-  format (NameSort sort) = format sort
+  format (NameSort nameSort) = format nameSort
 
 instance Format Label where
   format (Label name) = format name
