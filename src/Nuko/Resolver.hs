@@ -27,6 +27,7 @@ import Data.Traversable        (for)
 import Data.HashMap.Strict     qualified as HashMap
 import Data.HashSet            qualified as HashSet
 import Data.List.NonEmpty      qualified as NonEmpty
+import Nuko.Names              (ValName)
 import Nuko.Names              qualified as Names
 import Nuko.Resolver.Env       qualified as Env
 
@@ -186,6 +187,9 @@ resolvePat pat' = do
     PAnn pat'' ty ext' -> PAnn <$> renamePat map' pat'' <*> resolveType ty <*> pure ext'
     POr l r ext' -> POr <$> renamePat map' l <*> renamePat map' r <*> pure ext'
 
+resolveOp :: MonadResolver m => Operator -> m Operator
+resolveOp = pure
+
 resolveExpr :: MonadResolver m => Expr Nm -> m (Expr Re)
 resolveExpr = \case
   Lower path' ext' -> Lower <$> resolvePath path' <*> pure ext'
@@ -198,7 +202,13 @@ resolveExpr = \case
   Match scrut cases ext' -> Match <$> resolveExpr scrut <*> traverse resolveCase cases <*> pure ext'
   Ann expr ty ext' -> Ann <$> resolveExpr expr <*> resolveType ty <*> pure ext'
   Block block ext' -> Env.newScope (Block <$> resolveBlock block <*> pure ext')
+  RecCreate path fields ext -> RecCreate <$> resolvePath path <*> traverse resolveField fields <*> pure ext
+  RecUpdate path fields ext -> RecUpdate <$> resolveExpr path <*> traverse resolveField fields <*> pure ext
+  BinOp op left right ext   -> BinOp <$> resolveOp op <*> resolveExpr left <*> resolveExpr right <*> pure ext
  where
+  resolveField :: MonadResolver m => RecordBinder Expr Nm -> m (RecordBinder Expr Re)
+  resolveField = undefined
+
   resolveCase :: MonadResolver m => (Pat Nm, Expr Nm) -> m (Pat Re, Expr Re)
   resolveCase (pat', expr) = Env.newScope ((,) <$> resolvePat pat' <*> resolveExpr expr)
 

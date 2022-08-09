@@ -78,10 +78,11 @@ inferPat pat =
         let constTy = evaluate [] constRealTy
         let fnRange = getPos path
         (argsRes, resTy) <- foldM (applyPat fnRange) ([], constTy) args
-        pure (PCons path argsRes (quote 0 resTy, ext), resTy)
+        resTt <- lift $ eagerInstantiate resTy
+        pure (PCons path (reverse argsRes) (quote 0 resTy, ext), resTt)
       PLit lit ext -> do
         (resLit, resTy) <- lift $ inferLit lit
-        pure (PLit resLit ext, resTy)
+        pure (PLit resLit (quote 0 resTy), resTy)
       PAnn pat' ty ext -> do
         (resPat, resPatTy) <- go pat'
         (resTy, _) <- lift $ inferClosedTy ty

@@ -35,6 +35,9 @@ type instance XPLit Re = NoExt
 type instance XPAnn Re = Range
 type instance XPOr Re = Range
 type instance XPCons Re = Range
+type instance XRecMono Re = Range
+type instance XRecCreate Re = Range
+type instance XRecBinder Re = Range
 type instance XPExt Re = Void
 
 type instance XLit Re = NoExt
@@ -42,6 +45,9 @@ type instance XLam Re = Range
 type instance XAnn Re = Range
 type instance XApp Re = Range
 type instance XLower Re = NoExt
+type instance XRecUpdate Re = Range
+type instance XRecCreate Re = Range
+type instance XBinOp Re = Range
 type instance XUpper Re = NoExt
 type instance XField Re = Range
 type instance XIf Re = Range
@@ -66,7 +72,11 @@ deriving instance Generic (Program Re)
 deriving instance Generic (TypeDeclArg Re)
 deriving instance Generic (TypeDecl Re)
 deriving instance Generic (LetDecl Re)
+deriving instance Generic (RecordBinder Pat Re)
+deriving instance Generic (RecordBinder Expr Re)
 
+instance PrettyTree (RecordBinder Pat Re) where
+instance PrettyTree (RecordBinder Expr Re) where
 instance PrettyTree (Expr Re) where
 instance PrettyTree (Block Re) where
 instance PrettyTree (Var Re) where
@@ -101,16 +111,19 @@ instance HasPosition (Pat Re) where
 
 instance HasPosition (Expr Re) where
   getPos = \case
-    Lit t _     -> getPos t
-    Lam _ _ r   -> r
-    App _ _ r   -> r
-    Lower r _   -> getPos r
-    Upper r _   -> getPos r
-    Field _ _ r -> r
-    If _ _ _ r  -> r
-    Match _ _ r -> r
-    Block _  r  -> r
-    Ann _ _ r   -> r
+    Lit t _         -> getPos t
+    Lam _ _ r       -> r
+    App _ _ r       -> r
+    Lower r _       -> getPos r
+    Upper r _       -> getPos r
+    Field _ _ r     -> r
+    If _ _ _ r      -> r
+    Match _ _ r     -> r
+    Block _  r      -> r
+    Ann _ _ r       -> r
+    RecUpdate _ _ r -> r
+    RecCreate _ _ r -> r
+    BinOp _ _ _ r   -> r
 
 instance HasPosition (Block Re) where
   getPos = \case

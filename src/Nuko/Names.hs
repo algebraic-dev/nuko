@@ -71,8 +71,8 @@ data Ident = Ident
   deriving stock (Generic)
 
 data NameKind k where
-  ValName :: NameKind ValName
-  TyName :: NameKind TyName
+  ValName  :: NameKind ValName
+  TyName   :: NameKind TyName
   ConsName :: NameKind ConsName
 
 deriving instance Eq (NameKind k)

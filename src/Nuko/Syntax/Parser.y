@@ -76,6 +76,9 @@ import qualified Data.List.NonEmpty      as NE
     sep      { Ranged TcSep _ }
     end      { Ranged TcEnd _ }
 
+%nonassoc '=>'
+%nonassoc if else then
+%nonassoc ':'
 %right '->' '|'
 
 %%
@@ -119,10 +122,15 @@ PathHelper(Pred)
     : Upper '.' PathHelper(Pred) { let (p, f) = $3 in ($1 : p, f) }
     | Pred { ([], $1) }
 
+RecordBinder
+    : Lower '=' Expr { (mkValName $1, $3) }
+
 PathEnd
-    : Upper           { \p -> Upper (mkPathFromList p (mkConsName $1)) NoExt }
-    | Lower           { \p -> Lower (mkPathFromList p (mkValName $1)) NoExt }
+    : Upper { \p -> Upper (mkPathFromList p (mkConsName $1)) NoExt }
+    | Lower { \p -> Lower (mkPathFromList p (mkValName $1)) NoExt }
     | Lower '.' Lower { \p -> withPosListR p $3 (Field (Lower (mkPathFromList p (mkValName $1)) NoExt) (mkValName $3)) }
+    --| Lower '{' SepList(',', RecordBinder) '}' { \p -> withPos $1 $4 $ RecUpdate (Lower (mkPathFromList p (mkValName $1)) NoExt) $3 }
+    --| Upper '{' SepList(',', RecordBinder) '}' { \p -> withPos $1 $4 $ RecCreate (mkPathFromList p (mkTyName $1)) $3 } -- Record update
 
 PathExpr : PathHelper(PathEnd) { let (p , f) = $1 in f p }
 
@@ -170,14 +178,19 @@ Literal :: { Literal Nm }
     : int  { LInt (getInt $1) $1.position }
     | str  { LStr (getData $1) $1.position }
 
+ParAtom :: { Expr Nm }
+    : '(' Expr ')' { $2 }
+
 Atom :: { Expr Nm }
-    : PathExpr     { $1 }
-    | Literal      { Lit $1 NoExt }
-    | '(' Expr ')' { $2 }
+    : PathExpr { $1 }
+    | Literal { Lit $1 NoExt }
+    | ParAtom { $1 }
+    | ParAtom '{' SepList(',', RecordBinder) '}' { $1 }
+    | ParAtom '.' Lower { $1 }
 
 App :: { NE.NonEmpty (Expr Nm) }
     : Atom App { $1 NE.<| $2 }
-    | Atom      { $1 NE.:| [] }
+    | Atom     { $1 NE.:| [] }
 
 VarExpr :: { Var Nm }
     : let Pat '=' Expr  { withPos $1 $4 $ Var $2 $4 }
@@ -195,15 +208,15 @@ End : end   { ()         }
 -- Match can be sucessed of a End so.. sometimes it will give an layout error
 ClosedExpr :: { Expr Nm }
     : if ClosedExpr OptSep then ClosedExpr OptSep else ClosedExpr { withPos $1 $8 $ If $2 $5 $8 }
-    | Atom App                                                    { withPos $1 $2 $ App $1 $2 }
-    | match ClosedExpr with begin SepList1(sep, CaseClause) End   { withPos $1 $5 $ Match $2 $5 }
-    | '\\' Pat '=>' ClosedExpr                                    { withPos $1 $4 $ Lam $2 $4 }
-    | begin BlockExpr End                                         { case $2 of { BlEnd x -> x; _ -> Block $2 (getBlockPos $2)} }
-    | Atom                                                        { $1 }
+    | match ClosedExpr with begin SepList1(sep, CaseClause) End { withPos $1 $5 $ Match $2 $5 }
+    | '\\' Pat '=>' ClosedExpr { withPos $1 $4 $ Lam $2 $4 }
+    | begin BlockExpr End { case $2 of { BlEnd x -> x; _ -> Block $2 (getBlockPos $2)} }
+    | ClosedExpr ':' Type { withPos $1 $3 $ Ann $1 $3 }
+    | Atom App { withPos $1 $2 $ App $1 $2 }
+    | Atom { $1 }
 
 Expr :: { Expr Nm }
     : ClosedExpr                                         { $1 }
-    | ClosedExpr ':' Type                                { withPos $1 $3 $ Ann $1 $3 }
 
 CaseClause :: { ((Pat Nm, Expr Nm)) }
     : Pat '=>' Expr { ($1, $3) }

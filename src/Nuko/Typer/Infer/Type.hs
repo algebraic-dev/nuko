@@ -19,10 +19,10 @@ import Nuko.Typer.Types     (Relation (..), TKind (..), TTy (..),
 import Nuko.Typer.Unify     (unifyKind)
 
 import Control.Monad.Reader (foldM)
-import Data.HashSet         qualified as HashSet
 import Data.List            (findIndex, (!!))
 import Lens.Micro.Platform  (view)
 
+import Data.HashSet         qualified as HashSet
 
 type PType x = (TTy x, TKind)
 
@@ -80,7 +80,7 @@ inferRealTy = go
         (vFrom, vFromKi) <- go from
         (vTo, vToKi) <- go to
         unifyKind (getPos from) vFromKi KiStar
-        unifyKind (getPos to)   vToKi KiStar
+        unifyKind (getPos to) vToKi KiStar
         pure (TyFun vFrom vTo, KiStar)
       TForall name ty _ -> do
         hole <- newKindHole name

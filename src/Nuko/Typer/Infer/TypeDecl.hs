@@ -8,6 +8,7 @@ import Nuko.Typer.Env
 import Relude
 import Relude.Extra          (traverseToSnd)
 
+import Lens.Micro.Platform   (_2, set)
 import Nuko.Names            (ConsName, Name (nIdent), TyName, ValName,
                               mkLocalPath)
 import Nuko.Report.Range     (getPos)
@@ -57,10 +58,10 @@ initTypeDecl decl = do
     getTyDef :: MonadTyper m => TypeDeclArg Re -> m TyInfoKind
     getTyDef = \case
       TypeSym  _      -> error "Not Implemented Yet!"
-      TypeProd fields -> pure $ IsProdType $ ProdTyInfo (fst <$> fields)
+      TypeProd fields -> pure $ IsProdType $ ProdTyInfo (fst <$> fields) []
       TypeSum fields  -> do
         fieldsRes <- traverse (\(n, r) -> (, length r) <$> qualifyTyName (Just decl.tyName.nIdent) n) fields
-        pure (IsSumType $ SumTyInfo fieldsRes)
+        pure (IsSumType $ SumTyInfo fieldsRes [])
 
 
 inferTypeDecl :: MonadTyper m => TypeDecl Re -> TyInfo -> m (TypeDecl Tc)
@@ -97,5 +98,14 @@ inferTypeDecl (TypeDecl name' args arg) tyInfo =
     inferBody :: MonadTyper m => TypeDeclArg Re -> m (TypeDeclArg Tc)
     inferBody = \case
       TypeSym  _      -> error "Not Implemented Yet!"
-      TypeProd fields -> TypeProd <$> traverse inferField fields
-      TypeSum fields  -> TypeSum  <$> traverse inferSumField fields
+      TypeProd fields -> do
+        fieldTys <-  traverse inferField fields
+        qualified <- qualifyLocal name'
+        updateTyKind qualified (Just . set (_2 . tyKind) (IsProdType $ ProdTyInfo (fst <$> fields) (snd <$> fieldTys)))
+        pure $ TypeProd fieldTys
+      TypeSum fields  -> do
+        fieldsRes <- traverse (\(n, r) -> (, length r) <$> qualifyTyName (Just name'.nIdent) n) fields
+        fieldTys <- traverse inferSumField fields
+        qualified <- qualifyLocal name'
+        updateTyKind qualified (Just . set (_2 . tyKind) (IsSumType $ SumTyInfo fieldsRes (snd <$> toList fieldTys)))
+        pure $ TypeSum fieldTys

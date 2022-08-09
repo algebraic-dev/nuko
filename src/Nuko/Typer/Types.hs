@@ -74,7 +74,10 @@ evaluate types = \case
 quote :: Int -> TTy 'Virtual -> TTy 'Real
 quote lvl = \case
   TyErr             -> TyErr
-  TyHole hole       -> TyHole hole
+  TyHole hole       ->
+    case unsafePerformIO (readIORef hole) of
+      Empty _ _ -> TyHole hole
+      Filled f  -> quote lvl f
   TyForall ident fn -> TyForall ident (quote (lvl + 1) (fn (TyVar lvl)))
   TyFun t f         -> TyFun (quote lvl t) (quote lvl f)
   TyApp k t f       -> TyApp k (quote lvl t) (quote lvl f)

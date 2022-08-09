@@ -5,10 +5,12 @@ module Nuko.Typer.Tree where
 
 import Relude
 
+import Data.Text         qualified as Text
 import Nuko.Names        (Ident, ModName, Name, Path)
 import Nuko.Report.Range (HasPosition (..), Range)
 import Nuko.Tree
 import Nuko.Typer.Types  (Relation (..), TTy)
+import Pretty.Format
 import Pretty.Tree       (PrettyTree)
 
 type instance XIdent Tc    = Ident
@@ -22,18 +24,23 @@ type instance XLStr Tc = (XTy Tc, Range)
 
 type instance XPWild Tc = (XTy Tc, Range)
 type instance XPId Tc = XTy Tc
-type instance XPId Tc = XTy Tc
 type instance XPOr Tc = (XTy Tc, Range)
-type instance XPLit Tc = NoExt
+type instance XPLit Tc = XTy Tc
 type instance XPAnn Tc = (XTy Tc, Range)
 type instance XPCons Tc = (XTy Tc, Range)
 type instance XPExt Tc = Void
+
+type instance XRecBinder Tc = XTy Tc
+type instance XRecMono Tc = XTy Tc
 
 type instance XLit Tc = NoExt
 type instance XLam Tc = (XTy Tc, Range)
 type instance XAnn Tc = Range
 type instance XApp Tc = (XTy Tc, Range)
 type instance XLower Tc = XTy Tc
+type instance XRecUpdate Tc = (XTy Tc, Range)
+type instance XRecCreate Tc = (XTy Tc, Range)
+type instance XBinOp Tc = (XTy Tc, Range)
 type instance XUpper Tc = XTy Tc
 type instance XField Tc = (XTy Tc, Range)
 type instance XIf Tc = (XTy Tc, Range)
@@ -44,6 +51,8 @@ type instance XExt Tc = Void
 
 type instance XImport Tc = Void
 
+deriving instance Generic (RecordBinder Pat Tc)
+deriving instance Generic (RecordBinder Expr Tc)
 deriving instance Generic (Expr Tc)
 deriving instance Generic (Block Tc)
 deriving instance Generic (Var Tc)
@@ -59,6 +68,8 @@ deriving instance Generic (TypeDeclArg Tc)
 deriving instance Generic (TypeDecl Tc)
 deriving instance Generic (LetDecl Tc)
 
+instance PrettyTree (RecordBinder Pat Tc) where
+instance PrettyTree (RecordBinder Expr Tc) where
 instance PrettyTree (Expr Tc) where
 instance PrettyTree (Block Tc) where
 instance PrettyTree (Var Tc) where
@@ -72,6 +83,18 @@ instance PrettyTree (Program Tc) where
 instance PrettyTree (TypeDeclArg Tc) where
 instance PrettyTree (TypeDecl Tc) where
 instance PrettyTree (LetDecl Tc) where
+
+instance Format (Pat Tc) where
+  format = \case
+    PId name _ -> format name
+    PWild _    -> "_"
+    PCons name [] _   -> format name
+    PCons name pats _ -> "(" <> format name <> " " <> Text.unwords (map format pats) <> ")"
+    POr le ri or -> "(" <> format le <> "|" <> format ri <> ")"
+    PLit (LStr t _) _ -> "\"" <> format t <> "\""
+    PLit (LInt t _) _ -> format t
+    PAnn p _ _        -> format p
+    PRec name bind  _ -> format name <> "{" <> "}"
 
 instance HasPosition (Var Tc) where
   getPos (Var _ _ r) = r
@@ -92,16 +115,19 @@ instance HasPosition (Pat Tc) where
 
 instance HasPosition (Expr Tc) where
   getPos = \case
-    Lit t _          -> getPos t
-    Lam _ _ (_, r)   -> r
-    App _ _ (_, r)   -> r
-    Lower r _        -> getPos r
-    Upper r _        -> getPos r
-    Field _ _ (_, r) -> r
-    If _ _ _ (_, r)  -> r
-    Match _ _ (_, r) -> r
-    Block _  (_, r)  -> r
-    Ann _ _ r        -> r
+    Lit t _              -> getPos t
+    Lam _ _ (_, r)       -> r
+    App _ _ (_, r)       -> r
+    Lower r _            -> getPos r
+    Upper r _            -> getPos r
+    Field _ _ (_, r)     -> r
+    If _ _ _ (_, r)      -> r
+    Match _ _ (_, r)     -> r
+    Block _  (_, r)      -> r
+    Ann _ _ r            -> r
+    RecUpdate _ _ (_, r) -> r
+    RecCreate _ _ (_, r) -> r
+    BinOp _ _ _ (_, r)   -> r
 
 instance HasPosition (Block Tc) where
   getPos = \case

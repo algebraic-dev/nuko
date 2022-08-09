@@ -45,6 +45,7 @@ module Nuko.Typer.Env (
   runToIO,
   genKindHole,
   addLocalTypes,
+  tyKind
 ) where
 
 import Relude
@@ -70,12 +71,14 @@ import Control.Monad.State.Strict    qualified as State
 import Control.Monad.Trans.Chronicle qualified as Chronicle
 import Data.HashMap.Strict           qualified as HashMap
 
-newtype SumTyInfo = SumTyInfo
+data SumTyInfo = SumTyInfo
   { _stiConstructors :: NonEmpty (Qualified (Name ConsName), Int)
+  , _stiTypes        :: [[TTy 'Real]]
   } deriving Generic
 
-newtype ProdTyInfo = ProdTyInfo
+data ProdTyInfo = ProdTyInfo
   { _ptiFields :: [Name ValName]
+  , _ptiTypes  :: [TTy 'Real]
   } deriving Generic
 
 data TyInfoKind
@@ -128,6 +131,7 @@ data ScopeEnv = ScopeEnv
   , _seScope :: Int
   } deriving Generic
 
+makeLenses ''TyInfo
 makeLenses ''DataConsInfo
 makeLenses ''FieldInfo
 makeLenses ''TypeSpace
@@ -153,7 +157,7 @@ type MonadTyper m =
 
 endDiagnostic :: MonadTyper m => TypeError -> Range -> m b
 endDiagnostic kind' range = do
-  modName <- use teCurModule
+  modName  <- use teCurModule
   fileName <- use teCurFilename
   terminate $ Diagnostic
     { moduleName = modName

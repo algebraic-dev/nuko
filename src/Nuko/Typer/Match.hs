@@ -1,236 +1,256 @@
 module Nuko.Typer.Match (
-  checkUseful,
-  addRow,
-  matrixFromColumn,
-  toMatchPat,
-  isExhaustive,
   checkPatterns
 ) where
 
--- The Pattern matching analysis is part of the type checker.
-
 import Relude
 
-import Nuko.Names          (ConsName, Name, Path, Qualified (..), TyName,
-                            getPathInfo, mkQualifiedPath)
-import Nuko.Report.Message (Severity (..))
-import Nuko.Report.Range   (HasPosition (getPos), Range (..))
-import Nuko.Tree           (Tc)
-import Nuko.Tree.Expr      (Pat (..))
-import Nuko.Typer.Env      (DataConsInfo (..), MonadTyper, SumTyInfo (..),
-                            TyInfo (..), TyInfoKind (..), emitDiagnostic,
-                            globalTypingEnv, qualifyPath, tsConstructors,
-                            tsTypes)
-import Nuko.Typer.Error    (TypeError (..))
-import Nuko.Typer.Tree     ()
-import Pretty.Format       (Format (..))
+import Nuko.Names               (ConsName, Name (..), Path, Qualified (..),
+                                 TyName, ValName, mkQualifiedPath)
+import Nuko.Report.Range        (Range, emptyRange, getPos)
+import Nuko.Tree                (Literal, Pat (..), Tc)
+import Nuko.Tree.Expr           (Literal (..), RecordBinder (..))
+import Nuko.Typer.Env           (DataConsInfo (..), FieldInfo (_fiResultType),
+                                 MonadTyper, SumTyInfo (..), TyInfo (..),
+                                 TyInfoKind (..), globalTypingEnv, qualifyPath,
+                                 tsConstructors, tsTypeFields, tsTypes)
+import Nuko.Typer.Infer.Literal (preludeQual)
+import Nuko.Typer.Tree          ()
+import Nuko.Typer.Types         (Relation (..), TTy (..))
+import Pretty.Format            (Format (..))
 
-import Control.Monad       (foldM)
-import Data.HashSet        qualified as HashSet
-import Data.List           (findIndex, nub, (!!))
-import Data.List.NonEmpty  ((<|))
-import Data.Text           qualified as Text
-import Lens.Micro.Platform (at, use)
-
--- Implementation of http://moscova.inria.fr/%7Emaranget/papers/warn/warn.pdf
--- But modified to look like the rust version.
-
-type ConsNm = Path (Name ConsName)
-
-data At = At Range | Created
-
-data Match
-  = Wild At
-  | Or Match Match At
-  | Cons ConsNm [Match] At
-
-newtype Matrix = Matrix { unpackMatrix ::  [[Match]] }
+import Control.Monad            (foldM)
+import Data.HashMap.Strict      qualified as HashMap
+import Data.List                (lookup, nub)
+import Lens.Micro.Platform      (at, use)
 
 data Witness
-  = Witness (Maybe [Match])
-  | NoMatter Bool
+  = NoMatter Bool
+  | Witness  (Maybe [Pat Tc])
 
-instance Format Match where
-  format = \case
-    Wild _ -> "_"
-    Or a b _ -> "(" <> format a <> "|" <> format b <> ")"
-    Cons t [] _ -> "(" <> format t <> ")"
-    Cons t e _ -> "(" <> format (getPathInfo t) <> " " <> Text.intercalate " " (format <$> e) <> ")"
+type Matrix = [[Pat Tc]]
 
-instance Format Matrix where
-  format (Matrix []) = "||"
-  format (Matrix x) = Text.intercalate "\n" ((\t -> "| " <> t <> " |") . Text.intercalate ", " <$> ((format <$>) <$> x))
+-- Specialization
 
-instance Format Witness where
-  format (NoMatter True)      = "<Yes>"
-  format (NoMatter False)     = "<No>"
-  format (Witness Nothing)    = "<Exhaustive>"
-  format (Witness (Just res)) = "<" <> Text.intercalate ", " (format <$> res) <> ">"
+specializeRow :: Int -> [Pat Tc] -> [[Pat Tc]]
+specializeRow size = \case
+  (PWild ext:rest)     -> [replicate size (PWild ext) <> rest]
+  (PId ident ext:rest) -> [replicate size (PWild (ext, getPos ident)) <> rest]
+  (PLit _ _: _)          -> []
+  (PRec _ _ _: _)        -> []
+  (PCons _ _ _: _)       -> []
+  (POr _ _ _ : _)        -> error "Compiler error: generic specialization should not have Or"
+  (PAnn _ _ _ : _)       -> error "Compiler error: generic specialization should not have Ann"
+  []                     -> error "Compiler Error: specializeRow should not have empty rows?"
 
-toMatchPat :: Pat Tc -> Match
-toMatchPat = \case
-  PCons name pats (_, r) -> Cons name (toMatchPat <$> pats) (At r)
-  PWild x                -> Wild (At (snd x))
-  PId n _                -> Wild (At $ getPos n)
-  PLit _ _               -> error "Not implemented yet"
-  PAnn t _ _             -> toMatchPat t
-  POr p q (_,x)          -> Or (toMatchPat p) (toMatchPat q) (At x)
+specializeLiteral :: Literal Tc -> Matrix -> Matrix
+specializeLiteral lit matrix = concatMap getRow matrix where
+  getRow res = case (res, lit) of
+    (PLit (LInt n _) _:rest, LInt n' _) | n == n' -> [rest] | otherwise -> []
+    (PLit (LStr n _) _:rest, LStr n' _) | n == n' -> [rest] | otherwise -> []
+    (POr p q _ : rest, _)            -> specializeLiteral lit [p:rest, q:rest]
+    (PAnn pat _ _ : rest, _)         -> getRow (pat:rest)
+    (pats, _)                        -> specializeRow 0 pats
 
-matrixFromColumn :: [Pat Tc] -> Matrix
-matrixFromColumn pats = Matrix ((: []) . toMatchPat <$> pats)
+fieldToTuple :: RecordBinder Pat Tc -> (Name ValName, Pat Tc)
+fieldToTuple (Mono p ty)     = (p, PId p ty)
+fieldToTuple (Binder p ty _) = (p, ty)
 
-specialize :: Path (Name ConsName) -> Int -> Matrix -> Matrix
-specialize cons size (Matrix rows) = Matrix $ concatMap getRow rows where
+completeFields :: [(Name ValName, TTy 'Real)] -> [(Name ValName, Pat Tc)] -> [Pat Tc]  -> [Pat Tc]
+completeFields []                _ acc       = reverse acc
+completeFields ((name, ty) : xs) binders acc =
+  completeFields xs binders (fromMaybe (PWild (ty, getPos name)) (lookup name binders) : acc)
+
+specializeRecord :: Path (Name TyName) -> HashMap (Name ValName) FieldInfo -> Matrix -> Matrix
+specializeRecord path names matrix = concatMap getRow matrix where
   getRow = \case
-    []               -> error "Should not be empty?"
-    (Or p q _: rest) -> unpackMatrix $ specialize cons size (Matrix [p:rest, q:rest])
-    (Wild _ : rest)  -> [replicate size (Wild Created) <> rest]
-    (Cons path pats _ : rest)
-      | path == cons -> [pats <> rest]
-      | otherwise    -> []
+    (PRec path' binders _: rest)
+      | path == path' -> [completeFields (second _fiResultType <$> HashMap.toList names) (fieldToTuple <$> binders) [] <> rest]
+      | otherwise     -> []
+    (POr p q _ : rest)     -> specializeRecord path names [p:rest, q:rest]
+    (PAnn pat _ _ : rest)  -> getRow (pat:rest)
+    pats -> specializeRow (length names) pats
 
-getUsedCons :: Matrix -> [ConsNm]
-getUsedCons (Matrix patMatrix) = nub $ concatMap withRow patMatrix where
-  withRow = \case
-    Wild _:_     -> []
-    Or p q _:_   -> withRow [p] <> withRow [q]
-    Cons c _ _:_ -> [c]
-    []           -> []
+specializeConstructor :: Path (Name ConsName) -> Int -> Matrix -> Matrix
+specializeConstructor path size matrix = concatMap getRow matrix where
+  getRow = \case
+    (PCons path' pats _: rest)
+      | path == path' -> [pats <> rest]
+                               | otherwise     -> []
+    (POr p q _ : rest)     -> specializeConstructor path size [p:rest, q:rest]
+    (PAnn pat _ _ : rest)  -> getRow (pat:rest)
+    pats -> specializeRow size pats
+
+-- WItness
+
+mkUseless :: Bool -> Witness
+mkUseless True  = Witness Nothing
+mkUseless False = NoMatter False
+
+mkUseful :: Bool -> Witness
+mkUseful True  = Witness (Just [])
+mkUseful False = NoMatter True
+
+extend :: Witness -> Witness -> Witness
+extend (NoMatter True) _         = NoMatter True
+extend (NoMatter a) (NoMatter b) = NoMatter (a || b)
+extend (Witness a) (Witness b)   = Witness ((<>) <$> a <*> b)
+extend _ _                       = error "Compiler Error: like.. extending a witness this way should not be possible?"
+
+isUsefulWitness :: Witness -> Bool
+isUsefulWitness = \case
+  (Witness (Just _)) -> True
+  (NoMatter t)       -> t
+  _                  -> False
+
+-- Functions to get data
 
 ensure :: Maybe a -> a
 ensure (Just n) = n
 ensure Nothing  = error "Compiler error: Constructor does not exists!"
 
-getConsInfo  :: MonadTyper m => ConsNm -> m DataConsInfo
+getConsInfo  :: MonadTyper m => Path (Name ConsName) -> m DataConsInfo
 getConsInfo name = do
-  qualPath   <- qualifyPath name
+  qualPath <- qualifyPath name
   snd . ensure <$> use (globalTypingEnv . tsConstructors . at qualPath)
 
-getConsFromTy :: MonadTyper m => Qualified (Name TyName) -> m TyInfo
-getConsFromTy name = snd . ensure <$> use (globalTypingEnv . tsTypes . at name)
+getRecordInfo  :: MonadTyper m => Path (Name TyName) -> m (HashMap (Name ValName) FieldInfo)
+getRecordInfo name = do
+  qualPath <- qualifyPath name
+  tyInfo   <- use (globalTypingEnv . tsTypeFields . at qualPath)
+  pure (fromMaybe (error "Compiler Error: Not well typed") tyInfo)
 
-addRow :: Matrix -> Pat Tc -> Matrix
-addRow (Matrix c) p = Matrix (c <> [[toMatchPat p]])
+getPatTy :: Pat Tc -> TTy 'Real
+getPatTy = \case
+  PWild ty     -> fst ty
+  PId _ ty     -> ty
+  POr _ _ ty   -> fst ty
+  PCons _ _ ty -> fst ty
+  PLit _ ty    -> ty
+  PAnn _ _ ty  -> fst ty
+  PRec _ _ ty  -> fst ty
 
-getAllCons :: MonadTyper m => ConsNm -> m (NonEmpty (Qualified (Name ConsName), Int))
-getAllCons name = do
-  info  <- getConsInfo name
-  tInfo <- getConsFromTy info._tyName
-  case tInfo._tyKind of
-    IsSumType prod -> pure prod._stiConstructors
-    _              -> error "Cannot match on this type!"
+-- Usefulness
+
+-- The name of this functions lies a little bit. It does not only gets
+-- the type, it just not relies on the type if it's a LIteral type because..
+-- you know, they cannot be satisfied
+getTy :: TTy 'Real -> Maybe (Qualified (Name TyName))
+getTy = \case
+  TyIdent e
+    | e == preludeQual "Int" -> Nothing
+    | e == preludeQual "String" -> Nothing
+    | otherwise -> pure e
+  TyApp _ t _ -> getTy t
+  _           -> Nothing
+
+getConstTyFields :: MonadTyper m => Qualified (Name TyName) -> m TyInfo
+getConstTyFields tyName = snd . ensure <$> use (globalTypingEnv . tsTypes . at tyName)
+
+getUsedConstructors :: Matrix -> [Path (Name ConsName)]
+getUsedConstructors = nub . concatMap getRow where
+  getRow :: [Pat Tc] -> [Path (Name ConsName)]
+  getRow = \case
+    (PCons name _ _:_) -> [name]
+    _                  -> []
+
 
 defaultMatrix :: Matrix -> Matrix
-defaultMatrix (Matrix s) = Matrix $ concatMap getRow s where
+defaultMatrix s = concatMap getRow s where
   getRow = \case
-    []             -> error "Checker Error: Should not have empty rows in default matrix"
-    Cons {}  :_    -> []
-    Wild _   :rest -> [rest]
-    Or p q _ :rest -> unpackMatrix $ defaultMatrix (Matrix [p:rest, q:rest])
+    []                -> error "Checker Error: Should not have empty rows in default matrix"
+    PCons {}   :_     -> []
+    PLit {}    :_     -> []
+    PRec {}    :_     -> []
+    PWild _    :rest  -> [rest]
+    PId {}     :rest  -> [rest]
+    POr p q _  :rest  -> defaultMatrix [p:rest, q:rest]
+    PAnn p _ _ : rest -> getRow (p:rest)
 
-mkUseless :: Bool -> Witness
-mkUseless cond = if cond then Witness Nothing else NoMatter False
-
-mkUseful :: Bool -> Witness
-mkUseful cond = if cond then Witness (Just []) else NoMatter True
-
-extend :: Witness -> Witness -> Witness
-extend (NoMatter a) (NoMatter b)      = NoMatter $ a || b
-extend (Witness Nothing) (Witness  _) = Witness Nothing
-extend (Witness _) (Witness Nothing)  = Witness Nothing
-extend (Witness (Just a)) (Witness (Just b)) = Witness (Just $ a <> b)
-extend _ _                            = error "Like.. it's not possible right now"
-
-witnessUseful :: Witness -> Bool
-witnessUseful (NoMatter res)    = res
-witnessUseful (Witness Nothing) = True
-witnessUseful (Witness _)       = False
-
-specializeUseful :: MonadTyper m => Bool -> Matrix -> [Match] -> Qualified (Name ConsName) -> Int -> m Witness
-specializeUseful retWitness patMatrix rest name size =
-  isUseful retWitness
-    (specialize (mkQualifiedPath name) size patMatrix)
-    (replicate size (Wild Created) <> rest)
-
-isUseful :: MonadTyper m => Bool -> Matrix -> [Match] -> m Witness
-isUseful retWitness (Matrix [])              [] = pure $ mkUseful retWitness
-isUseful retWitness (Matrix x) [] | all null x  = pure $ mkUseless retWitness
-isUseful _          (Matrix _)               [] = error "Oh no!"
-
-isUseful retWitness patMatrix (Or p q _ : rest) = do
-  res1 <- isUseful retWitness patMatrix (p:rest)
-  res2 <- isUseful retWitness patMatrix (q:rest)
-  pure (extend res1 res2)
-
-isUseful retWitness patMatrix (Cons t p _ : rest) = do
-  cInfo <- getConsInfo t
-  isUseful retWitness (specialize t cInfo._parameters patMatrix) (p <> rest)
-
-isUseful retWitness patMatrix (Wild _ : rest) = do
-  let used = getUsedCons patMatrix
-  case used of
-    (x : _) -> do
-      all' <- getAllCons x
-      if length all' == length used
-        then completeWitness (toList all')
-        else notCompleteWitness used (toList all')
-    [] -> notCompleteWitness used []
+isIdentifierUseful :: MonadTyper m => Bool -> [TTy 'Real] -> Matrix -> [Pat Tc] -> TTy 'Real -> Range -> m Witness
+isIdentifierUseful returnWitness currentTy matrix rest ty range =
+    case getTy ty of
+      Just name -> do
+        typeInfo <- getConstTyFields name
+        case typeInfo._tyKind of
+          IsSumType info -> do
+            let usedConstructors = getUsedConstructors matrix
+            if length info._stiConstructors == length usedConstructors
+              then completeWitness info typeInfo._resultantType
+              else incompleteWitness usedConstructors info
+          IsProdType info -> undefined
+          IsBuiltIn       -> error "Not supported yet?"
+          _               -> error "Compiler Error: Not supported lol"
+      Nothing -> do
+        isUseful returnWitness currentTy (defaultMatrix matrix) rest
   where
-    mkCons :: (Qualified (Name ConsName), Int) -> Match
-    mkCons (name, size) = Cons (mkQualifiedPath name) (replicate size (Wild Created)) Created
+    findFirstNotUseful []              = error "Should not be empty wtf"
+    findFirstNotUseful [const']        = (const', ) <$> usefulSpecialized const'
+    findFirstNotUseful (const': rest') = do
+      witness <- usefulSpecialized const'
+      if isUsefulWitness witness
+        then findFirstNotUseful rest'
+        else pure (const', witness)
 
-    notCompleteWitness used all' = do
-      witness <- isUseful retWitness (defaultMatrix patMatrix) rest
-      case (witness, used) of
-        (Witness (Just pats), []) -> pure (Witness (Just (Wild Created : pats)))
-        (Witness (Just pats),  _) -> do
-          let hashUsed = HashSet.fromList used
-          let notUsed = take 3 $ filter (\(name, _) -> not $ HashSet.member (mkQualifiedPath name) hashUsed) all'
-          case notUsed of
-            [] -> error "Compiler error: Probably it should not be empty? anyways it happened on the pattern match checking."
-            (x:xs) ->
-              let orMatch = foldr (\cons match -> Or (mkCons cons) match Created) (mkCons x) xs in
-              pure (Witness (Just $ orMatch : pats))
-        _ -> pure witness
+    usefulSpecialized ((consName, size), tty) =
+      isUseful returnWitness (tty <> currentTy)
+        (specializeConstructor (mkQualifiedPath consName) size matrix)
+        (((\ty' -> PWild (ty', range)) <$> tty) <> rest)
 
-    completeWitness all' = do
-      witnessList <- traverse (uncurry (specializeUseful retWitness patMatrix rest)) all'
-      let idx     = fromMaybe (length witnessList - 1) (findIndex (not . witnessUseful) (toList witnessList))
-      let witness = toList witnessList !! idx
-      let (name, size) = all' !! idx
+    completeWitness info resTy = do
+      let constructors  = zip (toList info._stiConstructors) info._stiTypes
+      (((name, size), _), witness) <- findFirstNotUseful constructors
       case witness of
         Witness (Just pats) -> do
           let (args, ret) = splitAt size pats
-          pure $ Witness (Just (Cons (mkQualifiedPath name) args Created : ret))
+          pure $ Witness (Just (PCons (mkQualifiedPath name) args (resTy, emptyRange) : ret))
         _ -> pure witness
 
-checkUseful :: MonadTyper m => Matrix -> Pat Tc -> m Bool
-checkUseful pats pat = witnessUseful <$> isUseful False pats [toMatchPat pat]
+    incompleteWitness used allCons = do
+      witness <- isUseful returnWitness currentTy (defaultMatrix matrix) rest
+      case (witness, used) of
+        (Witness (Just res), []) -> pure (Witness (Just (PWild (TyErr, emptyRange) : res)))
+        (Witness (Just res), o)  -> undefined
+        _ -> pure witness
 
-isExhaustive :: MonadTyper m => [Pat Tc] -> m Witness
-isExhaustive pats = isUseful True (matrixFromColumn pats) [Wild Created]
-
-desestructOr :: Match -> (NonEmpty Text)
-desestructOr (Or a b _) = format a <| desestructOr b
-desestructOr alt        = one (format alt)
-
-checkPatterns :: MonadTyper m => Range -> (NonEmpty (Pat Tc)) -> m ()
-checkPatterns range (x :| xs) = do
-    let emptyMatrix = Matrix [[toMatchPat x]]
-    finalMatrix    <- foldM go emptyMatrix xs
-    witness        <- isUseful True finalMatrix [Wild Created]
-    case witness of
-      Witness (Just (match:_)) -> emitDiagnostic Error (NotExhaustive range (desestructOr match)) range
-      Witness Nothing         -> pure ()
-      _ -> error "Compiler error: Check patterns returned a strange result!"
-
+isUseful :: MonadTyper m => Bool -> [TTy 'Real] -> Matrix -> [Pat Tc] -> m Witness
+isUseful cond _ [] []                       = pure $ mkUseful cond
+isUseful cond _ matrix [] | all null matrix = pure $ mkUseless cond
+isUseful _    _  m []                       = error $ "Compiler Error: Probably the pattern matching entry is not well typed! |" <> (show (length <$> m) <> "|")
+isUseful returnWitness (fstTy : restTy) matrix (pat : rest) = case pat of
+  PWild ty    -> isIdUseful (fst ty) (snd ty)
+  PId i ty    -> isIdUseful ty (getPos i)
+  POr p q _   -> extend <$> isUsefulDef (p:rest) <*> isUsefulDef (q:rest)
+  PCons n p _ -> do
+    info <- getConsInfo n
+    isUseful returnWitness ((getPatTy <$> p) <> restTy) (specializeConstructor n info._parameters matrix) (p <> rest)
+  PLit lit _    -> do
+    isUseful returnWitness (restTy) (specializeLiteral lit matrix) rest
+  PAnn pat' _ _ ->
+    isUseful returnWitness (fstTy : restTy) matrix (pat' : rest)
+  PRec path binders _  -> do
+    let tuples = fieldToTuple <$> binders
+    recordInfo <- getRecordInfo path
+    let pats   = completeFields (HashMap.toList (_fiResultType <$> recordInfo)) tuples []
+    isUseful returnWitness [] (specializeRecord path recordInfo matrix) (pats <> rest)
   where
-    go :: MonadTyper m => Matrix -> Pat Tc -> m Matrix
-    go matrix@(Matrix list) pat = do
-      let match = toMatchPat pat
-      result <- isUseful False matrix [match]
+    isUsefulDef = isUseful returnWitness (restTy) matrix
+    isIdUseful  = isIdentifierUseful returnWitness restTy matrix rest
+isUseful _    _  m _ = do
+  error $ "Compiler Error: Probably the pattern matching entry is not well typed!! |" <> format m <> "|"
 
-      when (not $ witnessUseful result) $ do
-        emitDiagnostic Warning (UselessClause (getPos pat)) (getPos pat)
+checkPatterns :: MonadTyper m => TTy 'Real -> [Pat Tc] -> m ()
+checkPatterns TyErr _               = pure ()
+checkPatterns patternsType (x : xs) = do
+    pats <- foldM checkPat [[x]] xs
+    checkPat pats (PWild (patternsType, emptyRange))
+    pure ()
+  where
+    checkPat :: MonadTyper m => Matrix -> Pat Tc -> m Matrix
+    checkPat matrix pat = do
+      res <- isUseful False [patternsType] matrix [pat]
+      case res of
+        NoMatter res' -> putTextLn ("<Useful " <> show res' <> ">")
+        _             -> putTextLn "????"
+      pure (matrix <> [[pat]])
 
-      pure (Matrix (list <> [[match]]))
+checkPatterns _ []        = pure ()

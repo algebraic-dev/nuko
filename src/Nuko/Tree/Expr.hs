@@ -1,43 +1,4 @@
-module Nuko.Tree.Expr (
-  Literal(..),
-  Pat(..),
-  Expr(..),
-  NoExt(..),
-  Block(..),
-  Ty(..),
-  Var(..),
-  XIdent,
-  XLInt,
-  XLStr,
-  XPWild,
-  XPId,
-  XPCons,
-  XPLit,
-  XPExt,
-  XLit,
-  XLam,
-  XApp,
-  XLower,
-  XUpper,
-  XField,
-  XAnn,
-  XPAnn,
-  XPOr,
-  XIf,
-  XMatch,
-  XName,
-  XBlock,
-  XExt,
-  XVar,
-  XTId,
-  XTPoly,
-  XTCons,
-  XTArrow,
-  XModName,
-  XTForall,
-  XPath,
-  XTy,
-) where
+module Nuko.Tree.Expr where
 
 import Relude
 
@@ -47,6 +8,11 @@ import Pretty.Tree (PrettyTree (prettyTree), Tree (..))
 data NoExt = NoExt deriving Show
 
 instance PrettyTree NoExt where prettyTree _ = Node "NoExt" [] []
+
+
+data RecordBinder val x
+  = Mono (XName x ValName) !(XRecMono x)
+  | Binder (XName x ValName) (val x) !(XRecBinder x)
 
 -- Abstract Syntax Tree
 
@@ -68,6 +34,7 @@ data Pat x
   | PLit (Literal x) !(XPLit x)
   | PAnn (Pat x) (XTy x) !(XPAnn x)
   | POr (Pat x) (Pat x) !(XPOr x)
+  | PRec (XPath x TyName) [RecordBinder Pat x] (XPOr x)
   | PExt !(XPExt x)
 
 data Var x = Var
@@ -81,6 +48,14 @@ data Block x
   | BlVar (Var x) (Block x)
   | BlEnd (Expr x)
 
+-- We dont have a CST because i dont like new infix
+-- operators that much.
+data Operator
+  = Add | Sub | Mul | Div
+  | Xor | BinOr | BinAnd
+  | Or | And | Pipe
+  deriving Generic
+
 data Expr x
   = Lit (Literal x) !(XLit x)
   | Lam (Pat x) (Expr x) !(XLam x)
@@ -88,6 +63,9 @@ data Expr x
   | Lower (XPath x ValName) !(XLower x)
   | Upper (XPath x ConsName) !(XUpper x)
   | Field (Expr x) (XName x ValName) !(XField x)
+  | RecCreate (XPath x TyName) [RecordBinder Expr x] !(XRecCreate x)
+  | RecUpdate (Expr x) [RecordBinder Expr x] !(XRecUpdate x)
+  | BinOp Operator (Expr x) (Expr x) !(XBinOp x)
   | If (Expr x) (Expr x) (Expr x) !(XIf x)
   | Match (Expr x) (NonEmpty (Pat x, Expr x)) !(XMatch x)
   | Ann (Expr x) (XTy x) !(XAnn x)
@@ -112,12 +90,18 @@ type family XTCons x
 type family XTArrow x
 type family XTForall x
 
+type family XRecBinder x
+type family XRecMono x
+
 type family XPWild x
 type family XPId x
 type family XPAnn x
 type family XPCons x
 type family XPOr x
 type family XPExt x
+type family XRecUpdate x
+type family XRecCreate x
+type family XBinOp x
 type family XPLit x
 
 type family XLit x
@@ -132,4 +116,4 @@ type family XMatch x
 type family XBlock x
 type family XExt x
 
-
+instance PrettyTree Operator where

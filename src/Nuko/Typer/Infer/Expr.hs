@@ -15,7 +15,6 @@ import Nuko.Typer.Error         (TypeError (..))
 import Nuko.Typer.Infer.Literal (boolTy, inferLit)
 import Nuko.Typer.Infer.Pat     (inferPat)
 import Nuko.Typer.Infer.Type    (inferClosedTy)
-import Nuko.Typer.Match         (checkPatterns)
 import Nuko.Typer.Tree          ()
 import Nuko.Typer.Types         (Relation (..), TTy (..), derefTy, evaluate,
                                  isError, quote)
@@ -28,6 +27,8 @@ import Lens.Micro.Platform      (view)
 
 import Data.HashMap.Strict      qualified as HashMap
 import Nuko.Typer.Error.Extract (Tracker (InFunApp), track)
+import Nuko.Typer.Match         (checkPatterns)
+import Pretty.Format
 
 inferBlock :: MonadTyper m => Block Re -> m (Block Tc, TTy 'Virtual)
 inferBlock = \case
@@ -38,7 +39,6 @@ inferBlock = \case
   BlVar var rest   -> do
     ((patRes, patTy), bindings) <- inferPat var.pat
     (exprRes, resPatTy) <- checkExpr var.val patTy
-    when (not $ isError resPatTy) (checkPatterns (getPos var.pat) (one patRes))
     (resBlock, resTy') <- addLocals bindings (inferBlock rest)
     pure (BlVar (Var patRes exprRes var.ext) resBlock, resTy')
   BlEnd expr       -> do
@@ -53,7 +53,6 @@ checkExpr expr tty = case (expr, tty) of
   (Lam exprPat expr' e, TyFun argTy retTy) -> do
     ((patRes, patTy), bindings) <- inferPat exprPat
     resTy <- unify (getPos exprPat) patTy argTy
-    when (not $ isError resTy) (checkPatterns (getPos exprPat) (one patRes))
     (exprRes, bodyResTy) <- addLocals bindings (checkExpr expr' retTy)
     pure (Lam patRes exprRes (quote 0 (TyFun resTy bodyResTy), e), (TyFun resTy bodyResTy))
   _ -> do
@@ -108,16 +107,17 @@ inferExpr = \case
 
     casesRes <- for cas $ \(casePat, expr) ->  do
       ((resPat, patTy), bindings) <- inferPat casePat
-      scrutResTy <- unify (getPos resPat) patTy scrutTy
+      instTy <- eagerInstantiate patTy
+      scrutResTy <- unify (getPos resPat) instTy =<< eagerInstantiate scrutTy
       when (isError scrutResTy) (writeIORef patError True)
       resExpr <- addLocals bindings (checkExpr expr resTy)
       pure (resPat, resExpr)
 
+    checkPatterns (quote 0 scrutTy) (toList $ fst <$> casesRes)
     let isErrored = any isError $ (snd . snd) <$> casesRes
     let patsMatch = (second fst) <$> casesRes
 
     isPatErrored <- readIORef patError
-    when (not isPatErrored) (checkPatterns range (fst <$> casesRes))
 
     if (not isErrored) then do
       let resDeref = derefTy resTy
@@ -127,7 +127,6 @@ inferExpr = \case
 
   Lam binderPat expr extension -> do
     ((resPat, patTy), bindings) <- inferPat binderPat
-    when (not $ isError patTy) (checkPatterns (getPos binderPat) (one (resPat)))
     (resExpr, exprTy) <- runInst $ addLocals bindings (inferExpr expr)
     pure (Lam resPat resExpr (quote 0 (TyFun patTy exprTy), extension), TyFun patTy exprTy)
   App expr (x :| xs) extension -> do
@@ -142,6 +141,7 @@ inferExpr = \case
     (argFieldTy, resFieldTy) <- destructFun (getPos field) =<< getFieldByTy field resTy
     _ <- unify (getPos expr) argFieldTy resTy
     pure (Field resExpr field (quote 0 resFieldTy, extension), resFieldTy)
+  _ -> error "Cannotttt parse"
 
 -- TODO: If the type is private and it's not in the current namespace, we have to thrown
 -- an error. It would cause problems in the hot reloading.
