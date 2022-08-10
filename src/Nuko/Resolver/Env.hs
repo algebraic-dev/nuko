@@ -2,6 +2,7 @@ module Nuko.Resolver.Env (
   ResolverState(..),
   Visibility(..),
   NameSpace(..),
+  DefType(..),
   Query(..),
   Use(..),
   MonadResolver,
@@ -51,6 +52,11 @@ data Visibility
   | Private
   deriving (Eq, Show, Generic)
 
+data DefType
+  = RecordDef
+  | Irrelevant
+  deriving (Eq, Show, Generic)
+
 data Use
    = Single (Qualified Label)
    | Ambiguous (HashSet (Qualified Label))
@@ -58,7 +64,7 @@ data Use
 
 data NameSpace = NameSpace
   { _modName :: ModName
-  , _names   :: OccEnv Visibility
+  , _names   :: OccEnv (Visibility, DefType)
   } deriving Generic
 
 -- | Describes the current state of the resolver
@@ -78,6 +84,7 @@ data ResolverState = ResolverState
 makeLenses ''NameSpace
 makeLenses ''ResolverState
 
+instance PrettyTree DefType where
 instance PrettyTree Visibility where
 instance PrettyTree Use where
 instance PrettyTree NameSpace where
@@ -144,8 +151,8 @@ newScope action = do
   usedLocals .= used
   pure result
 
-addDefinition :: MonadState ResolverState m => Label -> Visibility -> m ()
-addDefinition name vs = currentNamespace . names %= insertOcc name vs
+addDefinition :: MonadState ResolverState m => Label -> Visibility -> DefType -> m ()
+addDefinition name vs def = currentNamespace . names %= insertOcc name (vs, def)
 
 addModule :: MonadState ResolverState m => ModName -> NameSpace -> m ()
 addModule name space = openedModules %= HashMap.insert name space
@@ -183,9 +190,9 @@ useModule modName' = do
       Nothing  -> terminate =<< mkDiagnostic Message.Error (getPos modName')  (CannotFindModule modName')
       Just res -> pure res
 
-addGlobal :: MonadResolver m => Name k -> Visibility -> m ()
-addGlobal name vs = do
+addGlobal :: MonadResolver m => Name k -> Visibility -> DefType -> m ()
+addGlobal name vs def = do
   result <- use (currentNamespace . names . getMap . at (Label name))
   case result of
     Just _  -> flag =<< mkDiagnostic Message.Error (getPos name) (AlreadyExistsName (Label name))
-    Nothing -> addDefinition (Label name) vs
+    Nothing -> addDefinition (Label name) vs def

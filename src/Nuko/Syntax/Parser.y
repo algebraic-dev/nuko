@@ -49,6 +49,7 @@ import qualified Data.List.NonEmpty      as NE
     else     { Ranged TcElse _ }
     pub      { Ranged TcPub _ }
     forall   { Ranged TcForall _ }
+    do       { Ranged TcDo _ }
 
     int      { Ranged (TcInt _) _ }
     str      { Ranged (TcStr _) _ }
@@ -123,14 +124,15 @@ PathHelper(Pred)
     | Pred { ([], $1) }
 
 RecordBinder
-    : Lower '=' Expr { (mkValName $1, $3) }
+    : ValName          { RecordBinder $1 (Lower (mkLocalPath $1) NoExt) (getPos $1) }
+    | ValName '=' Expr { withPos $1 $3 $ RecordBinder $1 $3 }
 
 PathEnd
     : Upper { \p -> Upper (mkPathFromList p (mkConsName $1)) NoExt }
     | Lower { \p -> Lower (mkPathFromList p (mkValName $1)) NoExt }
     | Lower '.' Lower { \p -> withPosListR p $3 (Field (Lower (mkPathFromList p (mkValName $1)) NoExt) (mkValName $3)) }
-    --| Lower '{' SepList(',', RecordBinder) '}' { \p -> withPos $1 $4 $ RecUpdate (Lower (mkPathFromList p (mkValName $1)) NoExt) $3 }
-    --| Upper '{' SepList(',', RecordBinder) '}' { \p -> withPos $1 $4 $ RecCreate (mkPathFromList p (mkTyName $1)) $3 } -- Record update
+    | Lower '{' SepList(',', RecordBinder) '}' { \p -> withPos $1 $4 $ RecUpdate (Lower (mkPathFromList p (mkValName $1)) NoExt) $3 }
+    | Upper '{' SepList(',', RecordBinder) '}' { \p -> withPos $1 $4 $ RecCreate (mkPathFromList p (mkTyName $1)) $3 } -- Record update
 
 PathExpr : PathHelper(PathEnd) { let (p , f) = $1 in f p }
 
@@ -154,15 +156,21 @@ Type
 
 -- Patterns
 
+PatBinder
+    : ValName          { RecordBinder $1 (PId $1 NoExt) (getPos $1) }
+    | ValName '=' Pat  { withPos $1 $3 $ RecordBinder $1 $3 }
+
 AtomPat :: { Pat Nm }
     : '_' { PWild $1.position }
     | Lower { PId (mkValName $1) NoExt }
     | Literal { PLit $1 NoExt }
     | Path(UpperCons) { PCons $1 [] (getPos $1) }
+
     | '(' Pat ')' { $2 }
 
 MiniPat :: { Pat Nm }
-    : Path(UpperCons) List1(AtomPat) { let t = toList $2 in withPosList $1 t $ PCons $1 t }
+    : Path(UpperCons) List1(AtomPat)    { let t = toList $2 in withPosList $1 t $ PCons $1 t }
+    | Path(UpperTy) '{' SepList(',', PatBinder) '}' { withPos $1 $4 $ PRec $1 $3 }
     | MiniPat ':' Type { withPos $1 $3 $ PAnn $1 $3 }
     | AtomPat { $1 }
 
@@ -185,7 +193,7 @@ Atom :: { Expr Nm }
     : PathExpr { $1 }
     | Literal { Lit $1 NoExt }
     | ParAtom { $1 }
-    | ParAtom '{' SepList(',', RecordBinder) '}' { $1 }
+    | ParAtom '{' SepList(',', RecordBinder) '}' { withPos $1 $4 $ RecUpdate $1 $3 }
     | ParAtom '.' Lower { $1 }
 
 App :: { NE.NonEmpty (Expr Nm) }
@@ -210,7 +218,7 @@ ClosedExpr :: { Expr Nm }
     : if ClosedExpr OptSep then ClosedExpr OptSep else ClosedExpr { withPos $1 $8 $ If $2 $5 $8 }
     | match ClosedExpr with begin SepList1(sep, CaseClause) End { withPos $1 $5 $ Match $2 $5 }
     | '\\' Pat '=>' ClosedExpr { withPos $1 $4 $ Lam $2 $4 }
-    | begin BlockExpr End { case $2 of { BlEnd x -> x; _ -> Block $2 (getBlockPos $2)} }
+    | do begin BlockExpr End { case $3 of { BlEnd x -> x; _ -> Block $3 (getBlockPos $3)} }
     | ClosedExpr ':' Type { withPos $1 $3 $ Ann $1 $3 }
     | Atom App { withPos $1 $2 $ App $1 $2 }
     | Atom { $1 }

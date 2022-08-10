@@ -1,3 +1,4 @@
+{-# OPTIONS_GHC -Wno-missing-export-lists #-}
 module Nuko.Tree.Expr where
 
 import Relude
@@ -9,11 +10,11 @@ data NoExt = NoExt deriving Show
 
 instance PrettyTree NoExt where prettyTree _ = Node "NoExt" [] []
 
-
-data RecordBinder val x
-  = Mono (XName x ValName) !(XRecMono x)
-  | Binder (XName x ValName) (val x) !(XRecBinder x)
-
+data RecordBinder val x = RecordBinder {
+   rbName :: XName x ValName,
+   rbVal  :: val x,
+   rbExt  :: !(XRecMono x)
+}
 -- Abstract Syntax Tree
 
 data Ty x
@@ -34,7 +35,7 @@ data Pat x
   | PLit (Literal x) !(XPLit x)
   | PAnn (Pat x) (XTy x) !(XPAnn x)
   | POr (Pat x) (Pat x) !(XPOr x)
-  | PRec (XPath x TyName) [RecordBinder Pat x] (XPOr x)
+  | PRec (XPath x TyName) [RecordBinder Pat x] (XPRec x)
   | PExt !(XPExt x)
 
 data Var x = Var
@@ -98,7 +99,9 @@ type family XPId x
 type family XPAnn x
 type family XPCons x
 type family XPOr x
+type family XPRec x
 type family XPExt x
+
 type family XRecUpdate x
 type family XRecCreate x
 type family XBinOp x

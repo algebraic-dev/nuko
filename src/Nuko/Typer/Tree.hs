@@ -10,7 +10,7 @@ import Nuko.Names        (Ident, ModName, Name, Path)
 import Nuko.Report.Range (HasPosition (..), Range)
 import Nuko.Tree
 import Nuko.Typer.Types  (Relation (..), TTy)
-import Pretty.Format
+import Pretty.Format     (Format (..))
 import Pretty.Tree       (PrettyTree)
 
 type instance XIdent Tc    = Ident
@@ -28,6 +28,7 @@ type instance XPOr Tc = (XTy Tc, Range)
 type instance XPLit Tc = XTy Tc
 type instance XPAnn Tc = (XTy Tc, Range)
 type instance XPCons Tc = (XTy Tc, Range)
+type instance XPRec Tc = (XTy Tc, Range)
 type instance XPExt Tc = Void
 
 type instance XRecBinder Tc = XTy Tc
@@ -90,11 +91,14 @@ instance Format (Pat Tc) where
     PWild _    -> "_"
     PCons name [] _   -> format name
     PCons name pats _ -> "(" <> format name <> " " <> Text.unwords (map format pats) <> ")"
-    POr le ri or -> "(" <> format le <> "|" <> format ri <> ")"
+    POr le ri _       -> "(" <> format le <> "|" <> format ri <> ")"
     PLit (LStr t _) _ -> "\"" <> format t <> "\""
     PLit (LInt t _) _ -> format t
     PAnn p _ _        -> format p
     PRec name bind  _ -> format name <> "{" <> "}"
+
+instance (XRecMono x ~ Range) => HasPosition (RecordBinder val x) where
+  getPos (RecordBinder _ _ e) = e
 
 instance HasPosition (Var Tc) where
   getPos (Var _ _ r) = r
@@ -112,6 +116,7 @@ instance HasPosition (Pat Tc) where
     POr _ _ r        -> snd r
     PAnn _ _ r       -> snd r
     PId n _          -> getPos n
+    PRec _ _ r       -> snd r
 
 instance HasPosition (Expr Tc) where
   getPos = \case

@@ -40,19 +40,19 @@ initTypeDecl decl = do
     indices <- traverse (traverseToSnd newKindHole) decl.tyArgs
 
     -- The type kind
-    let tyKind = foldr KiFun KiStar (fmap snd indices)
+    let tyKind' = foldr KiFun KiStar (fmap snd indices)
 
     -- Label type
     typeTy <- TyIdent <$> qualifyPath (mkLocalPath decl.tyName)
 
     -- The type application that should end with kind equals to *
-    let (resKind, resType, _) = mkTyApp tyKind typeTy indices
+    let (resKind, resType, _) = mkTyApp tyKind' typeTy indices
     unifyKind (getPos decl.tyName) resKind KiStar
 
     tyDef <- getTyDef decl.tyDecl
 
     let resInfo = TyInfo resType decl.tyName indices tyDef
-    addTyKind decl.tyName tyKind resInfo
+    addTyKind decl.tyName tyKind' resInfo
     pure resInfo
   where
     getTyDef :: MonadTyper m => TypeDeclArg Re -> m TyInfoKind

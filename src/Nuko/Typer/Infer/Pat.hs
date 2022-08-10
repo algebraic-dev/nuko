@@ -8,12 +8,9 @@ import Relude
 import Nuko.Names               (Attribute (Untouched), Name, NameKind (TyName),
                                  ValName, coerceTo, genIdent, mkName)
 import Nuko.Resolver.Tree       ()
-import Nuko.Tree                (Re, Tc)
+import Nuko.Tree                (Re, RecordBinder (..), Tc)
 import Nuko.Tree.Expr           (Pat (..))
-import Nuko.Typer.Env           (DataConsInfo (_parameters), MonadTyper,
-                                 eagerInstantiate, endDiagnostic, getTy,
-                                 newTyHole, qualifyPath, seScope,
-                                 tsConstructors)
+import Nuko.Typer.Env
 import Nuko.Typer.Error         (TypeError (..))
 import Nuko.Typer.Infer.Literal (inferLit)
 import Nuko.Typer.Infer.Type    (inferClosedTy)
@@ -26,7 +23,9 @@ import Lens.Micro.Platform      (at, use, view)
 
 import Control.Monad.State      qualified as State
 import Data.HashMap.Strict      qualified as HashMap
+import Data.Traversable         (for)
 import Nuko.Report.Range        (HasPosition (getPos), Range)
+import Nuko.Typer.Infer.Fields  (assertFields)
 
 type InferPat m a = State.StateT (HashMap (Name ValName) (TTy 'Virtual)) m a
 
@@ -80,7 +79,7 @@ inferPat pat =
         (argsRes, resTy) <- foldM (applyPat fnRange) ([], constTy) args
         resTt <- lift $ eagerInstantiate resTy
         pure (PCons path (reverse argsRes) (quote 0 resTy, ext), resTt)
-      PLit lit ext -> do
+      PLit lit _ -> do
         (resLit, resTy) <- lift $ inferLit lit
         pure (PLit resLit (quote 0 resTy), resTy)
       PAnn pat' ty ext -> do
@@ -93,3 +92,12 @@ inferPat pat =
         (resPat', resPatTy') <- go pat''
         resTy' <- lift $ unify (getPos resPat) resPatTy resPatTy'
         pure (POr resPat resPat' (quote 0 resPatTy, ext), resTy')
+      PRec tyName' binders ext -> do
+        qualified <- lift (qualifyPath tyName')
+        resInfo <- lift (getTy tsTypeFields qualified)
+        (binderRec, resTy) <- lift $ assertFields qualified ext resInfo binders
+        newBinders' <- for binderRec $ \(binder, binderTy) -> do
+          (resPat, resPatTy) <- go binder.rbVal
+          _ <- lift $ unify (getPos binder) resPatTy binderTy
+          pure (RecordBinder binder.rbName resPat (quote 0 resTy))
+        pure (PRec tyName' newBinders' (quote 0 resTy, ext), resTy)

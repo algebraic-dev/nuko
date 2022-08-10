@@ -42,9 +42,9 @@ getErrorSite = \case
 
 errorTitle :: SyntaxError -> Mode
 errorTitle = \case
-  UnexpectedStr _ -> Words [Raw "Unexpected token"]
+  UnexpectedStr r -> Words [Raw "Unexpected token", Marked Fst (show r)]
   UnfinishedStr _ -> Words [Raw "Unfinished string"]
-  UnexpectedToken _ -> Words [Raw "Unexpected token"]
+  UnexpectedToken r -> Words [Raw "Unexpected token", Marked Fst (show r)]
   AssignInEndOfBlock _ -> Words [Raw "You cannot assign a new variable in the end of a block!"]
   WrongUsageOfCase UpperCase _ -> Words [Raw "The identifier should be upper cased"]
   WrongUsageOfCase LowerCase _ -> Words [Raw "The identifier should be lower cased"]

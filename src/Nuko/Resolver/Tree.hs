@@ -35,10 +35,12 @@ type instance XPLit Re = NoExt
 type instance XPAnn Re = Range
 type instance XPOr Re = Range
 type instance XPCons Re = Range
+type instance XPRec Re = Range
+type instance XPExt Re = Void
+
 type instance XRecMono Re = Range
 type instance XRecCreate Re = Range
 type instance XRecBinder Re = Range
-type instance XPExt Re = Void
 
 type instance XLit Re = NoExt
 type instance XLam Re = Range
@@ -108,6 +110,7 @@ instance HasPosition (Pat Re) where
     PAnn _ _ r  -> r
     PId n _     -> getPos n
     POr _ _ r   -> r
+    PRec _ _ r  -> r
 
 instance HasPosition (Expr Re) where
   getPos = \case

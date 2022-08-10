@@ -8,8 +8,8 @@ import Relude
 import Nuko.Names        (Ident, Label, ModName, Name, NameSort, Path,
                           Qualified, TyName, ValName)
 import Nuko.Report.Range (HasPosition (..), Range)
-import Nuko.Report.Text  (Annotation (NoAnn), Color (..), Mode (..), Piece (..),
-                          PrettyDiagnostic (..), mkBasicDiagnostic)
+import Nuko.Report.Text  (Annotation (Ann, NoAnn), Color (..), Mode (..),
+                          Piece (..), PrettyDiagnostic (..), mkBasicDiagnostic)
 import Pretty.Format     (Format (format), formatOr)
 
 data Case = UpperCase | LowerCase
@@ -25,6 +25,7 @@ data ResolveErrorReason
   | ConflictingTypes (NonEmpty (Name TyName))
   | AlreadyExistsPat (Name ValName)
   | ShouldAppearOnOr (Name ValName)
+  | NotARecord (Path Label)
   | CannotIntroduceNewVariables (Name ValName)
 
 errorCode :: ResolveErrorReason -> Int
@@ -39,6 +40,7 @@ errorCode = \case
   AlreadyExistsPat {}            -> 107
   ShouldAppearOnOr {}            -> 108
   CannotIntroduceNewVariables {} -> 109
+  NotARecord {}                  -> 110
 
 errorTitle :: ResolveErrorReason -> Mode
 errorTitle = \case
@@ -62,6 +64,8 @@ errorTitle = \case
     Words [Raw "The pattern", Marked Fst (format name), Raw "should appear on each side of the or pattern"]
   CannotIntroduceNewVariables name ->
     Words [Raw "Cannot introduce the variable", Marked Fst (format name), Raw "in the left side of a Or Pattern"]
+  NotARecord name ->
+    Words [Raw "The type", Marked Fst (format name), Raw "is not a record type!"]
 
 getErrorSite :: ResolveErrorReason -> Range
 getErrorSite = \case
@@ -75,9 +79,10 @@ getErrorSite = \case
   AlreadyExistsPat path            -> getPos path
   ShouldAppearOnOr path            -> getPos path
   CannotIntroduceNewVariables path -> getPos path
+  NotARecord path                  -> getPos path
 
 instance PrettyDiagnostic ResolveErrorReason where
   prettyDiagnostic = \case
     err ->
       let (Words title) = errorTitle err in
-      mkBasicDiagnostic (errorCode err) title [NoAnn Fst (getErrorSite err)]
+      mkBasicDiagnostic (errorCode err) title [Ann Fst (Words [Raw "Here!"]) (getErrorSite err)]

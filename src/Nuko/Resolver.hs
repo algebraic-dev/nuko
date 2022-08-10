@@ -8,10 +8,10 @@ import Relude
 
 import Nuko.Report.Range       (HasPosition, getPos)
 import Nuko.Report.Text        (Severity (Error))
-import Nuko.Resolver.Env       (ImportErrorKind (..), MonadResolver,
-                                NameSpace (..))
+import Nuko.Resolver.Env       (DefType (..), ImportErrorKind (..),
+                                MonadResolver, NameSpace (..), currentNamespace)
 import Nuko.Resolver.Error     (ResolveErrorReason (..))
-import Nuko.Resolver.Path      (getPublicLabels, resolveConsOrTy,
+import Nuko.Resolver.Path      (getPathData, getPublicLabels, resolveConsOrTy,
                                 resolveInNameSpace, resolvePath, useLocalPath)
 import Nuko.Resolver.Tree      ()
 import Nuko.Syntax.Tree        ()
@@ -23,11 +23,11 @@ import Control.Monad.Chronicle (MonadChronicle (dictate), memento)
 import Control.Monad.Query     (MonadQuery (..))
 import Data.List.NonEmpty      (groupAllWith)
 import Data.Traversable        (for)
+import Lens.Micro.Platform     (use)
 
 import Data.HashMap.Strict     qualified as HashMap
 import Data.HashSet            qualified as HashSet
 import Data.List.NonEmpty      qualified as NonEmpty
-import Nuko.Names              (ValName)
 import Nuko.Names              qualified as Names
 import Nuko.Resolver.Env       qualified as Env
 
@@ -35,6 +35,8 @@ initProgram :: MonadResolver m => Program Nm -> m ()
 initProgram (Program tyDecls' letDecls' _ _) = do
   traverse_ initTyDecl tyDecls'
   traverse_ initLetDecl letDecls'
+  currentMod <- use currentNamespace
+  Env.addModule currentMod._modName currentMod
 
 resolveProgram :: MonadResolver m => Program Nm -> m (Program Re)
 resolveProgram (Program tyDecls' letDecls' impDecls' ext') = do
@@ -82,14 +84,14 @@ resolveImport decl = do
 initTyDecl :: MonadResolver m => TypeDecl Nm -> m ()
 initTyDecl (TypeDecl name' _ decl) = do
   curName <- gets (_modName . Env._currentNamespace)
-  Env.addGlobal name' Env.Public
+  Env.addGlobal name' Env.Public (case decl of {TypeProd _ -> Env.RecordDef; _ -> Env.Irrelevant})
   Env.newNamespace (Names.addSegments curName [name'.nIdent]) (initFields decl)
  where
   initFields :: MonadResolver m => TypeDeclArg Nm -> m ()
   initFields = \case
     TypeSym _       -> pure ()
-    TypeProd fields -> traverse_ (`Env.addGlobal` Env.Public) (fmap fst fields)
-    TypeSum fields  -> traverse_ (`Env.addGlobal` Env.Public) (fmap fst fields)
+    TypeProd fields -> traverse_ (\x -> Env.addGlobal x Env.Public Env.Irrelevant) (fmap fst fields)
+    TypeSum fields  -> traverse_ (\x -> Env.addGlobal x Env.Public Env.Irrelevant) (fmap fst fields)
 
 resolveTypeDecl :: MonadResolver m => TypeDecl Nm -> m (TypeDecl Re)
 resolveTypeDecl (TypeDecl name' args decl) = do
@@ -114,7 +116,7 @@ resolveTypeDecl (TypeDecl name' args decl) = do
     TypeSum fields  -> TypeSum <$> traverse resolveSumField fields
 
 initLetDecl :: MonadResolver m => LetDecl Nm -> m ()
-initLetDecl (LetDecl name' _ _ _ _) = Env.addGlobal name' Env.Public
+initLetDecl (LetDecl name' _ _ _ _) = Env.addGlobal name' Env.Public Env.Irrelevant
 
 resolveLetDecl :: MonadResolver m => LetDecl Nm -> m (LetDecl Re)
 resolveLetDecl (LetDecl name' args body ret ext') =
@@ -158,8 +160,12 @@ resolvePat pat' = do
     pure res
   localRem other = pure other
 
+  removeDupsField :: MonadResolver m => HashSet (Names.Name Names.ValName) -> RecordBinder Pat Nm -> m (HashSet (Names.Name Names.ValName))
+  removeDupsField names (RecordBinder _ pat _) = removeDuplicates names pat
+
   removeDuplicates :: MonadResolver m => HashSet (Names.Name Names.ValName) -> Pat Nm -> m (HashSet (Names.Name Names.ValName))
   removeDuplicates newNames = \case
+    PRec _ binder _ -> foldM removeDupsField newNames binder
     PWild _ -> pure newNames
     PLit {} -> pure newNames
     PAnn annPat _ _ -> removeDuplicates newNames annPat
@@ -175,6 +181,10 @@ resolvePat pat' = do
       for_ (diff newNamesR newNamesL) (\res -> flag =<< Env.mkDiagnostic Error (getPos res) (CannotIntroduceNewVariables res))
       pure newNamesL
 
+  renameField :: MonadResolver m => HashMap (Names.Name Names.ValName) (Names.Name Names.ValName) -> RecordBinder Pat Nm -> m (RecordBinder Pat Re)
+  renameField map' = \case
+    RecordBinder name pat ext -> RecordBinder name <$> renamePat map' pat <*> pure ext
+
   renamePat :: MonadResolver m => HashMap (Names.Name Names.ValName) (Names.Name Names.ValName) -> Pat Nm -> m (Pat Re)
   renamePat map' = \case
     PId name' ext' -> do
@@ -186,9 +196,19 @@ resolvePat pat' = do
     PLit lit ext' -> PLit <$> resolveLit lit <*> pure ext'
     PAnn pat'' ty ext' -> PAnn <$> renamePat map' pat'' <*> resolveType ty <*> pure ext'
     POr l r ext' -> POr <$> renamePat map' l <*> renamePat map' r <*> pure ext'
+    PRec path binder e -> PRec <$> resolveFieldPath path <*> traverse (renameField map') binder <*> pure e
 
 resolveOp :: MonadResolver m => Operator -> m Operator
 resolveOp = pure
+
+resolveFieldPath :: MonadResolver m => Names.Path (Names.Name k) -> m (Names.Path (Names.Name k))
+resolveFieldPath path = do
+  resolvedPath <- resolvePath path
+  info <- getPathData resolvedPath
+  case info of
+    Just (_, Irrelevant) -> terminate =<< Env.mkDiagnostic Error (getPos path) (NotARecord (Names.Label <$> resolvedPath))
+    Just (_, RecordDef)  -> pure resolvedPath
+    Nothing -> error "Compiler Error: Wtf, this should not happen lol in the name resolution"
 
 resolveExpr :: MonadResolver m => Expr Nm -> m (Expr Re)
 resolveExpr = \case
@@ -202,12 +222,13 @@ resolveExpr = \case
   Match scrut cases ext' -> Match <$> resolveExpr scrut <*> traverse resolveCase cases <*> pure ext'
   Ann expr ty ext' -> Ann <$> resolveExpr expr <*> resolveType ty <*> pure ext'
   Block block ext' -> Env.newScope (Block <$> resolveBlock block <*> pure ext')
-  RecCreate path fields ext -> RecCreate <$> resolvePath path <*> traverse resolveField fields <*> pure ext
+  RecCreate path fields ext -> RecCreate <$> resolveFieldPath path <*> traverse resolveField fields <*> pure ext
   RecUpdate path fields ext -> RecUpdate <$> resolveExpr path <*> traverse resolveField fields <*> pure ext
   BinOp op left right ext   -> BinOp <$> resolveOp op <*> resolveExpr left <*> resolveExpr right <*> pure ext
  where
   resolveField :: MonadResolver m => RecordBinder Expr Nm -> m (RecordBinder Expr Re)
-  resolveField = undefined
+  resolveField = \case
+    RecordBinder name expr ext -> RecordBinder name <$> resolveExpr expr <*> pure ext
 
   resolveCase :: MonadResolver m => (Pat Nm, Expr Nm) -> m (Pat Re, Expr Re)
   resolveCase (pat', expr) = Env.newScope ((,) <$> resolvePat pat' <*> resolveExpr expr)

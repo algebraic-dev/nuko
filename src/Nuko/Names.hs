@@ -236,6 +236,9 @@ instance Hashable (Path a) where
   hashWithSalt salt (Full hash' _)  = hashWithSalt salt hash'
   hashWithSalt salt (Local hash' _) = hashWithSalt salt hash'
 
+instance Ord (Name k) where
+  compare (Name hash' _ _ _) (Name hash'' _ _ _) = compare hash' hash''
+
 instance Eq Label where
   (Label name) == (Label name') = name.nHash == name'.nHash
 
@@ -361,3 +364,4 @@ instance SetPosition Label where
 instance SetPosition k => SetPosition (Path k) where
   setPos r (Local h i) = Local h (setPos r i)
   setPos r (Full h i)  = Full h (setPos r i)
+

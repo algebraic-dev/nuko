@@ -5,10 +5,11 @@ module Nuko.Typer.Infer.Expr (
 
 import Relude
 
-import Nuko.Names               (Name, Path (..), ValName)
+import Nuko.Names               (Name, Path (..), Qualified, TyName, ValName)
 import Nuko.Report.Range        (Range (..), getPos)
 import Nuko.Resolver.Tree       ()
-import Nuko.Tree                (Block (..), Re, Tc, Var (..))
+import Nuko.Tree                (Block (..), Re, RecordBinder (..), Tc,
+                                 Var (..))
 import Nuko.Tree.Expr           (Expr (..))
 import Nuko.Typer.Env
 import Nuko.Typer.Error         (TypeError (..))
@@ -25,10 +26,11 @@ import Data.List.NonEmpty       ((<|))
 import Data.Traversable         (for)
 import Lens.Micro.Platform      (view)
 
+import Data.Foldable            (Foldable (..))
 import Data.HashMap.Strict      qualified as HashMap
 import Nuko.Typer.Error.Extract (Tracker (InFunApp), track)
+import Nuko.Typer.Infer.Fields  (assertFields)
 import Nuko.Typer.Match         (checkPatterns)
-import Pretty.Format
 
 inferBlock :: MonadTyper m => Block Re -> m (Block Tc, TTy 'Virtual)
 inferBlock = \case
@@ -38,7 +40,7 @@ inferBlock = \case
     pure (BlBind resExpr resBlock, resTy')
   BlVar var rest   -> do
     ((patRes, patTy), bindings) <- inferPat var.pat
-    (exprRes, resPatTy) <- checkExpr var.val patTy
+    (exprRes, _) <- checkExpr var.val patTy
     (resBlock, resTy') <- addLocals bindings (inferBlock rest)
     pure (BlVar (Var patRes exprRes var.ext) resBlock, resTy')
   BlEnd expr       -> do
@@ -77,28 +79,34 @@ inferExpr = \case
   Lit lit extension -> do
     (resLit, resTy) <- inferLit lit
     pure (Lit resLit extension, resTy)
+
   Lower path _ -> do
     ty <- case path of
       Local _ path' -> getLocal path'
       Full _ qual   -> evaluate [] . fst <$> getTy tsVars qual
     pure (Lower path (quote 0 ty), ty)
+
   Upper path _ -> do
     qualified <- qualifyPath path
     (consTy, _) <- getTy tsConstructors qualified
     pure (Upper path consTy, evaluate [] consTy)
+
   Ann expr ty extension -> do
     (resTy, _) <- inferClosedTy ty
     (exprRes, resTy') <- checkExpr expr resTy
     pure (Ann exprRes (quote 0 resTy) extension, resTy')
+
   Block block extension -> do
     (blockRes, resTy) <- inferBlock block
     pure (Block blockRes (quote 0 resTy, extension), resTy)
+
   If con if' else' extension -> do
     (conRes, conTy) <- inferExpr con
     _ <- unify (getPos con) conTy boolTy
     (ifRes, ifTy)  <- runInst $ inferExpr if'
     (elseRes, ifResTy) <- checkExpr else' ifTy
     pure (If conRes ifRes elseRes (quote 0 ifTy, extension), ifResTy)
+
   Match scrut cas range -> do
     (scrutRes, nonInstScrutTy) <- inferExpr scrut
     scrutTy <- eagerInstantiate nonInstScrutTy
@@ -113,11 +121,12 @@ inferExpr = \case
       resExpr <- addLocals bindings (checkExpr expr resTy)
       pure (resPat, resExpr)
 
-    checkPatterns (quote 0 scrutTy) (toList $ fst <$> casesRes)
     let isErrored = any isError $ (snd . snd) <$> casesRes
     let patsMatch = (second fst) <$> casesRes
 
     isPatErrored <- readIORef patError
+    when (not isPatErrored) $ do
+      checkPatterns (quote 0 scrutTy) (toList $ fst <$> casesRes)
 
     if (not isErrored) then do
       let resDeref = derefTy resTy
@@ -129,24 +138,59 @@ inferExpr = \case
     ((resPat, patTy), bindings) <- inferPat binderPat
     (resExpr, exprTy) <- runInst $ addLocals bindings (inferExpr expr)
     pure (Lam resPat resExpr (quote 0 (TyFun patTy exprTy), extension), TyFun patTy exprTy)
+
   App expr (x :| xs) extension -> do
     (fnExpr, fnTy) <- inferExpr expr
     let fnRange = getPos expr
     (argExpr, fnResTy) <- track (InFunApp fnRange 1 (getPos x)) $ applyExpr fnRange fnTy x
     (_, resArgs, resTy) <- foldM (accApplyExpr fnRange) (2, one argExpr, fnResTy) xs
     pure (App fnExpr resArgs (quote 0 resTy, extension), resTy)
+
   Field expr field extension -> do
     -- TODO: Probably will have problems with eager instantiation
     (resExpr, resTy) <- inferExpr expr
     (argFieldTy, resFieldTy) <- destructFun (getPos field) =<< getFieldByTy field resTy
     _ <- unify (getPos expr) argFieldTy resTy
     pure (Field resExpr field (quote 0 resFieldTy, extension), resFieldTy)
-  _ -> error "Cannotttt parse"
+
+  RecUpdate expr binders range -> do
+    (resExpr, resTy) <- inferExpr expr
+    tyName' <- getTypeNameByTy (getPos expr) resTy
+    resInfo <- getTy tsTypeFields tyName'
+    (binders', resTy'') <- assertFields tyName' range resInfo binders
+    resTy' <- unify (getPos resExpr) resTy resTy''
+    newBinders <- for binders' $ \(binder, argTy) -> do
+      (binderExpr, binderTy) <- checkExpr binder.rbVal argTy
+      pure (RecordBinder binder.rbName binderExpr (quote 0 binderTy))
+
+    pure (RecUpdate resExpr newBinders (quote 0 resTy', range), resTy')
+
+  RecCreate tyName' binders range -> do
+    qualified <- qualifyPath tyName'
+    resInfo <- getTy tsTypeFields qualified
+    (binders', resTy') <- assertFields qualified range resInfo binders
+
+    when (length binders' /= HashMap.size resInfo) $ do
+      let notCreated = HashMap.keys $ foldr' (HashMap.delete) resInfo (rbName . fst <$> binders')
+      endDiagnostic (NeedMoreFields (fromList notCreated)) range
+
+    newBinders <- for binders' $ \(binder, argTy) ->
+      RecordBinder binder.rbName <$> (fst <$> checkExpr binder.rbVal argTy) <*> pure (quote 0 argTy)
+    pure (RecCreate tyName' newBinders (quote 0 resTy', range), resTy')
+
+  BinOp operator left right range -> do
+    error "Oh no, binary operator are not implemented yet"
+
+getTypeNameByTy :: MonadTyper m => Range -> TTy 'Virtual -> m (Qualified (Name TyName))
+getTypeNameByTy pos ty = eagerInstantiate ty >>= \case
+  TyApp _ f _ -> getTypeNameByTy pos f
+  TyIdent p   -> pure p
+  _           -> endDiagnostic (CannotInferField pos) pos
 
 -- TODO: If the type is private and it's not in the current namespace, we have to thrown
 -- an error. It would cause problems in the hot reloading.
 getFieldByTy :: MonadTyper m => Name ValName -> TTy 'Virtual -> m (TTy 'Virtual)
-getFieldByTy field = \case
+getFieldByTy field ty = eagerInstantiate ty >>= \case
   TyApp _ f _ -> getFieldByTy field f
   TyIdent p   -> do
     res <- getTy tsTypeFields p

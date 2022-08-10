@@ -6,6 +6,8 @@ module Nuko.Resolver.Path (
   resolveInNameSpace,
   useLocalPath,
   getPublicLabels,
+  qualifyPath,
+  getPathData,
 ) where
 
 import Relude
@@ -13,7 +15,7 @@ import Relude
 import Nuko.Names
 import Nuko.Report.Range        (SetPosition (setPos), copyPos, getPos)
 import Nuko.Report.Text         (Severity (Error))
-import Nuko.Resolver.Env        (MonadResolver)
+import Nuko.Resolver.Env        (MonadResolver, useModule)
 import Nuko.Resolver.Env        qualified as Env
 import Nuko.Resolver.Error      (ResolveErrorReason (..))
 import Nuko.Resolver.Occourence (OccEnv (..), getMap)
@@ -33,7 +35,15 @@ useLocalPath name' = do
 useGlobal :: MonadResolver m => Env.NameSpace -> Name k -> m (Maybe (Qualified (Name k), Env.Visibility))
 useGlobal ns name' = do
   let visibilityRes = view (Env.names . occAt (Label name')) ns
-  pure ((attachModName ns._modName name', ) <$> visibilityRes)
+  pure ((attachModName ns._modName name', ) . fst <$> visibilityRes)
+
+getPathData :: MonadResolver m => Path (Name k) -> m (Maybe (Env.Visibility, Env.DefType))
+getPathData path = do
+  ns <- case path of
+        Full _ q  -> useModule q.qModule
+        Local _ _ -> use Env.currentNamespace
+  let info = getPathInfo path
+  pure $ view (Env.names . occAt (Label info)) ns
 
 -- | TODO: Add each name in the openedNames so it will make ambiguity checking easier.
 useGlobalPath :: MonadResolver m => Env.NameSpace -> Name k -> m (Maybe (Path (Name k)))
@@ -108,5 +118,12 @@ resolveConsOrTy ns ident = do
 getPublicLabels :: Env.NameSpace -> [Label]
 getPublicLabels ns =
     fmap fst
-  $ filter (\(_, v) -> v == Env.Public)
+  $ filter (\(_, v) -> fst v == Env.Public)
   $ HashMap.toList (ns._names._getMap)
+
+qualifyPath :: MonadResolver m => Path (Name k) -> m (Qualified (Name k))
+qualifyPath = \case
+  Full _ q -> pure q
+  Local _ n -> do
+    module' <- use Env.currentNamespace
+    pure (mkQualified module'._modName n (getPos n))

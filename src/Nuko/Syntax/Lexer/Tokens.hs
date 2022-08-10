@@ -19,8 +19,9 @@ data Token
   | TcAs           -- | The "as" keyword
   | TcElse         -- | The "else" keyword
   | TcType         -- | The "type" keyword
-  | TcForall       -- | The "public" keyword
+  | TcForall       -- | The "forall" keyword
   | TcPub          -- | The "public" keyword
+  | TcDo           -- | The "do" keyword
 
   | TcStr Text     -- | String literal
   | TcInt Int      -- | Integer literal

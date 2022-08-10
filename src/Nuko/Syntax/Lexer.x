@@ -52,15 +52,16 @@ lexer :-
 <linecom> \n    { \_ _ ->  popCode *> scan }
 <linecom> eof   { \_ _ ->  popCode *> scan }
 
-<0> "type"      { nonLWToken TcType  }
+<0> "type"      { token TcType  }
 <0> "with"      { layoutKw TcWith    }
 <0> "let"       { token TcLet        }
 <0> "as"        { token TcAs         }
 <0> "match"     { token TcMatch      }
 <0> "import"    { token TcImport     }
-<0> "if"        { layoutKw TcIf      }
-<0> "then"      { layoutKw TcThen    }
-<0> "else"      { layoutKw TcElse    }
+<0> "if"        { token TcIf         }
+<0> "then"      { token TcThen       }
+<0> "else"      { token TcElse       }
+<0> "do"        { layoutKw TcDo      }
 <0> "forall"    { token TcForall     }
 <0> "pub"       { token TcPub        }
 <0> \"          { \_ pos -> do
@@ -77,7 +78,7 @@ lexer :-
 
 <0> @number     { emit $ TcInt . fst . unsafeRight . decimal }
 
-<0> "="         { layoutKw TcEqual }
+<0> "="         { token TcEqual }
 <0> "_"         { token TcWild   }
 <0> "("         { token TcLPar   }
 <0> ")"         { token TcRPar   }
@@ -89,7 +90,7 @@ lexer :-
 <0> ","         { token TcComma  }
 <0> "->"        { token TcArrow  }
 <0> "\"         { token TcSlash  }
-<0> "=>"        { layoutKw TcDoubleArrow  }
+<0> "=>"        { token TcDoubleArrow  }
 
 <0> @not_id     { \_ p -> flagChar (UnexpectedStr) p *> scan }
 

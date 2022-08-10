@@ -45,7 +45,10 @@ module Nuko.Typer.Env (
   runToIO,
   genKindHole,
   addLocalTypes,
-  tyKind
+  tyKind,
+  label,
+  resultantType,
+  tyNames
 ) where
 
 import Relude
@@ -55,7 +58,7 @@ import Nuko.Report.Message           (Diagnostic (..), DiagnosticInfo (..),
                                       Severity (..))
 import Nuko.Report.Range             (Range, getPos)
 import Nuko.Resolver.Tree            ()
-import Nuko.Typer.Error              (TypeError (NameResolution))
+import Nuko.Typer.Error              (TypeError (..))
 import Nuko.Typer.Error.Tracking     (Tracker)
 import Nuko.Typer.Types              (Hole (..), Relation (..), TKind (..),
                                       TTy (..), derefTy)

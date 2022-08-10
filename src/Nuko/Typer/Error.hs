@@ -4,8 +4,8 @@ module Nuko.Typer.Error (
 
 import Relude
 
-import Nuko.Names        (Label (..))
-import Nuko.Report.Range (Range)
+import Nuko.Names        (Label (..), Name, ValName)
+import Nuko.Report.Range (HasPosition (getPos), Range)
 import Nuko.Report.Text
 import Nuko.Typer.Types  (Relation (..), TKind, TTy)
 import Pretty.Format     (format, formatAnd)
@@ -22,8 +22,11 @@ data TypeError
   | CyclicTypeDef Range [Label]
   | ExpectedConst Range Int Int
   | CannotInferField Range
+  | FieldDoesNotBelongsToTheType (Name ValName)
+  | DuplicatedFieldName (Name ValName)
   | NotExhaustive Range (NonEmpty Text)
   | UselessClause Range
+  | NeedMoreFields (NonEmpty (Name ValName))
 
 instance PrettyDiagnostic TypeError where
   prettyDiagnostic err = case err of
@@ -74,3 +77,9 @@ instance PrettyDiagnostic TypeError where
         mkBasicDiagnostic 310 [Raw "These clauses does not match", Marked Snd (formatAnd like)] [Ann Fst (Words [Raw "Here!"]) range]
     UselessClause range ->
         mkBasicDiagnostic 311 [Raw "The clause is useless for the other ones!"] [Ann For (Words [Raw "Here!"]) range]
+    FieldDoesNotBelongsToTheType name ->
+        mkBasicDiagnostic 312 [Raw "The field", Marked Fst (format name), Raw "does not exists in this type!"] [Ann Fst (Words [Raw "Here!"]) (getPos name)]
+    DuplicatedFieldName name ->
+        mkBasicDiagnostic 313 [Raw "The field", Marked Fst (format name), Raw "is duplicated"] [Ann Fst (Words [Raw "Here!"]) (getPos name)]
+    NeedMoreFields fields ->
+        mkBasicDiagnostic 313 [Raw "The record needs", Marked Fst (formatAnd fields), Raw "in order to be created"] [Ann Fst (Words [Raw "Here!"]) (getPos (head fields))]
