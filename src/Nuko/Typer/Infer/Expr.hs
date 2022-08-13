@@ -56,7 +56,7 @@ checkExpr expr tty = case (expr, tty) of
     ((patRes, patTy), bindings) <- inferPat exprPat
     resTy <- unify (getPos exprPat) patTy argTy
     (exprRes, bodyResTy) <- addLocals bindings (checkExpr expr' retTy)
-    pure (Lam patRes exprRes (quote 0 (TyFun resTy bodyResTy), e), (TyFun resTy bodyResTy))
+    pure (Lam patRes exprRes (quote 0 (TyFun resTy bodyResTy), e), TyFun resTy bodyResTy)
   _ -> do
     (resExpr, inferedTy) <- inferExpr expr
     instTy <- eagerInstantiate inferedTy
@@ -121,14 +121,14 @@ inferExpr = \case
       resExpr <- addLocals bindings (checkExpr expr resTy)
       pure (resPat, resExpr)
 
-    let isErrored = any isError $ (snd . snd) <$> casesRes
-    let patsMatch = (second fst) <$> casesRes
+    let isErrored = any isError $ snd . snd <$> casesRes
+    let patsMatch = second fst <$> casesRes
 
     isPatErrored <- readIORef patError
-    when (not isPatErrored) $ do
-      checkPatterns (quote 0 scrutTy) (toList $ fst <$> casesRes)
+    unless isPatErrored $ do
+      checkPatterns range (quote 0 scrutTy) (toList $ fst <$> casesRes)
 
-    if (not isErrored) then do
+    if not isErrored then do
       let resDeref = derefTy resTy
       pure (Match scrutRes patsMatch (quote 0 resDeref, range), derefTy resTy)
     else do
@@ -171,14 +171,14 @@ inferExpr = \case
     (binders', resTy') <- assertFields qualified range resInfo binders
 
     when (length binders' /= HashMap.size resInfo) $ do
-      let notCreated = HashMap.keys $ foldr' (HashMap.delete) resInfo (rbName . fst <$> binders')
+      let notCreated = HashMap.keys $ foldr' HashMap.delete resInfo (rbName . fst <$> binders')
       endDiagnostic (NeedMoreFields (fromList notCreated)) range
 
     newBinders <- for binders' $ \(binder, argTy) ->
       RecordBinder binder.rbName <$> (fst <$> checkExpr binder.rbVal argTy) <*> pure (quote 0 argTy)
     pure (RecCreate tyName' newBinders (quote 0 resTy', range), resTy')
 
-  BinOp operator left right range -> do
+  BinOp {} -> do
     error "Oh no, binary operator are not implemented yet"
 
 getTypeNameByTy :: MonadTyper m => Range -> TTy 'Virtual -> m (Qualified (Name TyName))

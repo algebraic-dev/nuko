@@ -28,16 +28,15 @@ assertFields qualified range resInfo binders = do
   let resTy = evaluate holes tyInfo._resultantType
   let parts = List.groupBy ((==) `on` rbName) $ List.sortBy (compare `on` rbName) binders
   newBinders' <-
-    for parts $ \group' ->
-      case group' of
-        []    -> error "Impossible case!"
-        [binder] -> do
-          let fieldTy = (evaluate [] . _fiResultType) <$> HashMap.lookup binder.rbName resInfo
-          case fieldTy of
-            Nothing -> endDiagnostic (FieldDoesNotBelongsToTheType binder.rbName) range
-            Just ty -> do
-              (argTy, retTy) <- destructFun (getPos binder) ty
-              _ <- unify (getPos binder) resTy retTy
-              pure (binder, argTy)
-        (other:_) -> endDiagnostic (DuplicatedFieldName other.rbName) range
+    for parts $ \case
+      []    -> error "Impossible case!"
+      [binder] -> do
+        let fieldTy = evaluate [] . _fiResultType <$> HashMap.lookup binder.rbName resInfo
+        case fieldTy of
+          Nothing -> endDiagnostic (FieldDoesNotBelongsToTheType binder.rbName) range
+          Just ty -> do
+            (argTy, retTy) <- destructFun (getPos binder) ty
+            _ <- unify (getPos binder) resTy retTy
+            pure (binder, argTy)
+      (other:_) -> endDiagnostic (DuplicatedFieldName other.rbName) range
   pure (newBinders', resTy)

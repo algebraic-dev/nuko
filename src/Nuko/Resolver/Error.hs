@@ -8,8 +8,8 @@ import Relude
 import Nuko.Names        (Ident, Label, ModName, Name, NameSort, Path,
                           Qualified, TyName, ValName)
 import Nuko.Report.Range (HasPosition (..), Range)
-import Nuko.Report.Text  (Annotation (Ann, NoAnn), Color (..), Mode (..),
-                          Piece (..), PrettyDiagnostic (..), mkBasicDiagnostic)
+import Nuko.Report.Text  (Annotation (Ann), Color (..), Mode (..), Piece (..),
+                          PrettyDiagnostic (..), mkBasicDiagnostic)
 import Pretty.Format     (Format (format), formatOr)
 
 data Case = UpperCase | LowerCase

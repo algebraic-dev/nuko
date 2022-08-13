@@ -48,6 +48,8 @@ module Nuko.Typer.Env (
   tyKind,
   label,
   resultantType,
+  fiType,
+  tyTypes,
   tyNames
 ) where
 
@@ -88,7 +90,7 @@ data TyInfoKind
   = IsTySyn
   | IsSumType SumTyInfo
   | IsProdType ProdTyInfo
-  | IsBuiltIn -- TODO: Remove this in the future?
+  | IsOpaque -- TODO: Remove this in the future?
   deriving Generic
 
 data TyInfo = TyInfo
@@ -105,13 +107,15 @@ data DefInfo = DefInfo
   , _retType      :: TTy 'Real
   } deriving Generic
 
-newtype FieldInfo = FieldInfo
-  { _fiResultType :: TTy 'Real
+data FieldInfo = FieldInfo
+  { _fiType       :: TTy 'Real
+  , _fiResultType :: TTy 'Real
   } deriving Generic
 
 data DataConsInfo = DataConsInfo
   { _parameters :: Int
   , _tyName     :: Qualified (Name TyName)
+  , _tyTypes    :: [TTy 'Real]
   } deriving Generic
 
 data TypeSpace = TypeSpace

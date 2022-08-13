@@ -84,7 +84,7 @@ renderTitle diagnostic detailed =
 renderLocation :: Diagnostic -> Builder
 renderLocation diagnostic =
   let pos = diagnostic.position in
-  fromText (blue $ faint $ (diagnostic.filename <> ":" <> (format $ pos.start.line + 1) <> ":" <> (format $ pos.start.column + 1)))
+  fromText (blue $ faint (diagnostic.filename <> ":" <> format (pos.start.line + 1) <> ":" <> (format $ pos.start.column + 1)))
 
 renderSubtitle :: (Report.Color, Report.Mode) -> Builder
 renderSubtitle (color, text) =
@@ -106,7 +106,7 @@ modifyLine source range fn =
     fixedRange = if sameLine then range else toEndRange range (Text.length line')
 
 emptyLine :: Builder
-emptyLine = pad (indent) <> (fromText $ faint "┊ \n")
+emptyLine = pad indent <> fromText (faint "┊ \n")
 
 -- TODO: Probably join these two functions?
 renderLine :: [Text] -> Int -> Builder
@@ -116,7 +116,7 @@ renderLine source lineNum = do
   let padding  = pad (indent - Text.length lineText - 1)
   let line'    = source !! lineNum
   let header   = fromText $ faint $ lineText <> " | "
-  padding <> header <> (fromText $ faint $ line') <> "\n"
+  padding <> header <> fromText (faint line') <> "\n"
 
 renderPosition :: [Text] -> Report.Annotation -> Builder
 renderPosition source ann = do
@@ -150,7 +150,7 @@ renderDiagnostic source diagnostic =
         , pad 1 <> renderTitle diagnostic detailed <> "\n"
         , "\n"
         , renderSubtitles detailed.subtitles
-        , pad indent <> builderFaint "┌" <> (fromText (blue $ faint $ " at ") <> renderLocation diagnostic <> "\n")
+        , pad indent <> builderFaint "┌" <> (fromText (blue $ faint " at ") <> renderLocation diagnostic <> "\n")
         , pad indent <> builderFaint "|" <> "\n"
         , mconcat $ renderPosition source <$> detailed.positions
         ]

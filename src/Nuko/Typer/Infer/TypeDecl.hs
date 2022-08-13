@@ -78,7 +78,7 @@ inferTypeDecl (TypeDecl name' args arg) tyInfo =
       let names = fst <$> tyInfo._tyNames
       let realTy = TyFun inferedTy tyInfo._resultantType
       let generalizedTy = generalizeNames names realTy
-      addFieldToEnv name' fieldName (FieldInfo generalizedTy)
+      addFieldToEnv name' fieldName (FieldInfo inferedTy generalizedTy)
       pure (fieldName, realTy)
 
     inferSumField :: MonadTyper m => (Name ConsName, [Ty Re]) -> m (Name ConsName, [TTy 'Real])
@@ -90,7 +90,10 @@ inferTypeDecl (TypeDecl name' args arg) tyInfo =
       let generalizedTy = generalizeNames names (foldr TyFun tyInfo._resultantType argTys)
 
       path <- qualifyLocal name'
-      addTy tsConstructors (Just tyInfo._label.nIdent) consName (generalizedTy, DataConsInfo (length tys) path)
+
+      let consInfo = DataConsInfo (length tys) path argTys
+
+      addTy tsConstructors (Just tyInfo._label.nIdent) consName (generalizedTy, consInfo)
 
       traverse_ (\(r, k) -> unifyKind r k KiStar) argKinds
       pure (consName, argTys)

@@ -76,9 +76,9 @@ commonState filename = (emptyState mainMod filename) { _openedNames = openedPrel
 prelude :: TypeSpace
 prelude = emptyTypeSpace
   { _tsTypes = HashMap.fromList
-    [ (preludeQual "Int", (KiStar, TyInfo intTy (mkName TyName (genIdent "Int") Untouched) [] IsBuiltIn))
-    , (preludeQual "String", (KiStar, TyInfo strTy (mkName TyName (genIdent "String") Untouched) [] IsBuiltIn))
-    , (preludeQual "Bool", (KiStar, TyInfo boolTy (mkName TyName (genIdent "Bool") Untouched) [] IsBuiltIn))
+    [ (preludeQual "Int", (KiStar, TyInfo intTy (mkName TyName (genIdent "Int") Untouched) [] IsOpaque))
+    , (preludeQual "String", (KiStar, TyInfo strTy (mkName TyName (genIdent "String") Untouched) [] IsOpaque))
+    , (preludeQual "Bool", (KiStar, TyInfo boolTy (mkName TyName (genIdent "Bool") Untouched) [] IsOpaque))
     ]
   }
 

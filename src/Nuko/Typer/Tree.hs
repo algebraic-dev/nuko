@@ -3,7 +3,7 @@
 
 module Nuko.Typer.Tree where
 
-import Relude
+import Relude            (Generic, Semigroup ((<>)), Void, map, snd)
 
 import Data.Text         qualified as Text
 import Nuko.Names        (Ident, ModName, Name, Path)
@@ -85,17 +85,20 @@ instance PrettyTree (TypeDeclArg Tc) where
 instance PrettyTree (TypeDecl Tc) where
 instance PrettyTree (LetDecl Tc) where
 
+instance (Format (p Tc)) => Format (RecordBinder p Tc) where
+  format (RecordBinder name' pat' _) = format name' <> " = " <> format pat'
+
 instance Format (Pat Tc) where
   format = \case
-    PId name _ -> format name
+    PId name' _ -> format name'
     PWild _    -> "_"
-    PCons name [] _   -> format name
-    PCons name pats _ -> "(" <> format name <> " " <> Text.unwords (map format pats) <> ")"
+    PCons name' [] _   -> format name'
+    PCons name' pats _ -> "(" <> format name' <> " " <> Text.unwords (map format pats) <> ")"
     POr le ri _       -> "(" <> format le <> "|" <> format ri <> ")"
     PLit (LStr t _) _ -> "\"" <> format t <> "\""
     PLit (LInt t _) _ -> format t
     PAnn p _ _        -> format p
-    PRec name bind  _ -> format name <> "{" <> "}"
+    PRec name' bind  _ -> format name' <> "{" <> Text.intercalate "," (map format bind) <> "}"
 
 instance (XRecMono x ~ Range) => HasPosition (RecordBinder val x) where
   getPos (RecordBinder _ _ e) = e
